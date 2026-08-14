@@ -6,6 +6,7 @@ import guessmarket.dto.EventDto;
 import guessmarket.dto.EventTradingStatusDto;
 import guessmarket.dto.PurchaseRequestDto;
 import guessmarket.dto.PurchaseResultDto;
+import guessmarket.dto.StateFileResultDto;
 import guessmarket.engine.GuessMarketEngine;
 import guessmarket.engine.exception.GuessMarketException;
 import guessmarket.engine.exception.InvalidFileContentException;
@@ -78,6 +79,8 @@ public class ConsoleSession {
             case EVENT_TRADING_STATUS -> displayTradingStatus();
             case PARTICIPATE -> participateInEvent();
             case CLOSE_EVENT -> closeEvent();
+            case SAVE_STATE -> saveSystemState();
+            case LOAD_STATE -> loadSystemState();
             case EXIT -> {
                 return false;
             }
@@ -160,6 +163,31 @@ public class ConsoleSession {
                 new CloseEventRequestDto(event.id(), optionNumber - 1));
         printer.printCloseResult(result);
         printer.printTradingStatus(result.statusAfterClose());
+    }
+
+    private void saveSystemState() {
+        printer.printHeading(MenuCommand.SAVE_STATE.getTitle());
+        String path = input.readFilePath("Enter the full path and file name to save the system to, "
+                + "without an extension");
+        if (path.isEmpty()) {
+            printer.printMessage("No path was entered, so nothing was saved.");
+            return;
+        }
+        StateFileResultDto result = engine.saveSystemState(path);
+        printer.printStateSaved(result);
+    }
+
+    private void loadSystemState() {
+        printer.printHeading(MenuCommand.LOAD_STATE.getTitle());
+        String path = input.readFilePath("Enter the full path and file name of the saved system, "
+                + "without an extension");
+        if (path.isEmpty()) {
+            printer.printMessage("No path was entered, so nothing was loaded. "
+                    + "The events that were already in the system were not changed.");
+            return;
+        }
+        StateFileResultDto result = engine.loadSystemState(path);
+        printer.printStateLoaded(result);
     }
 
     /** @return the chosen active event, or {@code null} if there is none or the user went back. */

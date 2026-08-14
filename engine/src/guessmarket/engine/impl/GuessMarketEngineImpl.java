@@ -7,12 +7,14 @@ import guessmarket.dto.EventTradingStatusDto;
 import guessmarket.dto.LoadResultDto;
 import guessmarket.dto.PurchaseRequestDto;
 import guessmarket.dto.PurchaseResultDto;
+import guessmarket.dto.StateFileResultDto;
 import guessmarket.engine.GuessMarketEngine;
 import guessmarket.engine.exception.SystemNotLoadedException;
 import guessmarket.engine.market.Event;
 import guessmarket.engine.market.GuessMarketSystem;
 import guessmarket.engine.market.Settlement;
 import guessmarket.engine.market.Trade;
+import guessmarket.engine.persistence.SystemStateStore;
 import guessmarket.engine.xml.SystemFileLoader;
 
 import java.util.List;
@@ -88,6 +90,21 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
                 settlement.amountPaidToWinners(),
                 settlement.payoutPerShare(),
                 EventDtoFactory.toTradingStatusDto(event));
+    }
+
+    @Override
+    public StateFileResultDto saveSystemState(String pathWithoutExtension) {
+        GuessMarketSystem systemToSave = loadedSystem();
+        String writtenFile = SystemStateStore.save(systemToSave, pathWithoutExtension);
+        return new StateFileResultDto(writtenFile, systemToSave.getEventCount());
+    }
+
+    @Override
+    public StateFileResultDto loadSystemState(String pathWithoutExtension) {
+        GuessMarketSystem restoredSystem = SystemStateStore.load(pathWithoutExtension);
+        this.system = restoredSystem;
+        return new StateFileResultDto(pathWithoutExtension.trim()
+                + SystemStateStore.STATE_FILE_EXTENSION, restoredSystem.getEventCount());
     }
 
     /** @return the loaded system, or fails when nothing has been loaded yet. */

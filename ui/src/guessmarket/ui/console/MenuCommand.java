@@ -13,7 +13,9 @@ enum MenuCommand {
     EVENT_TRADING_STATUS("Show the trading status of an event"),
     PARTICIPATE("Participate in an event by buying shares"),
     CLOSE_EVENT("Close an event and pay its winners"),
-    EXIT("Exit the system");
+    EXIT("Exit the system"),
+    SAVE_STATE("Save the current state of the system to a file   (bonus)"),
+    LOAD_STATE("Load a state of the system from a file           (bonus)");
 
     private final String title;
 

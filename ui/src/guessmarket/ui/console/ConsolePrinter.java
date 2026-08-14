@@ -6,6 +6,7 @@ import guessmarket.dto.EventTradingStatusDto;
 import guessmarket.dto.LoadResultDto;
 import guessmarket.dto.OptionStateDto;
 import guessmarket.dto.PurchaseResultDto;
+import guessmarket.dto.StateFileResultDto;
 import guessmarket.dto.TradeRecordDto;
 
 import java.util.List;
@@ -141,6 +142,18 @@ class ConsolePrinter {
                 ConsoleFormat.money(result.amountPaidToWinners()));
         printField("Worth of one winning share",
                 ConsoleFormat.money(result.payoutPerShare()));
+    }
+
+    void printStateSaved(StateFileResultDto result) {
+        System.out.println("The whole system, including everything traded so far, was saved.");
+        printField("Saved to", result.filePath());
+        printField("Events saved", String.valueOf(result.eventCount()));
+    }
+
+    void printStateLoaded(StateFileResultDto result) {
+        System.out.println("The saved system was read back and is now the running system.");
+        printField("Read from", result.filePath());
+        printField("Events loaded", String.valueOf(result.eventCount()));
     }
 
     /** Prints a failure exactly as the engine described it, plus its details when it has any. */
