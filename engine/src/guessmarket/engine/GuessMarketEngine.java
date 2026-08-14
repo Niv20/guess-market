@@ -7,12 +7,14 @@ import guessmarket.dto.EventTradingStatusDto;
 import guessmarket.dto.LoadResultDto;
 import guessmarket.dto.PurchaseRequestDto;
 import guessmarket.dto.PurchaseResultDto;
+import guessmarket.dto.StateFileResultDto;
 import guessmarket.engine.exception.EventNotActiveException;
 import guessmarket.engine.exception.EventNotFoundException;
 import guessmarket.engine.exception.FileLoadException;
 import guessmarket.engine.exception.InvalidOptionSelectionException;
 import guessmarket.engine.exception.InvalidShareQuantityException;
 import guessmarket.engine.exception.SystemNotLoadedException;
+import guessmarket.engine.exception.SystemStateFileException;
 
 import java.util.List;
 
@@ -94,4 +96,26 @@ public interface GuessMarketEngine {
      * @throws InvalidOptionSelectionException if the event has no such option
      */
     CloseEventResultDto closeEvent(CloseEventRequestDto request);
+
+    /**
+     * Writes the whole system, including everything that has been traded so far, to a file.
+     *
+     * @param pathWithoutExtension the full path and file name to save to, with no extension
+     * @return the file that was written
+     * @throws SystemNotLoadedException  if there is nothing to save yet
+     * @throws SystemStateFileException  if the file cannot be written
+     */
+    StateFileResultDto saveSystemState(String pathWithoutExtension);
+
+    /**
+     * Reads a system that was saved earlier, replacing whatever is loaded now.
+     *
+     * <p>As with a system details file, the running system is only replaced once the saved one
+     * has been read successfully.
+     *
+     * @param pathWithoutExtension the full path and file name that was saved to, with no extension
+     * @return the file that was read
+     * @throws SystemStateFileException if the file is missing or is not a saved system
+     */
+    StateFileResultDto loadSystemState(String pathWithoutExtension);
 }
