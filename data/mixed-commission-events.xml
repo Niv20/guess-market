@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Guess-Market xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="GM-EX1-schema.xsd">
+	<GM-events>
+		<GM-event name="Rain in Tel Aviv Tomorrow">
+			<id>10</id>
+			<description>Will at least one millimeter of rain be measured in Tel Aviv during the next calendar day</description>
+			<comision type="on-purchase">0</comision>
+			<GM-options>
+				<GM-option>Yes</GM-option>
+				<GM-option>No</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-LMSR>
+					<b>100</b>
+				</GM-LMSR>
+			</GM-method>
+		</GM-event>
+		<GM-event name="Volatile Election Night">
+			<id>11</id>
+			<description>A deliberately thin market, every purchase moves the price sharply</description>
+			<comision type="on-close">90</comision>
+			<GM-options>
+				<GM-option>Challenger wins</GM-option>
+				<GM-option>Incumbent wins</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-LMSR>
+					<b>1</b>
+				</GM-LMSR>
+			</GM-method>
+		</GM-event>
+		<GM-event name="Deep Market Championship">
+			<id>12</id>
+			<description>A very deep market, prices barely move but the subsidy is large</description>
+			<comision type="on-close">7</comision>
+			<GM-options>
+				<GM-option>Home team</GM-option>
+				<GM-option>Away team</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-LMSR>
+					<b>5000</b>
+				</GM-LMSR>
+			</GM-method>
+		</GM-event>
+	</GM-events>
+</Guess-Market>
