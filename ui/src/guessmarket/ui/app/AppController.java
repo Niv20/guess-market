@@ -1,7 +1,9 @@
 package guessmarket.ui.app;
 
 import guessmarket.dto.LoadResultDto;
+import guessmarket.dto.StateFileResultDto;
 import guessmarket.engine.GuessMarketEngine;
+import guessmarket.engine.exception.GuessMarketException;
 import guessmarket.engine.exception.InvalidFileContentException;
 import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Dialogs;
@@ -41,10 +43,14 @@ public class AppController {
     private static final String FILE_CHOOSER_TITLE = "Choose a Guess Market system details file";
     private static final String XML_FILTER_NAME = "Guess Market system details file (*.xml)";
     private static final String XML_FILTER_PATTERN = "*.xml";
+    private static final String STATE_FILTER_NAME = "Guess Market saved system (*.gmstate)";
+    private static final String STATE_FILTER_PATTERN = "*.gmstate";
 
     @FXML private ComboBox<Skin> skinChooser;
     @FXML private CheckBox animationsToggle;
     @FXML private Button loadFileButton;
+    @FXML private Button saveStateButton;
+    @FXML private Button loadStateButton;
     @FXML private TextField loadedFilePath;
     @FXML private HBox progressRow;
     @FXML private ProgressBar loadProgressBar;
@@ -92,6 +98,7 @@ public class AppController {
             section.connect(context);
             section.clear();
         }
+        saveStateButton.setDisable(true);
     }
 
     /** The button in the header. Everything about loading a file starts here. */
@@ -176,9 +183,60 @@ public class AppController {
         }
     }
 
+    /**
+     * Writes everything the system currently holds to a file of its own, so that a session can be
+     * picked up again later. This is not the system details file: it is the whole running system,
+     * every trade and every balance included.
+     */
+    @FXML
+    private void onSaveState() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save the system as it stands");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(STATE_FILTER_NAME, STATE_FILTER_PATTERN));
+        chooser.setInitialFileName("guess-market" + STATE_FILTER_PATTERN.substring(1));
+        File chosenFile = chooser.showSaveDialog(window());
+        if (chosenFile == null) {
+            return;
+        }
+        try {
+            StateFileResultDto result = engine.saveSystemState(chosenFile.getAbsolutePath());
+            Dialogs.information(window(), "The system was saved",
+                    "All " + result.eventCount() + " events, the users and everything that has "
+                            + "been traded were written to " + result.filePath() + ".");
+        } catch (GuessMarketException refused) {
+            Dialogs.error(window(), "The system could not be saved", refused.getMessage());
+        }
+    }
+
+    /** Reads back a system that was saved earlier, replacing whatever is loaded now. */
+    @FXML
+    private void onLoadState() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Open a saved system");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(STATE_FILTER_NAME, STATE_FILTER_PATTERN));
+        File chosenFile = chooser.showOpenDialog(window());
+        if (chosenFile == null) {
+            return;
+        }
+        try {
+            StateFileResultDto result = engine.loadSystemState(chosenFile.getAbsolutePath());
+            loadedFilePath.setText(result.filePath());
+            loadMessageLabel.setText("Restored " + result.eventCount() + " events from a saved system");
+            showProgressRow(true);
+            loadProgressBar.setProgress(1);
+            loadProgressPercent.setText("100%");
+            refreshEverything();
+        } catch (GuessMarketException refused) {
+            Dialogs.error(window(), "The saved system could not be read", refused.getMessage());
+        }
+    }
+
     /** Asks both screens to read the engine again. */
     private void refreshEverything() {
         boolean loaded = engine.isSystemLoaded();
+        saveStateButton.setDisable(!loaded);
         for (AppSection section : sections()) {
             if (loaded) {
                 section.refresh();

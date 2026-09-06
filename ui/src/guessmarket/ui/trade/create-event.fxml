@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+    The form for creating an event from scratch.
+
+    Whoever fills it in becomes the market maker of the event, which means they will be the one who
+    pays to open it, who receives its commission and who eventually decides its outcome. The event
+    is created not yet started, exactly like one that came out of a file.
+
+    Only the settings of the chosen trading method are shown, because a liquidity parameter means
+    nothing to an order book and a base value means nothing to LMSR.
+-->
+<VBox fx:id="rootPane" spacing="12" prefWidth="560"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="guessmarket.ui.trade.CreateEventController">
+
+    <padding>
+        <javafx.geometry.Insets top="18" right="20" bottom="18" left="20"/>
+    </padding>
+
+    <Label text="Create an event" styleClass="section-title"/>
+    <Label fx:id="creatorLabel" styleClass="muted" wrapText="true"/>
+
+    <VBox spacing="2">
+        <Label text="NAME" styleClass="field-label"/>
+        <TextField fx:id="nameField" promptText="What is being predicted"/>
+    </VBox>
+
+    <VBox spacing="2">
+        <Label text="DESCRIPTION" styleClass="field-label"/>
+        <TextArea fx:id="descriptionField" prefRowCount="3" wrapText="true"
+                  promptText="What the event asks, and how it will be decided"/>
+    </VBox>
+
+    <HBox spacing="12">
+        <VBox spacing="2" HBox.hgrow="ALWAYS">
+            <Label text="FIRST OPTION" styleClass="field-label"/>
+            <TextField fx:id="firstOptionField" promptText="for example Yes"/>
+        </VBox>
+        <VBox spacing="2" HBox.hgrow="ALWAYS">
+            <Label text="SECOND OPTION" styleClass="field-label"/>
+            <TextField fx:id="secondOptionField" promptText="for example No"/>
+        </VBox>
+    </HBox>
+
+    <HBox spacing="12">
+        <VBox spacing="2">
+            <Label text="COMMISSION %" styleClass="field-label"/>
+            <TextField fx:id="commissionField" prefWidth="110" promptText="0 - 90"/>
+        </VBox>
+        <VBox spacing="2">
+            <Label text="COLLECTED" styleClass="field-label"/>
+            <ComboBox fx:id="commissionTypeChooser" prefWidth="170"/>
+        </VBox>
+        <VBox spacing="2">
+            <Label text="TRADING METHOD" styleClass="field-label"/>
+            <ComboBox fx:id="methodChooser" prefWidth="170"/>
+        </VBox>
+    </HBox>
+
+    <VBox fx:id="lmsrRow" spacing="8" managed="false" visible="false">
+        <VBox spacing="2">
+            <Label text="LIQUIDITY b" styleClass="field-label"/>
+            <TextField fx:id="liquidityField" prefWidth="140" maxWidth="140"
+                       promptText="for example 100"/>
+        </VBox>
+        <Label fx:id="lmsrHintLabel" styleClass="muted" wrapText="true"/>
+    </VBox>
+
+    <VBox fx:id="orderBookRows" spacing="8" managed="false" visible="false">
+        <HBox spacing="12" alignment="BOTTOM_LEFT">
+            <VBox spacing="2">
+                <Label text="OPENING INVESTMENT" styleClass="field-label"/>
+                <TextField fx:id="investmentField" prefWidth="150" promptText="for example 1000"/>
+            </VBox>
+            <VBox spacing="2">
+                <Label text="BASE VALUE d" styleClass="field-label"/>
+                <TextField fx:id="baseValueField" prefWidth="120" promptText="for example 1"/>
+            </VBox>
+            <CheckBox fx:id="mintCheckBox" text="Allow minting"/>
+        </HBox>
+        <Label fx:id="orderBookHintLabel" styleClass="muted" wrapText="true"/>
+    </VBox>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Cancel" styleClass="button-quiet" onAction="#onCancel"/>
+        <Button text="Create the event" styleClass="button-primary" onAction="#onCreate"/>
+    </HBox>
+
+</VBox>

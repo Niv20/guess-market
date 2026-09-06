@@ -44,6 +44,8 @@
                         styleClass="button-primary" onAction="#onLoadFile"/>
                 <TextField fx:id="loadedFilePath" editable="false" focusTraversable="false"
                            promptText="No file has been loaded yet" HBox.hgrow="ALWAYS"/>
+                <Button fx:id="saveStateButton" text="Save state" onAction="#onSaveState"/>
+                <Button fx:id="loadStateButton" text="Load state" onAction="#onLoadState"/>
             </HBox>
 
             <HBox fx:id="progressRow" alignment="CENTER_LEFT" spacing="10" managed="false"
