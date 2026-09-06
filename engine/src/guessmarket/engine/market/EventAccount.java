@@ -1,22 +1,25 @@
 package guessmarket.engine.market;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * The trading account of a single event, held by its market maker.
+ * The account of a single event: the money that stands behind its shares.
  *
- * <p>It is opened empty, receives the subsidy that makes the market tradable, then takes in
- * the money paid by buyers together with the commissions, and finally pays the winners when
- * the event is closed. It is never reset after a settlement: whatever is left simply stays in
- * it.
+ * <p>It opens empty and stays empty until the market maker starts the event. From then on it holds
+ * whatever backs the shares that exist. Under LMSR that is the subsidy the market maker put up plus
+ * everything participants have paid for shares; in an order book it is the money paid in whenever
+ * shares were minted, which is exactly one base value for every pair of shares in existence. When
+ * the event is settled this account pays the winners and is then emptied, and anything still left
+ * in it goes back to the market maker.
  *
- * <p>Two figures are worth telling apart. The balance is the money the account holds, and it
- * includes the subsidy the market maker put in. {@link #getMarketMakerNetResult()} removes
- * that subsidy again, and therefore says whether the market maker actually earned money on
- * the event or ended up paying for it out of their own pocket.
+ * <p>Commission is not kept here. The market maker of an event receives its commission personally,
+ * into their own account, so the only thing this account records about commission is how much of it
+ * the event has produced.
  */
 public class EventAccount implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private double balance;
@@ -27,21 +30,18 @@ public class EventAccount implements Serializable {
         return balance;
     }
 
+    /** @return what the market maker paid to open the event. */
     public double getSubsidy() {
         return subsidy;
     }
 
+    /** @return everything the commission of this event has paid its market maker so far. */
     public double getTotalCommissionCollected() {
         return totalCommissionCollected;
     }
 
-    /** @return the balance without the subsidy; a negative value means the event cost the market maker money. */
-    public double getMarketMakerNetResult() {
-        return balance - subsidy;
-    }
-
-    /** Puts the money that opens the market into the account, and remembers how much it was. */
-    void depositSubsidy(double amount) {
+    /** Records the money that opens the market, and remembers how much of it there was. */
+    void depositOpeningFunds(double amount) {
         subsidy += amount;
         balance += amount;
     }
@@ -54,11 +54,7 @@ public class EventAccount implements Serializable {
         balance -= amount;
     }
 
-    /**
-     * Records commission that the event earned. On a purchase the money arrives through
-     * {@link #deposit(double)}; when an event is closed the money is already in the account and
-     * is simply kept back from the winners, so only the running total changes here.
-     */
+    /** Records commission the event has produced. The money itself goes to the market maker. */
     void recordCommission(double amount) {
         totalCommissionCollected += amount;
     }

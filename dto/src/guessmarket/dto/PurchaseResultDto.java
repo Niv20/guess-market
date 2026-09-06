@@ -1,20 +1,22 @@
 package guessmarket.dto;
 
 /**
- * The outcome of a successful purchase, together with the state of the event after it.
+ * What an LMSR purchase cost and what the event looked like straight afterwards.
  *
- * @param optionName            the option that was bought
- * @param shares                the number of shares that were bought
- * @param amountPaidForShares   the price of the shares themselves
- * @param commissionPaid        the commission that was added on top, zero when the event
- *                              collects its commission only when it is closed
- * @param totalPaid             the total amount paid by the buyer
- * @param statusAfterPurchase   the trading state of the event once the purchase was applied
+ * @param optionName          the option that was bought
+ * @param shares              how many shares were bought
+ * @param amountPaidForShares what the shares themselves cost
+ * @param commissionPaid      the commission added on top, which is zero for an event that
+ *                            collects its commission only at the end
+ * @param totalPaid           the two together, which is what actually left the buyer's account
+ * @param balanceAfter        what the buyer's account holds now
+ * @param statusAfterPurchase the event as it stands after the purchase
  */
 public record PurchaseResultDto(String optionName,
                                 long shares,
                                 double amountPaidForShares,
                                 double commissionPaid,
                                 double totalPaid,
+                                double balanceAfter,
                                 EventTradingStatusDto statusAfterPurchase) {
 }

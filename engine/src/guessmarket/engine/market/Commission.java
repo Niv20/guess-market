@@ -41,6 +41,11 @@ public final class Commission implements Serializable {
         return type;
     }
 
+    /** @return the rate as the fraction it really is, so 15 percent comes back as 0.15. */
+    public double getFraction() {
+        return percent / 100.0;
+    }
+
     /**
      * @param purchasePrice the price of the shares themselves
      * @return the commission to add on top of that price, or zero for an event that collects

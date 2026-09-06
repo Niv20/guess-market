@@ -1,10 +1,11 @@
 package guessmarket.dto;
 
 /**
- * A request to resolve an event with one of its options as the winner.
+ * A request from a market maker to close their event and declare the outcome.
  *
- * @param eventId             the identifier of the event to close
- * @param winningOptionIndex  the position of the winning option inside the event, starting at 0
+ * @param userName           the user asking, who must be the market maker of the event
+ * @param eventId            the event to close
+ * @param winningOptionIndex the option that turned out to be right, counted from 0
  */
-public record CloseEventRequestDto(int eventId, int winningOptionIndex) {
+public record CloseEventRequestDto(String userName, int eventId, int winningOptionIndex) {
 }
