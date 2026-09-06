@@ -244,7 +244,16 @@
     -fx-padding: 6 10 6 10;
 }
 
-.text-field:focused, .combo-box:focused, .spinner:focused {
+.text-area .content {
+    -fx-background-color: -app-surface-2;
+    -fx-background-radius: 8;
+}
+
+.text-area:focused .content {
+    -fx-background-color: -app-surface-2;
+}
+
+.text-field:focused, .text-area:focused, .combo-box:focused, .spinner:focused {
     -fx-border-color: -app-accent;
 }
 

@@ -22,4 +22,10 @@ public enum TradingMethod {
     public String getDisplayName() {
         return displayName;
     }
+
+    /** Whatever shows this value to a person shows its display name, never its constant name. */
+    @Override
+    public String toString() {
+        return displayName;
+    }
 }

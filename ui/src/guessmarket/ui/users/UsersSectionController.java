@@ -11,6 +11,7 @@ import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Tables;
 import guessmarket.ui.events.EventDetailsController;
+import guessmarket.ui.trade.CreateEventController;
 import guessmarket.ui.trade.TradePanelController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,6 +19,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleButton;
@@ -55,6 +57,7 @@ public class UsersSectionController implements AppSection {
     @FXML private Label netResultLabel;
     @FXML private Label runsLabel;
     @FXML private Label participatesLabel;
+    @FXML private Button createEventButton;
 
     @FXML private VBox balanceChartBox;
     @FXML private LineChart<Number, Number> balanceChart;
@@ -178,8 +181,22 @@ public class UsersSectionController implements AppSection {
         participatesLabel.setText(countOf(user.participatingEventIds().size(), "event"));
 
         showNode(blockedBadge, user.blocked());
+        createEventButton.setDisable(user.blocked());
         showBalanceChart(user);
         showEventsOfSelectedUser();
+    }
+
+    /**
+     * Opens the form for creating an event, with the selected user as its market maker. Whatever
+     * comes out of it is an ordinary event that has not started yet, so nothing else here has to
+     * know that it was not in the file.
+     */
+    @FXML
+    private void onCreateEvent() {
+        UserDto user = usersTable.getSelectionModel().getSelectedItem();
+        if (user != null) {
+            CreateEventController.open(context, user.name());
+        }
     }
 
     private static String countOf(int count, String noun) {
