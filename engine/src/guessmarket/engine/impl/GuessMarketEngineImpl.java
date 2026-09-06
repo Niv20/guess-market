@@ -42,7 +42,7 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
         GuessMarketSystem loadedSystem = fileLoader.load(path);
         this.system = loadedSystem;
         return new LoadResultDto(path == null ? "" : path.trim(),
-                loadedSystem.getEventCount(), totalSubsidyOf(loadedSystem));
+                loadedSystem.getEventCount(), 0);
     }
 
     @Override
@@ -119,13 +119,5 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
         if (request == null) {
             throw new IllegalArgumentException("A request must be supplied, but it was missing.");
         }
-    }
-
-    private static double totalSubsidyOf(GuessMarketSystem system) {
-        double totalSubsidy = 0;
-        for (Event event : system.getEvents()) {
-            totalSubsidy += event.getAccount().getSubsidy();
-        }
-        return totalSubsidy;
     }
 }

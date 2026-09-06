@@ -1,0 +1,46 @@
+/*
+ * Midnight - the skin the program starts in.
+ *
+ * A dark trading desk: a near black window, panels that lift out of it in three steps of grey,
+ * and one violet accent that marks whatever is currently selected. Green and red are kept for
+ * the two sides of a market, buying and selling, and are never used for anything else.
+ */
+
+.root {
+    -app-bg: #12151b;
+    -app-surface: #1a1e26;
+    -app-surface-2: #20242e;
+    -app-surface-3: #262b36;
+
+    -app-border: #2b303c;
+    -app-border-soft: #232833;
+
+    -app-text: #e7e9ee;
+    -app-text-dim: #8b93a3;
+    -app-text-faint: #5c6373;
+
+    -app-accent: #8c9bff;
+    -app-accent-soft: rgba(140, 155, 255, 0.16);
+    -app-accent-contrast: #12151b;
+
+    -app-yes: #3ecf8e;
+    -app-no: #f0665c;
+    -app-warn: #f0b93e;
+
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+}
+
+/* Flat buttons with a hairline border: quiet until the pointer is over them. */
+.button {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.button-primary {
+    -fx-effect: dropshadow(gaussian, rgba(140, 155, 255, 0.35), 12, 0, 0, 2);
+}
+
+.header-bar {
+    -fx-background-color: linear-gradient(to bottom, #1c212b, #171b23);
+}

@@ -1,11 +1,11 @@
 package guessmarket.dto;
 
 /**
- * A summary of a file that was successfully loaded into the system.
+ * What a successful load of a system details file produced.
  *
- * @param filePath      the file that was read
- * @param eventCount    how many events were loaded from it
- * @param totalSubsidy  the total subsidy deposited into the accounts of those events
+ * @param filePath   the file that was loaded, as the system now knows it
+ * @param eventCount how many events came out of it
+ * @param userCount  how many users came out of it
  */
-public record LoadResultDto(String filePath, int eventCount, double totalSubsidy) {
+public record LoadResultDto(String filePath, int eventCount, int userCount) {
 }
