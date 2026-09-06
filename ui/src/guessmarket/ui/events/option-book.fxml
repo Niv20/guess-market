@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+    The order book of one option.
+
+    The five figures across the top are the ways a market is read: what it last traded at, what the
+    two sides are currently willing to do, the point between them, and how far apart they are. The
+    two tables underneath are the orders those figures are worked out from.
+-->
+<VBox fx:id="rootPane" styleClass="card-sunken" spacing="8"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="guessmarket.ui.events.OptionBookController">
+
+    <Label fx:id="optionNameLabel" styleClass="panel-title" text="Option"/>
+
+    <FlowPane hgap="16" vgap="6">
+        <VBox>
+            <Label text="LAST" styleClass="field-label"/>
+            <Label fx:id="lastLabel" styleClass="value" text="—"/>
+        </VBox>
+        <VBox>
+            <Label text="BID" styleClass="field-label"/>
+            <Label fx:id="bidLabel" styleClass="value, value-positive" text="—"/>
+        </VBox>
+        <VBox>
+            <Label text="ASK" styleClass="field-label"/>
+            <Label fx:id="askLabel" styleClass="value, value-negative" text="—"/>
+        </VBox>
+        <VBox>
+            <Label text="MID" styleClass="field-label"/>
+            <Label fx:id="midLabel" styleClass="value" text="—"/>
+        </VBox>
+        <VBox>
+            <Label text="SPREAD" styleClass="field-label"/>
+            <Label fx:id="spreadLabel" styleClass="value" text="—"/>
+        </VBox>
+    </FlowPane>
+
+    <HBox alignment="CENTER_LEFT" spacing="8">
+        <Label text="BIDS — WAITING TO BUY" styleClass="book-title-bid"/>
+        <Label fx:id="bidTotalLabel" styleClass="faint"/>
+    </HBox>
+    <TableView fx:id="bidsTable" prefHeight="140" minHeight="90" VBox.vgrow="ALWAYS"/>
+
+    <HBox alignment="CENTER_LEFT" spacing="8">
+        <Label text="ASKS — WAITING TO SELL" styleClass="book-title-ask"/>
+        <Label fx:id="askTotalLabel" styleClass="faint"/>
+    </HBox>
+    <TableView fx:id="asksTable" prefHeight="140" minHeight="90" VBox.vgrow="ALWAYS"/>
+
+</VBox>

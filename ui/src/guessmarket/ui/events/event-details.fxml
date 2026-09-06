@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+    Everything there is to see about one event, and nothing that acts on it.
+
+    The same component is used by both screens. The events screen shows it on its own, as an
+    overview; the users screen shows it underneath the controls of whichever user is selected, so
+    that the effect of an action appears in the same picture the rest of the system sees.
+
+    An event is traded either by LMSR or through an order book, and the two halves below are shown
+    one at a time accordingly: LMSR has an option value, an order book has two books.
+-->
+<VBox fx:id="rootPane" spacing="12"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="guessmarket.ui.events.EventDetailsController">
+
+    <!-- what the event is -->
+    <VBox styleClass="card" spacing="10">
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <Label fx:id="eventNameLabel" styleClass="section-title" text="Event"/>
+            <Label fx:id="statusBadge" styleClass="badge" text="Status"/>
+            <Label fx:id="methodBadge" styleClass="badge, badge-neutral" text="Method"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="winnerBadge" styleClass="badge, badge-active" managed="false"
+                   visible="false" text="Winner"/>
+        </HBox>
+
+        <Label fx:id="descriptionLabel" styleClass="muted" wrapText="true" text=""/>
+
+        <FlowPane hgap="10" vgap="10">
+            <VBox fx:id="marketMakerTile" styleClass="stat-tile">
+                <Label text="MARKET MAKER" styleClass="field-label"/>
+                <Label fx:id="marketMakerLabel" styleClass="value"/>
+            </VBox>
+            <VBox fx:id="accountTile" styleClass="stat-tile, stat-tile-accent">
+                <Label text="EVENT ACCOUNT" styleClass="field-label"/>
+                <Label fx:id="accountBalanceLabel" styleClass="value, value-accent"/>
+            </VBox>
+            <VBox fx:id="commissionTile" styleClass="stat-tile">
+                <Label text="COMMISSION" styleClass="field-label"/>
+                <Label fx:id="commissionLabel" styleClass="value"/>
+            </VBox>
+            <VBox fx:id="collectedTile" styleClass="stat-tile">
+                <Label text="COMMISSION EARNED" styleClass="field-label"/>
+                <Label fx:id="commissionCollectedLabel" styleClass="value"/>
+            </VBox>
+            <VBox fx:id="liquidityTile" styleClass="stat-tile">
+                <Label text="LIQUIDITY b" styleClass="field-label"/>
+                <Label fx:id="liquidityLabel" styleClass="value"/>
+            </VBox>
+            <VBox fx:id="subsidyTile" styleClass="stat-tile">
+                <Label text="SUBSIDY" styleClass="field-label"/>
+                <Label fx:id="subsidyLabel" styleClass="value"/>
+            </VBox>
+            <VBox fx:id="baseValueTile" styleClass="stat-tile">
+                <Label text="BASE VALUE d" styleClass="field-label"/>
+                <Label fx:id="baseValueLabel" styleClass="value"/>
+            </VBox>
+            <VBox fx:id="investmentTile" styleClass="stat-tile">
+                <Label text="OPENING INVESTMENT" styleClass="field-label"/>
+                <Label fx:id="investmentLabel" styleClass="value"/>
+            </VBox>
+            <VBox fx:id="mintTile" styleClass="stat-tile">
+                <Label text="MINTING" styleClass="field-label"/>
+                <Label fx:id="mintLabel" styleClass="value"/>
+            </VBox>
+        </FlowPane>
+    </VBox>
+
+    <!-- LMSR: what each option is worth, and how many of its shares have been bought -->
+    <VBox fx:id="lmsrBox" styleClass="card" spacing="8">
+        <Label text="OPTIONS" styleClass="panel-title"/>
+        <TableView fx:id="optionsTable" prefHeight="112" minHeight="90"/>
+    </VBox>
+
+    <!-- Order book: one book per option, side by side -->
+    <HBox fx:id="booksRow" spacing="12">
+        <fx:include fx:id="firstBook" source="option-book.fxml" HBox.hgrow="ALWAYS"/>
+        <fx:include fx:id="secondBook" source="option-book.fxml" HBox.hgrow="ALWAYS"/>
+    </HBox>
+
+    <!-- who is in the event and what they hold -->
+    <VBox fx:id="participantsBox" styleClass="card" spacing="8">
+        <Label text="PARTICIPANTS" styleClass="panel-title"/>
+        <TableView fx:id="participantsTable" prefHeight="170" minHeight="110"/>
+    </VBox>
+
+    <!-- everything that has happened, newest first -->
+    <VBox fx:id="historyBox" styleClass="card" spacing="8">
+        <Label text="TRADING HISTORY" styleClass="panel-title"/>
+        <TableView fx:id="historyTable" prefHeight="200" minHeight="110"/>
+    </VBox>
+
+    <!-- how the price of each option has moved -->
+    <VBox fx:id="chartBox" styleClass="card" spacing="8">
+        <Label text="PRICE PER TRANSACTION" styleClass="panel-title"/>
+        <LineChart fx:id="priceChart" prefHeight="230" minHeight="180" legendSide="BOTTOM"
+                   createSymbols="true" animated="false">
+            <xAxis>
+                <NumberAxis fx:id="tradeAxis" label="Transaction" minorTickCount="0"
+                            tickUnit="1" forceZeroInRange="true"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis fx:id="priceAxis" label="Price" forceZeroInRange="true"/>
+            </yAxis>
+        </LineChart>
+    </VBox>
+
+</VBox>
