@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.StackPane?>
+
+<!-- Placeholder. The users screen is built on the branch that follows this one. -->
+<StackPane fx:id="rootPane"
+           xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="guessmarket.ui.users.UsersSectionController">
+    <Label fx:id="placeholderLabel" styleClass="placeholder-text"
+           text="Load a system details file to see the users."/>
+</StackPane>

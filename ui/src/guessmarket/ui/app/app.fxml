@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+    The whole window.
+
+    The top of it never changes: the name of the program, the button that loads a file, the path
+    of the file that is currently loaded, and the bar that fills up while one is being read. The
+    rest of the window is the two screens, each of which is a component of its own with its own
+    layout file and its own controller.
+-->
+<BorderPane fx:id="rootPane"
+            xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="guessmarket.ui.app.AppController">
+
+    <top>
+        <VBox styleClass="header-bar" spacing="10">
+
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Label text="Guess Market" styleClass="app-title"/>
+                <Label fx:id="subtitleLabel" styleClass="faint"
+                       text="Prediction market - LMSR and Order Book"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Skin" styleClass="field-label"/>
+                <ComboBox fx:id="skinChooser" prefWidth="130"/>
+                <CheckBox fx:id="animationsToggle" text="Animations"/>
+            </HBox>
+
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Button fx:id="loadFileButton" text="Load File"
+                        styleClass="button-primary" onAction="#onLoadFile"/>
+                <TextField fx:id="loadedFilePath" editable="false" focusTraversable="false"
+                           promptText="No file has been loaded yet" HBox.hgrow="ALWAYS"/>
+            </HBox>
+
+            <HBox fx:id="progressRow" alignment="CENTER_LEFT" spacing="10" managed="false"
+                  visible="false">
+                <ProgressBar fx:id="loadProgressBar" prefWidth="260" progress="0"/>
+                <Label fx:id="loadProgressPercent" styleClass="value"/>
+                <Label fx:id="loadMessageLabel" styleClass="muted"/>
+            </HBox>
+
+        </VBox>
+    </top>
+
+    <center>
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
+            <tabs>
+                <Tab text="Events">
+                    <fx:include fx:id="eventsSection"
+                                source="/guessmarket/ui/events/events-section.fxml"/>
+                </Tab>
+                <Tab text="Users">
+                    <fx:include fx:id="usersSection"
+                                source="/guessmarket/ui/users/users-section.fxml"/>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+
+</BorderPane>
