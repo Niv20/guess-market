@@ -1,23 +1,33 @@
 package guessmarket.dto;
 
+import java.util.List;
+
 /**
- * The settlement details produced when an event is closed.
+ * What closing an event paid out and collected.
  *
- * @param winningOptionName        the option that was declared the winner
- * @param winningShares            the number of shares held in the winning option
- * @param grossPayoutPot           the money owed to the winners before commission, one
- *                                 dollar for every winning share
- * @param commissionCollectedNow   the commission taken out of that pot, zero when the event
- *                                 collected its commission on every purchase
- * @param amountPaidToWinners      the money actually distributed among the winners
- * @param payoutPerShare           what a single winning share was worth after commission
- * @param statusAfterClose         the trading state of the event once it was settled
+ * @param eventName            the event that was closed
+ * @param winningOptionName    the option that was declared the winner
+ * @param winningShares        how many shares of it were held altogether
+ * @param grossPayout          what those shares were worth before commission
+ * @param commissionCollected  what the market maker took out of that, for an event whose
+ *                             commission is collected at the end
+ * @param amountPaidToWinners  what was actually shared out among the winners
+ * @param payouts              who received what
+ * @param returnedToMarketMaker whatever was left in the event account and went back to the market
+ *                             maker
+ * @param statusAfterClose     the event as it stands now that it is closed
  */
-public record CloseEventResultDto(String winningOptionName,
+public record CloseEventResultDto(String eventName,
+                                  String winningOptionName,
                                   long winningShares,
-                                  double grossPayoutPot,
-                                  double commissionCollectedNow,
+                                  double grossPayout,
+                                  double commissionCollected,
                                   double amountPaidToWinners,
-                                  double payoutPerShare,
+                                  List<PayoutDto> payouts,
+                                  double returnedToMarketMaker,
                                   EventTradingStatusDto statusAfterClose) {
+
+    public CloseEventResultDto {
+        payouts = List.copyOf(payouts);
+    }
 }

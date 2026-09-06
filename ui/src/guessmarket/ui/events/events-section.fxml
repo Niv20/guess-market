@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+    The events screen.
+
+    On the left, every event in the system with a line of filters above it; on the right, whichever
+    one is selected, shown by the event details component. The divider can be dragged, and the
+    details side scrolls, so the screen stays usable when the window is made small.
+-->
+<SplitPane fx:id="rootPane" dividerPositions="0.44"
+           xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="guessmarket.ui.events.EventsSectionController">
+
+    <items>
+
+        <VBox spacing="10" minWidth="260">
+            <padding>
+                <javafx.geometry.Insets top="14" right="10" bottom="14" left="14"/>
+            </padding>
+
+            <VBox styleClass="filter-bar" spacing="8">
+                <FlowPane hgap="18" vgap="8">
+                    <HBox alignment="CENTER_LEFT" spacing="6">
+                        <Label text="TYPE" styleClass="field-label"/>
+                        <ToggleButton fx:id="allTypesButton" text="All" selected="true"/>
+                        <ToggleButton fx:id="lmsrButton" text="LMSR"/>
+                        <ToggleButton fx:id="orderBookButton" text="Order Book"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT" spacing="6">
+                        <Label text="STATUS" styleClass="field-label"/>
+                        <ToggleButton fx:id="allStatusesButton" text="All" selected="true"/>
+                        <ToggleButton fx:id="notStartedButton" text="Not started"/>
+                        <ToggleButton fx:id="activeButton" text="Active"/>
+                        <ToggleButton fx:id="closedButton" text="Ended"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT" spacing="6">
+                        <Label text="COMMISSION" styleClass="field-label"/>
+                        <ToggleButton fx:id="allCommissionsButton" text="All" selected="true"/>
+                        <ToggleButton fx:id="onPurchaseButton" text="On purchase"/>
+                        <ToggleButton fx:id="onCloseButton" text="On close"/>
+                    </HBox>
+                </FlowPane>
+            </VBox>
+
+            <TableView fx:id="eventsTable" VBox.vgrow="ALWAYS" minHeight="150"/>
+            <Label fx:id="countLabel" styleClass="faint"/>
+        </VBox>
+
+        <ScrollPane fx:id="detailsScroll" fitToWidth="true" minWidth="320">
+            <StackPane>
+                <padding>
+                    <javafx.geometry.Insets top="14" right="14" bottom="14" left="10"/>
+                </padding>
+                <Label fx:id="placeholderLabel" styleClass="placeholder-text" wrapText="true"
+                       text="Load a system details file to see the events."/>
+                <fx:include fx:id="eventDetails" source="event-details.fxml"/>
+            </StackPane>
+        </ScrollPane>
+
+    </items>
+</SplitPane>

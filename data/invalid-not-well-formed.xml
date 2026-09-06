@@ -1,20 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- The closing tag of the description element is missing, so this file cannot be parsed. -->
 <Guess-Market>
 	<GM-events>
-		<GM-event name="Broken File">
+		<GM-event name="Broken">
 			<id>1</id>
-			<description>This description is never closed
-			<comision type="on-purchase">5</comision>
-			<GM-options>
-				<GM-option>Yes</GM-option>
-				<GM-option>No</GM-option>
-			</GM-options>
-			<GM-method>
-				<GM-LMSR>
-					<b>100</b>
-				</GM-LMSR>
-			</GM-method>
+			<description>The closing tag of this element is missing, so the file is not XML at all.
 		</GM-event>
 	</GM-events>
 </Guess-Market>

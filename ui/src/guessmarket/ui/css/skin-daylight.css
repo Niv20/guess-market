@@ -1,0 +1,68 @@
+/*
+ * Daylight - a light skin.
+ *
+ * The window turns to paper, the panels are white cards that sit on it, and the text is a
+ * serif set a little larger, which is what makes this skin read differently rather than simply
+ * look inverted. The buttons become rounded and lift off the page with a soft shadow.
+ */
+
+.root {
+    -app-bg: #eef0f5;
+    -app-surface: #ffffff;
+    -app-surface-2: #f4f5f9;
+    -app-surface-3: #e6e9f1;
+
+    -app-border: #ccd2e0;
+    -app-border-soft: #e1e5ef;
+
+    -app-text: #171c2b;
+    -app-text-dim: #57607a;
+    -app-text-faint: #8892a8;
+
+    -app-accent: #2f5bd0;
+    -app-accent-soft: #dfe7fb;
+    -app-accent-contrast: #ffffff;
+
+    -app-yes: #10794f;
+    -app-no: #bf372e;
+    -app-warn: #8f6508;
+
+    -fx-font-family: "Georgia";
+    -fx-font-size: 14.5px;
+}
+
+/* Rounded, raised buttons rather than the flat bordered ones of the dark skins. */
+.button {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-color: #ccd2e0;
+    -fx-effect: dropshadow(gaussian, rgba(23, 28, 43, 0.12), 6, 0, 0, 1);
+}
+
+.button:hover {
+    -fx-background-color: #f4f5f9;
+    -fx-border-color: -app-accent;
+}
+
+.button-primary {
+    -fx-background-color: -app-accent;
+    -fx-effect: dropshadow(gaussian, rgba(47, 91, 208, 0.3), 8, 0, 0, 2);
+}
+
+.button-primary:hover {
+    -fx-background-color: derive(-app-accent, 15%);
+}
+
+.toggle-button {
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+}
+
+.card {
+    -fx-effect: dropshadow(gaussian, rgba(23, 28, 43, 0.07), 10, 0, 0, 2);
+}
+
+.header-bar {
+    -fx-background-color: #ffffff;
+}

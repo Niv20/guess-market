@@ -1,42 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  A deliberately broken file used to check that the system reports every problem it finds
-  at once instead of stopping at the first one, and that a failed load leaves the previously
-  loaded data untouched.
-
-  Expected problems: a blank event name, a negative commission, a commission above 90,
-  two events sharing the same id, a non positive liquidity parameter and two options that
-  carry the same name.
--->
-<Guess-Market xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="GM-EX1-schema.xsd">
+<Guess-Market>
 	<GM-events>
-		<GM-event name="   ">
-			<id>1</id>
-			<description>This event has no usable name</description>
-			<comision type="on-purchase">-5</comision>
-			<GM-options>
-				<GM-option>Yes</GM-option>
-				<GM-option>No</GM-option>
-			</GM-options>
-			<GM-method>
-				<GM-LMSR>
-					<b>100</b>
-				</GM-LMSR>
-			</GM-method>
-		</GM-event>
-		<GM-event name="Duplicated Identifier">
-			<id>1</id>
-			<description>This event reuses the identifier of the first event</description>
-			<comision type="on-close">120</comision>
-			<GM-options>
-				<GM-option>Yes</GM-option>
-				<GM-option>Yes</GM-option>
-			</GM-options>
-			<GM-method>
-				<GM-LMSR>
-					<b>0</b>
-				</GM-LMSR>
-			</GM-method>
-		</GM-event>
+	<GM-event name="">
+		<id>1</id>
+		<description></description>
+		<commission type="sometimes">120</commission>
+		<GM-options>
+			<GM-option>Yes</GM-option>
+			<GM-option>Yes</GM-option>
+		</GM-options>
+		<GM-method>
+			<GM-LMSR>
+				<b>0</b>
+			</GM-LMSR>
+		</GM-method>
+	</GM-event>
+	<GM-event name="Second event">
+		<id>1</id>
+		<description>This file breaks a great many rules at once.</description>
+		<commission type="on-close">10</commission>
+		<GM-options>
+			<GM-option>A</GM-option>
+			<GM-option>B</GM-option>
+		</GM-options>
+		<GM-method>
+			<GM-order-book allow-mint="maybe" initial="-5" d="0"/>
+		</GM-method>
+	</GM-event>
 	</GM-events>
+	<GM-users>
+		<GM-user name="">
+			<initial-cash>0</initial-cash>
+		</GM-user>
+		<GM-user name="Tikva">
+			<initial-cash>-100</initial-cash>
+			<GM-market-maker>
+				<event id="99"/>
+			</GM-market-maker>
+		</GM-user>
+	</GM-users>
 </Guess-Market>

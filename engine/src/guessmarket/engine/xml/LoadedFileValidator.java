@@ -4,74 +4,94 @@ import guessmarket.engine.market.Commission;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Checks that a file which was read successfully actually describes a system that can be run.
  *
- * <p>The file is guaranteed to match the course schema, but not to make sense: ids may repeat,
- * a commission may be out of range, a liquidity parameter may be zero, and so on. Every check
- * keeps going after a failure and adds one sentence to the list of problems, so that the user
- * is shown everything that is wrong with the file at once.
+ * <p>The file is guaranteed to match the course schema, but not to make sense: ids may repeat, a
+ * commission may be out of range, two users may share a name, a user may claim to run an event that
+ * is not in the file, and an event may have nobody running it at all.
+ *
+ * <p>Every check carries on after a failure and adds one sentence to the list of problems, so that
+ * the person is shown everything that is wrong with the file at once instead of correcting it one
+ * line at a time.
  */
 final class LoadedFileValidator {
 
-    /** Every event in this exercise has exactly two possible outcomes. */
+    /** Every event in this system has exactly two possible outcomes. */
     private static final int REQUIRED_OPTION_COUNT = 2;
+
+    private static final String TRUE_VALUE = "true";
+    private static final String FALSE_VALUE = "false";
 
     /** @return one readable sentence per problem, or an empty list when the file is usable. */
     List<String> findProblems(XmlGuessMarket market) {
         List<String> problems = new ArrayList<>();
         List<XmlEvent> events = eventsOf(market);
+        List<XmlUser> users = usersOf(market);
 
         if (events.isEmpty()) {
             problems.add("The file does not contain any event. "
-                    + "A system details file must describe at least one event.");
+                    + "A system details file must describe at least one event under GM-events.");
+        }
+        if (users.isEmpty()) {
+            problems.add("The file does not contain any user. "
+                    + "A system details file must describe at least one user under GM-users, "
+                    + "because every event needs a user to be its market maker.");
+        }
+        if (events.isEmpty() || users.isEmpty()) {
             return problems;
         }
 
-        Map<Integer, String> descriptionByEventId = new LinkedHashMap<>();
+        Set<Integer> eventIds = validateEvents(problems, events);
+        validateUsers(problems, users, eventIds);
+        validateMarketMakers(problems, events, users);
+        return problems;
+    }
+
+    // ------------------------------------------------------------------ events
+
+    /** @return the ids that were found, so that the market maker checks can be made against them. */
+    private Set<Integer> validateEvents(List<String> problems, List<XmlEvent> events) {
+        Map<Integer, String> ownerOfId = new LinkedHashMap<>();
         for (int position = 0; position < events.size(); position++) {
             XmlEvent event = events.get(position);
-            String where = describe(position + 1, event.getName());
-            validateName(problems, where, event);
-            validateId(problems, where, event, descriptionByEventId);
+            String where = describeEvent(position + 1, event.getName());
+            validateEventName(problems, where, event);
+            validateEventId(problems, where, event, ownerOfId);
             validateDescription(problems, where, event);
             validateCommission(problems, where, event);
             validateOptions(problems, where, event);
             validateMethod(problems, where, event);
         }
-        return problems;
+        return ownerOfId.keySet();
     }
 
-    private static List<XmlEvent> eventsOf(XmlGuessMarket market) {
-        if (market == null || market.getEvents() == null || market.getEvents().getEventList() == null) {
-            return List.of();
-        }
-        return market.getEvents().getEventList();
-    }
-
-    private static void validateName(List<String> problems, String where, XmlEvent event) {
+    private static void validateEventName(List<String> problems, String where, XmlEvent event) {
         if (isBlank(event.getName())) {
             problems.add(where + ": the event has no name. "
                     + "Give the GM-event element a name attribute that is not empty.");
         }
     }
 
-    private static void validateId(List<String> problems, String where, XmlEvent event,
-                                   Map<Integer, String> descriptionByEventId) {
+    private static void validateEventId(List<String> problems, String where, XmlEvent event,
+                                        Map<Integer, String> ownerOfId) {
         Integer id = event.getId();
         if (id == null) {
             problems.add(where + ": the event has no id. Add an id element holding a whole number.");
             return;
         }
-        String owner = descriptionByEventId.get(id);
+        String owner = ownerOfId.get(id);
         if (owner != null) {
             problems.add(where + ": id " + id + " is already used by " + owner
                     + ". Every event must have its own unique id.");
         } else {
-            descriptionByEventId.put(id, where);
+            ownerOfId.put(id, where);
         }
     }
 
@@ -86,14 +106,14 @@ final class LoadedFileValidator {
         XmlCommission commission = event.getCommission();
         if (commission == null) {
             problems.add(where + ": the event has no commission. "
-                    + "Add a comision element with a percentage and a type attribute.");
+                    + "Add a commission element with a percentage and a type attribute.");
             return;
         }
         Integer percent = commission.getPercent();
         if (percent == null) {
             problems.add(where + ": the commission has no value. "
                     + "Write a whole percentage between " + Commission.MIN_PERCENT + " and "
-                    + Commission.MAX_PERCENT + " inside the comision element.");
+                    + Commission.MAX_PERCENT + " inside the commission element.");
         } else if (percent < Commission.MIN_PERCENT || percent > Commission.MAX_PERCENT) {
             problems.add(where + ": the commission is " + percent
                     + ", but a commission must be a whole percentage between "
@@ -130,13 +150,28 @@ final class LoadedFileValidator {
         }
     }
 
+    /** An event is traded either by LMSR or by an order book, and the file must say which. */
     private static void validateMethod(List<String> problems, String where, XmlEvent event) {
-        if (event.getMethod() == null || event.getMethod().getLmsr() == null) {
-            problems.add(where + ": the event has no LMSR trading method. "
-                    + "Add a GM-method element holding a GM-LMSR element with a b value.");
+        XmlMethod method = event.getMethod();
+        if (method == null || (method.getLmsr() == null && method.getOrderBook() == null)) {
+            problems.add(where + ": the event has no trading method. Add a GM-method element "
+                    + "holding either a GM-LMSR element or a GM-order-book element.");
             return;
         }
-        Integer liquidityParameter = event.getMethod().getLmsr().getLiquidityParameter();
+        if (!method.hasExactlyOneMethod()) {
+            problems.add(where + ": the event has both an LMSR method and an order book method, "
+                    + "but an event is traded in one way only. Keep one of them and remove the other.");
+            return;
+        }
+        if (method.getLmsr() != null) {
+            validateLmsr(problems, where, method.getLmsr());
+        } else {
+            validateOrderBook(problems, where, method.getOrderBook());
+        }
+    }
+
+    private static void validateLmsr(List<String> problems, String where, XmlLmsr lmsr) {
+        Integer liquidityParameter = lmsr.getLiquidityParameter();
         if (liquidityParameter == null) {
             problems.add(where + ": the LMSR method has no liquidity parameter. "
                     + "Add a b element holding a whole number greater than 0.");
@@ -146,20 +181,160 @@ final class LoadedFileValidator {
         }
     }
 
+    private static void validateOrderBook(List<String> problems, String where, XmlOrderBook book) {
+        Integer baseValue = book.getBaseValue();
+        if (baseValue == null) {
+            problems.add(where + ": the order book has no base value. "
+                    + "Add a d attribute holding a whole number greater than 0, which is what one "
+                    + "share of the winning option will pay.");
+        } else if (baseValue <= 0) {
+            problems.add(where + ": the base value d is " + baseValue
+                    + ", but it must be a whole number greater than 0.");
+        }
+
+        Integer initial = book.getInitialInvestment();
+        if (initial == null) {
+            problems.add(where + ": the order book has no initial investment. Add an initial "
+                    + "attribute holding the amount the market maker pays to create the first shares.");
+        } else if (initial < 0) {
+            problems.add(where + ": the initial investment is " + initial
+                    + ", but it cannot be less than 0.");
+        }
+
+        String allowMint = book.getAllowMint() == null ? null : book.getAllowMint().trim();
+        if (allowMint == null || !(TRUE_VALUE.equalsIgnoreCase(allowMint)
+                || FALSE_VALUE.equalsIgnoreCase(allowMint))) {
+            problems.add(where + ": \"" + book.getAllowMint() + "\" is not a valid allow-mint value. "
+                    + "Use allow-mint=\"" + TRUE_VALUE + "\" or allow-mint=\"" + FALSE_VALUE + "\".");
+        }
+    }
+
+    // ------------------------------------------------------------------ users
+
+    private void validateUsers(List<String> problems, List<XmlUser> users, Set<Integer> eventIds) {
+        Set<String> namesSoFar = new LinkedHashSet<>();
+        for (int position = 0; position < users.size(); position++) {
+            XmlUser user = users.get(position);
+            String where = describeUser(position + 1, user.getName());
+            validateUserName(problems, where, user, namesSoFar);
+            validateInitialCash(problems, where, user);
+            validateMarketMakerReferences(problems, where, user, eventIds);
+        }
+    }
+
+    private static void validateUserName(List<String> problems, String where, XmlUser user,
+                                         Set<String> namesSoFar) {
+        if (isBlank(user.getName())) {
+            problems.add(where + ": the user has no name. "
+                    + "Give the GM-user element a name attribute that is not empty.");
+            return;
+        }
+        // Names are compared without regard to letter case, because the program treats the text a
+        // person types the same way, and two users it could not tell apart would be unusable.
+        String comparable = user.getName().trim().toLowerCase(Locale.ROOT);
+        if (!namesSoFar.add(comparable)) {
+            problems.add(where + ": there is already a user called \"" + user.getName().trim()
+                    + "\". Every user must have a name of their own.");
+        }
+    }
+
+    private static void validateInitialCash(List<String> problems, String where, XmlUser user) {
+        Integer initialCash = user.getInitialCash();
+        if (initialCash == null) {
+            problems.add(where + ": the user has no initial balance. "
+                    + "Add an initial-cash element holding a whole number greater than 0.");
+        } else if (initialCash <= 0) {
+            problems.add(where + ": the initial balance is " + initialCash
+                    + ", but every user must start with more than 0 in their account.");
+        }
+    }
+
+    private static void validateMarketMakerReferences(List<String> problems, String where,
+                                                      XmlUser user, Set<Integer> eventIds) {
+        for (Integer eventId : user.getMarketMakerEventIds()) {
+            if (eventId == null) {
+                problems.add(where + ": one of the events this user runs has no id. "
+                        + "Every event element inside GM-market-maker needs an id attribute.");
+            } else if (!eventIds.contains(eventId)) {
+                problems.add(where + ": this user is set as the market maker of event " + eventId
+                        + ", but there is no event with that id in the file. "
+                        + "Correct the id, or add the missing event.");
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ market makers
+
+    /**
+     * Checks the one rule that ties the two halves of the file together: every event must be run by
+     * exactly one of the users, no more and no fewer.
+     */
+    private void validateMarketMakers(List<String> problems, List<XmlEvent> events,
+                                      List<XmlUser> users) {
+        Map<Integer, List<String>> claimsByEventId = new LinkedHashMap<>();
+        for (XmlUser user : users) {
+            for (Integer eventId : user.getMarketMakerEventIds()) {
+                if (eventId != null) {
+                    claimsByEventId.computeIfAbsent(eventId, id -> new ArrayList<>())
+                            .add(isBlank(user.getName()) ? "an unnamed user" : user.getName().trim());
+                }
+            }
+        }
+
+        for (int position = 0; position < events.size(); position++) {
+            XmlEvent event = events.get(position);
+            if (event.getId() == null) {
+                continue;
+            }
+            List<String> claims = claimsByEventId.getOrDefault(event.getId(), List.of());
+            String where = describeEvent(position + 1, event.getName());
+            if (claims.isEmpty()) {
+                problems.add(where + ": no user is the market maker of this event. "
+                        + "Exactly one user must list event id " + event.getId()
+                        + " inside their GM-market-maker element.");
+            } else if (claims.size() > 1) {
+                problems.add(where + ": " + claims.size() + " users are set as its market maker ("
+                        + String.join(", ", claims) + "), but an event must have exactly one. "
+                        + "Remove event id " + event.getId() + " from all but one of them.");
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ small helpers
+
+    private static List<XmlEvent> eventsOf(XmlGuessMarket market) {
+        if (market == null || market.getEvents() == null
+                || market.getEvents().getEventList() == null) {
+            return List.of();
+        }
+        return market.getEvents().getEventList();
+    }
+
+    private static List<XmlUser> usersOf(XmlGuessMarket market) {
+        if (market == null || market.getUsers() == null
+                || market.getUsers().getUserList() == null) {
+            return List.of();
+        }
+        return market.getUsers().getUserList();
+    }
+
     private static boolean hasRepeatedName(List<String> optionNames) {
-        List<String> seen = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
         for (String optionName : optionNames) {
-            String trimmed = optionName == null ? "" : optionName.trim();
-            if (seen.contains(trimmed)) {
+            if (!seen.add(optionName == null ? "" : optionName.trim())) {
                 return true;
             }
-            seen.add(trimmed);
         }
         return false;
     }
 
-    private static String describe(int position, String name) {
+    private static String describeEvent(int position, String name) {
         String label = "Event number " + position + " in the file";
+        return isBlank(name) ? label : label + " (\"" + name.trim() + "\")";
+    }
+
+    private static String describeUser(int position, String name) {
+        String label = "User number " + position + " in the file";
         return isBlank(name) ? label : label + " (\"" + name.trim() + "\")";
     }
 

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+    What one user has to do with one event, as the assignment asks it to be shown.
+
+    The two trading methods call for genuinely different things. Under LMSR a participant has a list
+    of purchases, and once the event is decided, the shares everybody bought in each option and
+    which of them won. In an order book a participant has a position in each option, what that
+    position cost, the orders they still have waiting, and once the event is decided, what taking
+    part ended up being worth to them.
+-->
+<VBox fx:id="rootPane" styleClass="card" spacing="10"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="guessmarket.ui.users.UserInvolvementController">
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label fx:id="titleLabel" styleClass="panel-title" text="IN THIS EVENT"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="roleBadge" styleClass="badge, badge-neutral" text="Role"/>
+    </HBox>
+
+    <FlowPane hgap="10" vgap="10">
+        <VBox styleClass="stat-tile">
+            <Label text="COMMISSION PAID" styleClass="field-label"/>
+            <Label fx:id="commissionLabel" styleClass="value"/>
+        </VBox>
+        <VBox styleClass="stat-tile">
+            <Label text="HOLDINGS WORTH" styleClass="field-label"/>
+            <Label fx:id="holdingsValueLabel" styleClass="value"/>
+        </VBox>
+        <VBox fx:id="outcomeTile" styleClass="stat-tile, stat-tile-accent">
+            <Label fx:id="outcomeCaption" text="RESULT" styleClass="field-label"/>
+            <Label fx:id="outcomeLabel" styleClass="value, value-accent"/>
+        </VBox>
+    </FlowPane>
+
+    <Label fx:id="emptyLabel" styleClass="faint" wrapText="true" managed="false" visible="false"
+           text="This user has not done anything in this event yet."/>
+
+    <VBox fx:id="holdingsBox" spacing="6">
+        <Label text="SHARES HELD" styleClass="field-label"/>
+        <TableView fx:id="holdingsTable" prefHeight="100" minHeight="80"/>
+    </VBox>
+
+    <VBox fx:id="tradesBox" spacing="6">
+        <Label text="PURCHASES, NEWEST FIRST" styleClass="field-label"/>
+        <TableView fx:id="tradesTable" prefHeight="150" minHeight="90"/>
+    </VBox>
+
+    <VBox fx:id="ordersBox" spacing="6">
+        <Label text="ORDERS STILL WAITING IN THE BOOKS" styleClass="field-label"/>
+        <TableView fx:id="ordersTable" prefHeight="130" minHeight="80"/>
+    </VBox>
+
+    <VBox fx:id="finalTotalsBox" spacing="6">
+        <Label text="SHARES BOUGHT IN THE EVENT ALTOGETHER" styleClass="field-label"/>
+        <TableView fx:id="finalTotalsTable" prefHeight="100" minHeight="80"/>
+    </VBox>
+
+</VBox>

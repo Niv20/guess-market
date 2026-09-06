@@ -1,0 +1,75 @@
+/*
+ * Neon - a deep violet skin with a cyan accent.
+ *
+ * The window is almost black but tinted purple, the panels are lit from within, and the accent
+ * glows rather than merely colours. The label font is wider and larger again, so the three
+ * skins differ in typeface and in size as well as in colour.
+ */
+
+.root {
+    -app-bg: #0a0713;
+    -app-surface: #150f24;
+    -app-surface-2: #1d1533;
+    -app-surface-3: #2a1e49;
+
+    -app-border: #3d2d66;
+    -app-border-soft: #291d47;
+
+    -app-text: #f2ecff;
+    -app-text-dim: #b0a0d8;
+    -app-text-faint: #7a6aa3;
+
+    -app-accent: #00e5ff;
+    -app-accent-soft: rgba(0, 229, 255, 0.15);
+    -app-accent-contrast: #06121a;
+
+    -app-yes: #39ff88;
+    -app-no: #ff4d8d;
+    -app-warn: #ffd166;
+
+    -fx-font-family: "Trebuchet MS";
+    -fx-font-size: 15px;
+}
+
+/* Square, glowing buttons: the opposite of Daylight's rounded paper ones. */
+.button {
+    -fx-background-color: linear-gradient(to bottom right, #2a1e49, #1d1533);
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-color: #4b3880;
+}
+
+.button:hover {
+    -fx-background-color: linear-gradient(to bottom right, #3a2a63, #241a41);
+    -fx-border-color: -app-accent;
+    -fx-effect: dropshadow(gaussian, rgba(0, 229, 255, 0.45), 10, 0, 0, 0);
+}
+
+.button-primary {
+    -fx-background-color: linear-gradient(to right, #00e5ff, #b14dff);
+    -fx-border-color: transparent;
+    -fx-text-fill: -app-accent-contrast;
+    -fx-effect: dropshadow(gaussian, rgba(0, 229, 255, 0.5), 14, 0, 0, 0);
+}
+
+.button-primary:hover {
+    -fx-background-color: linear-gradient(to right, #5cf0ff, #c977ff);
+}
+
+.toggle-button {
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}
+
+.toggle-button:selected {
+    -fx-effect: dropshadow(gaussian, rgba(0, 229, 255, 0.4), 8, 0, 0, 0);
+}
+
+.app-title {
+    -fx-effect: dropshadow(gaussian, rgba(0, 229, 255, 0.45), 14, 0, 0, 0);
+}
+
+.header-bar {
+    -fx-background-color: linear-gradient(to right, #150f24, #1d1533);
+    -fx-border-color: transparent transparent #3d2d66 transparent;
+}
