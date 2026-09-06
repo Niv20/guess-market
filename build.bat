@@ -8,6 +8,8 @@ REM    out\classes\...   compiled classes, one folder per module
 REM    out\artifacts\    dto.jar, engine.jar, ui.jar, the lib folder, run scripts
 REM
 REM  Java 25 or newer must be installed and reachable from the command line.
+REM  JavaFX is not part of the JDK, so it travels with the project in lib\javafx and
+REM  nothing has to be installed for it.
 REM ---------------------------------------------------------------------------
 
 cd /d "%~dp0"
@@ -15,7 +17,9 @@ cd /d "%~dp0"
 set "CLASSES=out\classes"
 set "ARTIFACTS=out\artifacts"
 set "WORK=out\manifests"
-set "MAIN_CLASS=guessmarket.ui.GuessMarketApplication"
+set "MAIN_CLASS=guessmarket.ui.Main"
+set "JAVAFX=lib\javafx\win"
+set "JAVAFX_MODULES=javafx.controls,javafx.fxml"
 
 echo Cleaning previous build output
 if exist out rmdir /s /q out
@@ -40,8 +44,20 @@ if errorlevel 1 goto :failed
 
 echo   compiling ui
 dir /s /b ui\src\*.java > "%WORK%\ui-sources.txt"
-javac --release 25 -Xlint:all,-serial -classpath "%CLASSES%\dto;%CLASSES%\engine" -d "%CLASSES%\ui" "@%WORK%\ui-sources.txt"
+javac --release 25 -Xlint:all,-serial -classpath "%CLASSES%\dto;%CLASSES%\engine" ^
+      --module-path "%JAVAFX%" --add-modules %JAVAFX_MODULES% ^
+      -d "%CLASSES%\ui" "@%WORK%\ui-sources.txt"
 if errorlevel 1 goto :failed
+
+REM The layout files and the stylesheets sit next to the classes that ask for them, so they are
+REM copied into the same folder structure and end up inside the jar at the expected path.
+echo   copying ui resources
+for /r "ui\src" %%F in (*.fxml *.css) do (
+  set "FULL=%%F"
+  set "REL=!FULL:*\ui\src\=!"
+  for %%D in ("%CLASSES%\ui\!REL!") do if not exist "%%~dpD" mkdir "%%~dpD"
+  copy /y "%%F" "%CLASSES%\ui\!REL!" >nul
+)
 
 echo Building the jars
 > "%WORK%\dto.mf" echo Manifest-Version: 1.0
@@ -64,6 +80,7 @@ if errorlevel 1 goto :failed
 
 echo Copying the libraries and the run scripts
 copy /y lib\*.jar "%ARTIFACTS%\lib\" >nul
+xcopy /e /i /q /y lib\javafx "%ARTIFACTS%\lib\javafx" >nul
 copy /y run.bat "%ARTIFACTS%\" >nul
 copy /y run.sh "%ARTIFACTS%\" >nul
 
