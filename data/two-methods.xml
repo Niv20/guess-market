@@ -15,8 +15,26 @@
 			</GM-LMSR>
 		</GM-method>
 	</GM-event>
+	<GM-event name="World Cup winner">
+		<id>2</id>
+		<description>Which of the two finalists will lift the World Cup?</description>
+		<commission type="on-close">10</commission>
+		<GM-options>
+			<GM-option>Argentina</GM-option>
+			<GM-option>Spain</GM-option>
+		</GM-options>
+		<GM-method>
+			<GM-order-book allow-mint="true" initial="100" d="1"/>
+		</GM-method>
+	</GM-event>
 	</GM-events>
 	<GM-users>
+		<GM-user name="Avrum">
+			<initial-cash>1000</initial-cash>
+			<GM-market-maker>
+				<event id="2"/>
+			</GM-market-maker>
+		</GM-user>
 		<GM-user name="Tikva">
 			<initial-cash>10000</initial-cash>
 			<GM-market-maker>
@@ -24,7 +42,7 @@
 			</GM-market-maker>
 		</GM-user>
 		<GM-user name="Menash">
-			<initial-cash>500</initial-cash>
+			<initial-cash>400</initial-cash>
 		</GM-user>
 	</GM-users>
 </Guess-Market>

@@ -15,6 +15,18 @@
 			</GM-LMSR>
 		</GM-method>
 	</GM-event>
+	<GM-event name="World Cup winner">
+		<id>2</id>
+		<description>Which of the two finalists will lift the World Cup?</description>
+		<commission type="on-close">10</commission>
+		<GM-options>
+			<GM-option>Argentina</GM-option>
+			<GM-option>Spain</GM-option>
+		</GM-options>
+		<GM-method>
+			<GM-order-book allow-mint="true" initial="100" d="1"/>
+		</GM-method>
+	</GM-event>
 	</GM-events>
 	<GM-users>
 		<GM-user name="Tikva">

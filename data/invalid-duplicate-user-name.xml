@@ -23,7 +23,7 @@
 				<event id="1"/>
 			</GM-market-maker>
 		</GM-user>
-		<GM-user name="Menash">
+		<GM-user name="tikva">
 			<initial-cash>500</initial-cash>
 		</GM-user>
 	</GM-users>

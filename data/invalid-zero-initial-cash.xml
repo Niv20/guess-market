@@ -24,7 +24,7 @@
 			</GM-market-maker>
 		</GM-user>
 		<GM-user name="Menash">
-			<initial-cash>500</initial-cash>
+			<initial-cash>0</initial-cash>
 		</GM-user>
 	</GM-users>
 </Guess-Market>

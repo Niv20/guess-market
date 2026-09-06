@@ -25,6 +25,9 @@
 		</GM-user>
 		<GM-user name="Menash">
 			<initial-cash>500</initial-cash>
+			<GM-market-maker>
+				<event id="1"/>
+			</GM-market-maker>
 		</GM-user>
 	</GM-users>
 </Guess-Market>
