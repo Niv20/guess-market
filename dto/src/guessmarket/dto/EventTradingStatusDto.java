@@ -3,35 +3,54 @@ package guessmarket.dto;
 import java.util.List;
 
 /**
- * The complete trading picture of a single event: its details, the state of every option,
- * the money held by its account and the trades that were made in it.
+ * The whole picture of one event: what it is, where its money is, who is in it and everything that
+ * has happened in it.
  *
- * @param event                     the details of the event itself
- * @param optionStates              the state of every option, in the option order of the event
- * @param accountBalance            the money currently held by the event account
- * @param totalCommissionCollected  the commission collected by the event so far
- * @param subsidy                   the amount the market maker deposited to open the event
- * @param marketMakerNetResult      the account balance less the subsidy; a negative value
- *                                  means the market maker is still funding the event
- * @param tradeHistory              the trades of the event, most recent first
- * @param winningOptionName         the winning option, or {@code null} while the event is active
+ * <p>One record serves both trading methods, and the two lists that only one of them fills are
+ * simply empty for the other. An LMSR event has option values and no books; an order book event
+ * has a book for each option and no option values, because under that method a share has no single
+ * price, only the several figures inside {@link OptionBookDto}.
+ *
+ * @param event               the event itself
+ * @param optionStates        the value and the shares outstanding of each option; LMSR events only
+ * @param books               the order book of each option; order book events only
+ * @param subsidy             what the market maker put in to open the event
+ * @param tradeHistory        everything that has happened, newest first
+ * @param participants        everybody who has acted in the event
+ * @param totalSharesByOption how many shares of each option exist, in option order
  */
 public record EventTradingStatusDto(EventDto event,
                                     List<OptionStateDto> optionStates,
-                                    double accountBalance,
-                                    double totalCommissionCollected,
+                                    List<OptionBookDto> books,
                                     double subsidy,
-                                    double marketMakerNetResult,
-                                    List<TradeRecordDto> tradeHistory,
-                                    String winningOptionName) {
+                                    List<MarketTradeDto> tradeHistory,
+                                    List<ParticipantDto> participants,
+                                    List<Long> totalSharesByOption) {
 
     public EventTradingStatusDto {
         optionStates = List.copyOf(optionStates);
+        books = List.copyOf(books);
         tradeHistory = List.copyOf(tradeHistory);
+        participants = List.copyOf(participants);
+        totalSharesByOption = List.copyOf(totalSharesByOption);
     }
 
-    /** @return {@code true} when the event has already been resolved. */
+    /** @return the event's own account balance, which is where the shares are backed from. */
+    public double accountBalance() {
+        return event.accountBalance();
+    }
+
+    /** @return what the commission of this event has earned its market maker so far. */
+    public double totalCommissionCollected() {
+        return event.totalCommissionCollected();
+    }
+
     public boolean isClosed() {
-        return event.status() == EventStatus.CLOSED;
+        return event.isClosed();
+    }
+
+    /** @return the option that won, or null while the event is not closed. */
+    public String winningOptionName() {
+        return event.winningOptionName();
     }
 }

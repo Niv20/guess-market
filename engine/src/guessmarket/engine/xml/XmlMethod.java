@@ -7,8 +7,8 @@ import jakarta.xml.bind.annotation.XmlElement;
 /**
  * The trading method of an event.
  *
- * <p>LMSR is the only method exercise 1 supports; later exercises add an order book here as a
- * second, alternative child element.
+ * <p>The schema allows exactly one of the two, so a file holding both, or neither, describes an
+ * event that cannot exist and is reported by the validator rather than guessed at here.
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 public class XmlMethod {
@@ -16,7 +16,18 @@ public class XmlMethod {
     @XmlElement(name = "GM-LMSR")
     private XmlLmsr lmsr;
 
+    @XmlElement(name = "GM-order-book")
+    private XmlOrderBook orderBook;
+
     public XmlLmsr getLmsr() {
         return lmsr;
+    }
+
+    public XmlOrderBook getOrderBook() {
+        return orderBook;
+    }
+
+    public boolean hasExactlyOneMethod() {
+        return (lmsr == null) != (orderBook == null);
     }
 }

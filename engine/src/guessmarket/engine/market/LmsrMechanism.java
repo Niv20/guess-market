@@ -1,5 +1,8 @@
 package guessmarket.engine.market;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * The Logarithmic Market Scoring Rule.
  *
@@ -25,8 +28,9 @@ package guessmarket.engine.market;
  * value at which a {@code double} overflows to infinity, so even very large purchases are
  * priced correctly.
  */
-public final class LmsrMechanism extends TradingMechanism {
+public final class LmsrMechanism implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final int liquidityParameter;
@@ -42,12 +46,16 @@ public final class LmsrMechanism extends TradingMechanism {
         return liquidityParameter;
     }
 
-    @Override
+    /** @return what an empty two option market costs to open, which is {@code b * ln 2}. */
     public double initialSubsidy() {
         return cost(new long[]{0, 0});
     }
 
-    @Override
+    /**
+     * @param quantities  how many shares of each option have been bought so far
+     * @param optionIndex the option to price, starting at 0
+     * @return the value of one share of it, between 0 and 1
+     */
     public double optionValue(long[] quantities, int optionIndex) {
         double[] exponents = exponents(quantities);
         double highest = highestOf(exponents);
@@ -58,7 +66,12 @@ public final class LmsrMechanism extends TradingMechanism {
         return Math.exp(exponents[optionIndex] - highest) / total;
     }
 
-    @Override
+    /**
+     * @param quantities  how many shares of each option have been bought so far
+     * @param optionIndex the option being bought, starting at 0
+     * @param shares      how many shares are being bought
+     * @return what that purchase costs, before any commission
+     */
     public double purchaseCost(long[] quantities, int optionIndex, long shares) {
         long[] quantitiesAfterPurchase = quantities.clone();
         quantitiesAfterPurchase[optionIndex] += shares;

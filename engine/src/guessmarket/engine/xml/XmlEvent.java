@@ -18,9 +18,13 @@ public class XmlEvent {
     @XmlElement(name = "description")
     private String description;
 
-    /** Spelled this way in the course schema, and therefore in the files as well. */
-    @XmlElement(name = "comision")
+    /** As the course schema and the exercise 2 sample files spell it. */
+    @XmlElement(name = "commission")
     private XmlCommission commission;
+
+    /** As the appendix spells it, and as the exercise 1 files were written. */
+    @XmlElement(name = "comision")
+    private XmlCommission misspelledCommission;
 
     @XmlElement(name = "GM-options")
     private XmlOptions options;
@@ -40,8 +44,9 @@ public class XmlEvent {
         return description;
     }
 
+    /** @return whichever spelling of the commission element the file used, or null for neither. */
     public XmlCommission getCommission() {
-        return commission;
+        return commission != null ? commission : misspelledCommission;
     }
 
     public XmlOptions getOptions() {

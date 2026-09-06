@@ -1,14 +1,16 @@
 package guessmarket.dto;
 
 /**
- * The life cycle state of an event.
+ * The three stages of an event's life.
+ *
+ * <p>An event is loaded from the file as {@link #NOT_STARTED}, is moved to {@link #ACTIVE} by its
+ * market maker, and ends as {@link #CLOSED} when that same market maker decides the outcome. The
+ * order is one way: a closed event can never be reopened.
  */
 public enum EventStatus {
 
-    /** The event is open for trading. */
+    NOT_STARTED("Not started"),
     ACTIVE("Active"),
-
-    /** The event has been resolved and no further trading is possible. */
     CLOSED("Closed");
 
     private final String displayName;
@@ -17,7 +19,6 @@ public enum EventStatus {
         this.displayName = displayName;
     }
 
-    /** @return a human readable name, suitable for presenting to a user. */
     public String getDisplayName() {
         return displayName;
     }
