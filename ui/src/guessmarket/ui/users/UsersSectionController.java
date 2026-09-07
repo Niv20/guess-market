@@ -86,7 +86,7 @@ public class UsersSectionController implements AppSection {
      * <p>It is kept when the panel is emptied, on purpose. Every refresh rebuilds the list of
      * users, which drops the selection and empties the panel before putting the same person
      * straight back; forgetting here would make every purchase look like a move to another user
-     * and leave the panel sliding about while somebody is trying to trade.
+     * and leave the panel fading in and out while somebody is trying to trade.
      */
     private String shownUserName;
 
@@ -174,7 +174,7 @@ public class UsersSectionController implements AppSection {
         showNode(detailsBox, true);
         if (anotherUser) {
             // Started before the panels inside it are filled, so that they are carried in by this
-            // one rather than each sliding in on its own.
+            // one rather than each fading in on its own.
             Animations.switchIn(detailsBox);
         }
 

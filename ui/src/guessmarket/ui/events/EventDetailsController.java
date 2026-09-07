@@ -120,7 +120,7 @@ public class EventDetailsController {
      * <p>It survives {@link #clear()} on purpose. Every refresh rebuilds the list beside the panel,
      * which drops the selection and empties the panel before putting the same event straight back;
      * forgetting here would make every purchase look like a move to another event and leave the
-     * panel sliding about while somebody is trying to trade in it.
+     * panel fading in and out while somebody is trying to trade in it.
      */
     private int shownEventId = NOTHING_SHOWN;
 
