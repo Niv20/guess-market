@@ -16,8 +16,10 @@
  *   -app-yes -app-no -app-warn
  *
  * JavaFX can only look a colour up by name, never a font, so a skin also states the font family
- * and the font size once on .root. Both are inherited by every control underneath, and this file
- * only ever asks for sizes relative to that one (em), never in points.
+ * once on .root, and the size of ordinary text is written onto the root of the scene itself by
+ * Skin and TextSize together, so that the settings can scale it. Both are inherited by every
+ * control underneath, and this file only ever asks for sizes relative to that one (em), never in
+ * points.
  */
 
 /* ------------------------------------------------------------------ window and typography */

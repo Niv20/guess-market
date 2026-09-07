@@ -29,8 +29,12 @@
     -app-no: #b4352e;
     -app-warn: #96690f;
 
+    /*
+     * The family only. The size that goes with it is named in Skin instead, because the
+     * settings let the person put a multiplier on top of it and the two have to be
+     * multiplied together somewhere; saying it twice is how the two come to disagree.
+     */
     -fx-font-family: "Georgia";
-    -fx-font-size: 14.5px;
 }
 
 /* Rounded, raised buttons rather than the flat bordered ones of the dark skins. */

@@ -30,8 +30,12 @@
     -app-no: #e5565b;
     -app-warn: #d9b441;
 
+    /*
+     * The family only. The size that goes with it is named in Skin instead, because the
+     * settings let the person put a multiplier on top of it and the two have to be
+     * multiplied together somewhere; saying it twice is how the two come to disagree.
+     */
     -fx-font-family: "Segoe UI";
-    -fx-font-size: 13px;
 }
 
 /* Flat buttons with a hairline border: quiet until the pointer is over them. */

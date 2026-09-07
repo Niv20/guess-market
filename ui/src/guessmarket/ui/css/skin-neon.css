@@ -31,8 +31,12 @@
     -app-no: #ff7a97;
     -app-warn: #ffc978;
 
+    /*
+     * The family only. The size that goes with it is named in Skin instead, because the
+     * settings let the person put a multiplier on top of it and the two have to be
+     * multiplied together somewhere; saying it twice is how the two come to disagree.
+     */
     -fx-font-family: "Trebuchet MS";
-    -fx-font-size: 15px;
 }
 
 /* Square, gently lit buttons: the opposite of Daylight's rounded paper ones. */
