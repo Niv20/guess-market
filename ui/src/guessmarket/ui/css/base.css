@@ -16,8 +16,10 @@
  *   -app-yes -app-no -app-warn
  *
  * JavaFX can only look a colour up by name, never a font, so a skin also states the font family
- * and the font size once on .root. Both are inherited by every control underneath, and this file
- * only ever asks for sizes relative to that one (em), never in points.
+ * once on .root, and the size of ordinary text is written onto the root of the scene itself by
+ * Skin and TextSize together, so that the settings can scale it. Both are inherited by every
+ * control underneath, and this file only ever asks for sizes relative to that one (em), never in
+ * points.
  */
 
 /* ------------------------------------------------------------------ window and typography */
@@ -928,6 +930,204 @@
 
 .dialog-pane > .button-bar > .container {
     -fx-padding: 10;
+}
+
+/* ------------------------------------------------------------------ line drawings */
+
+/*
+ * The drawings Icons makes: a settings cog, a palette, a moon.
+ *
+ * They are outlines and nothing else - no fill, one stroke width, round ends - which is what
+ * makes a row of them read as one family rather than as a handful of separate pictures. All of
+ * that is said once here, so a drawing describes only its own shape and never how it is inked,
+ * and so a skin can re-ink every drawing in the program in one line.
+ *
+ * The stroke width is not scaled with the drawing on purpose. Every icon is described in the
+ * same twenty four unit square and then scaled to the size it is used at, so a line of a
+ * constant width stays a line of a constant width whatever size the icon is drawn at.
+ */
+.app-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -app-text-dim;
+    -fx-stroke-width: 1.7;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+/*
+ * A button that is a drawing and nothing else: the settings cog in the header, the cross that
+ * closes a panel. It is square, it has no border of its own until it is pointed at, and its
+ * drawing takes the accent then, which is the only thing that says it can be pressed.
+ *
+ * It is written as .button.icon-button rather than .icon-button because each skin restates
+ * .button for itself, and a skin is read after this file: without the second class the cog
+ * would come out as a full sized Daylight pill with a shadow under it.
+ */
+.button.icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 9;
+    -fx-border-color: transparent;
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+    -fx-padding: 7;
+    -fx-effect: null;
+    -fx-cursor: hand;
+}
+
+.button.icon-button:hover {
+    -fx-background-color: -app-surface-3;
+    -fx-border-color: -app-border;
+}
+
+.button.icon-button:hover .app-icon {
+    -fx-stroke: -app-accent;
+}
+
+/*
+ * The tinted square a drawing sits in at the head of a row of settings. It is the one place a
+ * drawing is given the accent without being pointed at, because there it is not a control: it
+ * is what the eye finds the row by when it is looking for the right one.
+ */
+.icon-badge {
+    -fx-background-color: -app-accent-soft;
+    -fx-background-radius: 10;
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+    -fx-pref-width: 36;
+    -fx-pref-height: 36;
+    -fx-max-width: 36;
+    -fx-max-height: 36;
+}
+
+.icon-badge .app-icon {
+    -fx-stroke: -app-accent;
+}
+
+/* The drawing inside a choice follows the words beside it, in both of its states. */
+.toggle-button .app-icon {
+    -fx-stroke: -app-text-dim;
+}
+
+.toggle-button:hover .app-icon {
+    -fx-stroke: -app-text;
+}
+
+.toggle-button:selected .app-icon {
+    -fx-stroke: -app-accent-contrast;
+}
+
+.button .app-icon {
+    -fx-stroke: -app-text;
+}
+
+.button-primary .app-icon {
+    -fx-stroke: -app-accent-contrast;
+}
+
+.button-quiet .app-icon {
+    -fx-stroke: -app-text-dim;
+}
+
+.button-quiet:hover .app-icon {
+    -fx-stroke: -app-text;
+}
+
+/* ------------------------------------------------------------------ the settings sheet */
+
+/*
+ * Everything the person decides about the program rather than about the market lives in one
+ * sheet laid over the window, reached by the cog in the top left corner.
+ *
+ * It is laid over the window rather than opened beside it or given a window of its own because
+ * none of it is part of reading a market: while it is open there is nothing else to be doing,
+ * and when it is closed the header is a header again rather than a shelf of switches. The
+ * darkened backing says the same thing - the market is still there, and is not being asked
+ * anything at the moment.
+ */
+.settings-scrim {
+    -fx-background-color: rgba(8, 8, 10, 0.5);
+    -fx-padding: 36;
+}
+
+.settings-sheet {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 16;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 30, 0, 0, 10);
+}
+
+.settings-sheet-header {
+    -fx-padding: 18 18 15 18;
+    -fx-border-color: transparent transparent -app-border-soft transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.settings-body {
+    -fx-padding: 0 18 0 18;
+}
+
+/*
+ * One setting: what it is, what it means, and the control that changes it.
+ *
+ * Every row carries a line under it, the last one included, where it lands directly above the
+ * footer and reads as the line that separates the two. That is deliberate: a stylesheet here
+ * cannot ask for the last row of a group and only the last, and a group of rows with one line
+ * missing from the middle of it looks like a mistake, which a group with one line too many at
+ * the end of it does not.
+ */
+.settings-row {
+    -fx-padding: 13 2 13 2;
+    -fx-border-color: transparent transparent -app-border-soft transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+/*
+ * The name of a group of settings. It says the same thing as .group-title and is written out
+ * again here rather than worn alongside it, so that a row of the sheet carries one style class
+ * and not two.
+ */
+.settings-group {
+    -fx-padding: 16 2 6 2;
+    -fx-font-size: 0.78em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text-faint;
+}
+
+.settings-sheet-footer {
+    -fx-padding: 12 18 14 18;
+}
+
+/* The name of a setting, read while looking for the right row. */
+.settings-title {
+    -fx-font-size: 1.02em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
+}
+
+/* What the setting actually does, read once the row has been found. */
+.settings-note {
+    -fx-font-size: 0.85em;
+    -fx-text-fill: -app-text-faint;
+}
+
+/* ------------------------------------------------------------------ tooltips */
+
+/*
+ * The one control in the window that is a drawing with no words on it is the cog, so the one
+ * place a tooltip is needed is under the cog. Left alone it would be the toolkit's pale yellow
+ * box, which belongs to no skin here.
+ */
+.tooltip {
+    -fx-background-color: -app-surface-3;
+    -fx-background-radius: 8;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-text-fill: -app-text;
+    -fx-font-size: 0.85em;
+    -fx-padding: 6 10 6 10;
 }
 
 /* ------------------------------------------------------------------ charts (bonus) */
