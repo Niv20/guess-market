@@ -33,8 +33,4 @@ public record UserDto(String name,
     public double netResult() {
         return balance - initialBalance;
     }
-
-    public boolean isMarketMaker() {
-        return !marketMakerEventIds.isEmpty();
-    }
 }

@@ -18,9 +18,11 @@ import javafx.scene.layout.VBox;
  * name on a narrow tile and out along the right on a wide one, which is a list of people that can
  * be read down the money alone.
  *
- * <p>The two things that change what a user may do are worn as badges above the name: running an
- * event, which makes them answerable for it, and being blocked, which ends everything. A blocked
- * user's whole tile is faded, because nothing on it can move again.
+ * <p>Only one thing is worn as a badge above the name: being blocked, which ends everything that
+ * user could do, and which a blocked tile says again by wearing the whole of itself faded. Running
+ * an event is not a badge, although it changes as much: the line under the name already says how
+ * many events they run, and a badge worn by some of the people would leave the list two tile
+ * heights, which is read as two kinds of user rather than as one list of people.
  */
 public final class UserTile {
 
@@ -32,11 +34,7 @@ public final class UserTile {
         VBox tile = Tiles.tile();
         if (user.blocked()) {
             tile.getStyleClass().add("tile-inactive");
-        }
-
-        FlowPane badges = badges(user);
-        if (!badges.getChildren().isEmpty()) {
-            tile.getChildren().add(badges);
+            tile.getChildren().add(blockedBadge());
         }
         tile.getChildren().add(
                 Tiles.body(Tiles.title(user.name()),
@@ -45,18 +43,10 @@ public final class UserTile {
         return tile;
     }
 
-    /**
-     * The badges above the name, and nothing when there are none: an ordinary user who is still
-     * free to act is the usual case, and the usual case is worth no badge at all.
-     */
-    private static FlowPane badges(UserDto user) {
+    /** @return the one badge a user can wear, on the row every other tile keeps for badges. */
+    private static FlowPane blockedBadge() {
         FlowPane badges = Tiles.badges();
-        if (user.isMarketMaker()) {
-            badges.getChildren().add(Tiles.badge("MARKET MAKER", "badge-mm"));
-        }
-        if (user.blocked()) {
-            badges.getChildren().add(Tiles.badge("BLOCKED", "badge-closed"));
-        }
+        badges.getChildren().add(Tiles.badge("BLOCKED", "badge-closed"));
         return badges;
     }
 
