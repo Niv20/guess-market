@@ -128,12 +128,6 @@ public final class Icons {
             + "a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
     };
 
-    /** An arrow curling back on itself, for putting something back the way it was. */
-    private static final String[] ARROW_BACK = {
-            "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8",
-            "M3 3v5h5"
-    };
-
     private Icons() {
     }
 
@@ -189,11 +183,6 @@ public final class Icons {
     /** The Neon skin. */
     public static Node lightning(double size) {
         return drawing(size, LIGHTNING);
-    }
-
-    /** Putting a set of choices back to the ones the program started with. */
-    public static Node arrowBack(double size) {
-        return drawing(size, ARROW_BACK);
     }
 
     /**

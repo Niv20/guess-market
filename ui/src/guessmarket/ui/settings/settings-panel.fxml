@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.HBox?>
@@ -21,7 +22,8 @@
     Every row is built the same way: a drawing to find the row by, its name, a line saying what it
     actually does, and the control that changes it. The drawings are not in this file because they
     are drawn in code rather than loaded from images; each row leaves an empty square with a name
-    on it and the controller fills it in.
+    on it and the controller fills it in. The header carries no drawing of its own: a cog over a
+    sheet that was opened by pressing a cog says nothing that pressing it did not already say.
 -->
 <StackPane fx:id="rootPane" styleClass="settings-scrim" visible="false" managed="false"
            xmlns="http://javafx.com/javafx"
@@ -31,12 +33,8 @@
     <VBox styleClass="settings-sheet" maxWidth="620" maxHeight="-Infinity">
 
         <HBox styleClass="settings-sheet-header" spacing="13" alignment="CENTER_LEFT">
-            <StackPane fx:id="titleIcon" styleClass="icon-badge"/>
-            <VBox spacing="1" HBox.hgrow="ALWAYS">
-                <Label text="Settings" styleClass="screen-title"/>
-                <Label styleClass="settings-note" wrapText="true"
-                       text="How the window looks, and what to do with the system inside it."/>
-            </VBox>
+            <Label text="Settings" styleClass="screen-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
             <Button fx:id="closeSettingsButton" styleClass="icon-button" minWidth="-Infinity"
                     onAction="#onClose"/>
         </HBox>
@@ -47,27 +45,15 @@
 
                 <Label text="APPEARANCE" styleClass="settings-group"/>
 
-                <!--
-                    The skin is the one setting whose control is under its description rather than
-                    beside it. Three choices shown at once take a row of their own; folded into a
-                    dropdown they would take less room, but then two of the three skins are things
-                    the person has to go looking for rather than things the program is offering.
-                -->
-                <VBox styleClass="settings-row" spacing="11">
-                    <HBox spacing="13" alignment="CENTER_LEFT">
-                        <StackPane fx:id="skinIcon" styleClass="icon-badge"/>
-                        <VBox spacing="2" HBox.hgrow="ALWAYS">
-                            <Label text="Skin" styleClass="settings-title"/>
-                            <Label styleClass="settings-note" wrapText="true"
-                                   text="The colours of the window, the shape of its buttons and the typeface every label is set in."/>
-                        </VBox>
-                    </HBox>
-                    <HBox fx:id="skinChoices" spacing="8" alignment="CENTER_LEFT">
-                        <padding>
-                            <javafx.geometry.Insets left="49"/>
-                        </padding>
-                    </HBox>
-                </VBox>
+                <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
+                    <StackPane fx:id="skinIcon" styleClass="icon-badge"/>
+                    <VBox spacing="2" minWidth="150" HBox.hgrow="ALWAYS">
+                        <Label text="Skin" styleClass="settings-title"/>
+                        <Label styleClass="settings-note" wrapText="true"
+                               text="The colours of the window, the shape of its buttons and the typeface every label is set in."/>
+                    </VBox>
+                    <ComboBox fx:id="skinChooser" prefWidth="160" minWidth="-Infinity"/>
+                </HBox>
 
                 <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
                     <StackPane fx:id="animationsIcon" styleClass="icon-badge"/>
@@ -105,14 +91,6 @@
 
             </VBox>
         </ScrollPane>
-
-        <HBox styleClass="settings-sheet-footer" spacing="10" alignment="CENTER_LEFT">
-            <Label styleClass="caption" wrapText="true"
-                   text="Press Escape, or click outside this sheet, to close it."/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="resetButton" text="Reset appearance" styleClass="button-quiet"
-                    minWidth="-Infinity" onAction="#onReset"/>
-        </HBox>
 
     </VBox>
 

@@ -8,15 +8,13 @@ import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -40,24 +38,19 @@ public class SettingsController {
 
     @FXML private StackPane rootPane;
 
-    @FXML private StackPane titleIcon;
     @FXML private StackPane skinIcon;
     @FXML private StackPane animationsIcon;
     @FXML private StackPane saveStateIcon;
     @FXML private StackPane loadStateIcon;
 
     @FXML private Button closeSettingsButton;
-    @FXML private Button resetButton;
     @FXML private Button saveStateButton;
     @FXML private Button loadStateButton;
 
     @FXML private ScrollPane settingsScroll;
     @FXML private VBox settingsBody;
-    @FXML private HBox skinChoices;
+    @FXML private ComboBox<Skin> skinChooser;
     @FXML private ToggleSwitch animationsToggle;
-
-    /** Holds the three skins together, so that exactly one of them is chosen at any moment. */
-    private final ToggleGroup skins = new ToggleGroup();
 
     /** The scene being dressed. Not known while the layout is being read, only once it is shown. */
     private Scene scene;
@@ -66,7 +59,6 @@ public class SettingsController {
 
     @FXML
     private void initialize() {
-        titleIcon.getChildren().setAll(Icons.gear(Icons.ROW));
         skinIcon.getChildren().setAll(Icons.palette(Icons.ROW));
         animationsIcon.getChildren().setAll(Icons.sparkles(Icons.ROW));
         saveStateIcon.getChildren().setAll(Icons.floppyDisk(Icons.ROW));
@@ -74,7 +66,6 @@ public class SettingsController {
 
         closeSettingsButton.setGraphic(Icons.cross(Icons.SMALL));
         closeSettingsButton.setTooltip(new Tooltip("Close the settings"));
-        resetButton.setGraphic(Icons.arrowBack(Icons.SMALL));
 
         askForExactlyTheHeightOfTheSettings();
         offerEverySkin();
@@ -135,34 +126,44 @@ public class SettingsController {
         settingsScroll.prefViewportHeightProperty().bind(Bindings.createDoubleBinding(
                 () -> settingsBody.prefHeight(settingsBody.getWidth()),
                 settingsBody.widthProperty(),
-                skins.selectedToggleProperty()));
+                skinChooser.valueProperty()));
     }
 
     /**
-     * Offers the three skins side by side, each with a drawing of what it is like.
+     * Fills the dropdown the skin is chosen from, each name with a drawing of what it is like.
      *
-     * <p>The chooser is built here rather than in the layout file because it is a list of whatever
-     * skins exist: a fourth one added to the enum appears in the sheet without this file or that
-     * one being touched.
+     * <p>The list is filled here rather than in the layout file because it is a list of whatever
+     * skins exist: a fourth one added to the enum appears in the dropdown without this file or
+     * that one being touched. A dropdown rather than the three names side by side because this is
+     * one setting among several, and a row of the sheet is one line with one control at the end
+     * of it.
      */
     private void offerEverySkin() {
-        for (Skin skin : Skin.values()) {
-            ToggleButton choice = new ToggleButton(skin.getDisplayName(), skin.icon(Icons.SMALL));
-            choice.setUserData(skin);
-            choice.setToggleGroup(skins);
-            choice.setSelected(skin == Skin.DEFAULT);
-            skinChoices.getChildren().add(choice);
-        }
+        skinChooser.setCellFactory(list -> skinLine());
+        skinChooser.setButtonCell(skinLine());
+        skinChooser.getItems().setAll(Skin.values());
+        skinChooser.setValue(Skin.DEFAULT);
 
-        skins.selectedToggleProperty().addListener((observable, previous, chosen) -> {
-            // A toggle group lets the chosen one be clicked again to choose nothing. The window is
-            // always wearing a skin, so that click is taken to mean "leave it as it is".
-            if (chosen == null) {
-                skins.selectToggle(previous);
-                return;
+        // A dropdown holds a skin at all times and offers no way of holding none, so unlike a
+        // group of buttons there is no emptied chooser to guard against here.
+        skinChooser.valueProperty().addListener((observable, previous, chosen) -> wear(chosen));
+    }
+
+    /**
+     * One name in the skin dropdown, with the drawing that goes with it.
+     *
+     * <p>Two of these are made rather than one, because the closed box and the open list both show
+     * the chosen skin and one node cannot hang in two places at once.
+     */
+    private ListCell<Skin> skinLine() {
+        return new ListCell<>() {
+            @Override
+            protected void updateItem(Skin skin, boolean empty) {
+                super.updateItem(skin, empty);
+                setText(empty || skin == null ? null : skin.getDisplayName());
+                setGraphic(empty || skin == null ? null : skin.icon(Icons.SMALL));
             }
-            wear((Skin) chosen.getUserData());
-        });
+        };
     }
 
     /**
@@ -186,16 +187,6 @@ public class SettingsController {
     @FXML
     private void onClose() {
         close();
-    }
-
-    /**
-     * Puts both appearance settings back to the ones the program opens with. It says nothing about
-     * the system that is loaded: nothing on this sheet is allowed to throw that away.
-     */
-    @FXML
-    private void onReset() {
-        select(Skin.DEFAULT);
-        animationsToggle.setSelected(Animations.ENABLED_AT_START);
     }
 
     /**
@@ -223,12 +214,4 @@ public class SettingsController {
         }
     }
 
-    private void select(Skin skin) {
-        for (Toggle choice : skins.getToggles()) {
-            if (choice.getUserData() == skin) {
-                skins.selectToggle(choice);
-                return;
-            }
-        }
-    }
 }

@@ -467,6 +467,14 @@
     -fx-text-fill: -app-accent-contrast;
 }
 
+/*
+ * A drawing in front of a choice keeps the colour of the words beside it. The line being pointed
+ * at is laid over the accent, and a drawing left at its own grey would all but vanish into it.
+ */
+.combo-box-popup .list-cell:filled:hover .app-icon {
+    -fx-stroke: -app-accent-contrast;
+}
+
 .check-box {
     -fx-text-fill: -app-text-dim;
     -fx-font-size: 0.9em;
@@ -1106,6 +1114,18 @@
 }
 
 /*
+ * The cog in the header is quieter still. It sits on the title line rather than inside a panel
+ * of controls, and drawn at the weight of the words beside it - all but white on a dark skin,
+ * all but black on a light one - it reads as the first thing on the screen to be pressed, which
+ * it is not: it is there for the once in a session it is wanted. So it is drawn in the faintest
+ * grey the skin offers, which is a grey on every one of them, and finds its colour only when it
+ * is pointed at.
+ */
+.button.icon-button-quiet .app-icon {
+    -fx-stroke: -app-text-faint;
+}
+
+/*
  * The tinted square a drawing sits in at the head of a row of settings. It is the one place a
  * drawing is given the accent without being pointed at, because there it is not a control: it
  * is what the eye finds the row by when it is looking for the right one.
@@ -1186,18 +1206,21 @@
     -fx-border-width: 0 0 1 0;
 }
 
+/*
+ * The settings themselves, and a little room under the last of them so that the line it carries
+ * lands inside the sheet rather than along the edge of it.
+ */
 .settings-body {
-    -fx-padding: 0 18 0 18;
+    -fx-padding: 0 18 10 18;
 }
 
 /*
  * One setting: what it is, what it means, and the control that changes it.
  *
- * Every row carries a line under it, the last one included, where it lands directly above the
- * footer and reads as the line that separates the two. That is deliberate: a stylesheet here
- * cannot ask for the last row of a group and only the last, and a group of rows with one line
- * missing from the middle of it looks like a mistake, which a group with one line too many at
- * the end of it does not.
+ * Every row carries a line under it, the last one included, where it ends up as a rule drawn
+ * under the whole sheet. That is deliberate: a stylesheet here cannot ask for the last row of a
+ * group and only the last, and a group of rows with one line missing from the middle of it looks
+ * like a mistake, which a group with one line too many at the end of it does not.
  */
 .settings-row {
     -fx-padding: 13 2 13 2;
@@ -1215,10 +1238,6 @@
     -fx-font-size: 0.78em;
     -fx-font-weight: bold;
     -fx-text-fill: -app-text-faint;
-}
-
-.settings-sheet-footer {
-    -fx-padding: 12 18 14 18;
 }
 
 /* The name of a setting, read while looking for the right row. */
