@@ -92,6 +92,9 @@ public class EventDetailsController {
      */
     private int shownEventId = NOTHING_SHOWN;
 
+    /** The event account balance the panel last showed, so a balance that has moved can be marked. */
+    private double shownAccountBalance;
+
     @FXML
     private void initialize() {
         buildOptionsTable();
@@ -116,6 +119,11 @@ public class EventDetailsController {
     /** Fills the component with one event and shows it. */
     public void show(EventTradingStatusDto status, List<PricePointDto> priceHistory) {
         EventDto event = status.event();
+        boolean anotherEvent = event.id() != shownEventId;
+        boolean accountMoved = !anotherEvent && event.accountBalance() != shownAccountBalance;
+        shownEventId = event.id();
+        shownAccountBalance = event.accountBalance();
+
         showIdentity(event);
         showStatistics(event, status);
 
@@ -133,12 +141,12 @@ public class EventDetailsController {
         historyTable.setItems(FXCollections.observableArrayList(status.tradeHistory()));
         showPriceChart(event, priceHistory);
 
-        boolean anotherEvent = event.id() != shownEventId;
-        shownEventId = event.id();
         rootPane.setVisible(true);
         rootPane.setManaged(true);
         if (anotherEvent) {
             Animations.switchIn(rootPane);
+        } else if (accountMoved) {
+            Animations.flash(accountBalanceLabel);
         }
     }
 
