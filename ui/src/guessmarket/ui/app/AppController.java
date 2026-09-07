@@ -10,6 +10,7 @@ import guessmarket.ui.common.Dialogs;
 import guessmarket.ui.common.Skin;
 import guessmarket.ui.events.EventsSectionController;
 import guessmarket.ui.users.UsersSectionController;
+import javafx.animation.Animation;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -24,6 +25,7 @@ import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import javafx.util.Duration;
 
 import java.io.File;
 import java.util.List;
@@ -46,6 +48,9 @@ public class AppController {
     private static final String STATE_FILTER_NAME = "Guess Market saved system (*.gmstate)";
     private static final String STATE_FILTER_PATTERN = "*.gmstate";
 
+    /** How long the outcome of a load stays on the screen before the row takes itself away. */
+    private static final Duration PROGRESS_ROW_LINGER = Duration.seconds(4);
+
     @FXML private ComboBox<Skin> skinChooser;
     @FXML private CheckBox animationsToggle;
     @FXML private Button loadFileButton;
@@ -67,6 +72,9 @@ public class AppController {
 
     /** The folder the file chooser opens in, which is the one the last file came from. */
     private File lastChosenFolder;
+
+    /** The countdown that ends with the progress row leaving, while it is still running. */
+    private Animation progressRowFarewell;
 
     @FXML
     private void initialize() {
@@ -164,6 +172,7 @@ public class AppController {
         loadedFilePath.setText(result.filePath());
         Animations.flash(loadProgressPercent);
         refreshEverything();
+        hideProgressRowSoon();
     }
 
     /**
@@ -181,6 +190,7 @@ public class AppController {
         } else {
             Dialogs.error(window(), "The file was not loaded", messageOf(failure));
         }
+        hideProgressRowSoon();
     }
 
     /**
@@ -228,6 +238,7 @@ public class AppController {
             loadProgressBar.setProgress(1);
             loadProgressPercent.setText("100%");
             refreshEverything();
+            hideProgressRowSoon();
         } catch (GuessMarketException refused) {
             Dialogs.error(window(), "The saved system could not be read", refused.getMessage());
         }
@@ -250,7 +261,26 @@ public class AppController {
         return List.of(eventsSectionController, usersSectionController);
     }
 
+    /**
+     * Starts the countdown at the end of which the progress row fades away. The row has said all
+     * it has to say by then, and a header that keeps last week's percentage on it says nothing.
+     */
+    private void hideProgressRowSoon() {
+        progressRowFarewell = Animations.hideAfter(progressRow, PROGRESS_ROW_LINGER,
+                () -> showProgressRow(false));
+        progressRowFarewell.playFromStart();
+    }
+
+    /**
+     * Shows or hides the progress row. Showing it also calls off a farewell that an earlier load
+     * left running, so a row brought back by a second load is not taken away by the first one.
+     */
     private void showProgressRow(boolean visible) {
+        if (visible && progressRowFarewell != null) {
+            progressRowFarewell.stop();
+            progressRowFarewell = null;
+            progressRow.setOpacity(1);
+        }
         progressRow.setVisible(visible);
         progressRow.setManaged(visible);
     }
