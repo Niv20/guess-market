@@ -7,6 +7,7 @@ import guessmarket.engine.exception.GuessMarketException;
 import guessmarket.engine.exception.InvalidFileContentException;
 import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Dialogs;
+import guessmarket.ui.common.Icons;
 import guessmarket.ui.common.Skin;
 import guessmarket.ui.events.EventsSectionController;
 import guessmarket.ui.users.UsersSectionController;
@@ -141,6 +142,7 @@ public class AppController {
         LoadFileTask task = new LoadFileTask(engine, chosenFile.getAbsolutePath());
 
         loadProgressBar.progressProperty().bind(task.progressProperty());
+        loadMessageLabel.setGraphic(null);
         loadMessageLabel.textProperty().bind(task.messageProperty());
         loadProgressPercent.textProperty().bind(Bindings.format(Locale.US, "%.0f%%",
                 task.progressProperty().multiply(100)));
@@ -167,12 +169,22 @@ public class AppController {
     private void onFileLoaded(LoadResultDto result) {
         loadProgressBar.setProgress(1);
         loadProgressPercent.setText("100%");
-        loadMessageLabel.setText("Loaded " + result.eventCount() + " events and "
-                + result.userCount() + " users");
+        showLoadMessage("Loaded " + result.eventCount() + " events and "
+                + result.userCount() + " users", false);
         loadedFilePath.setText(result.filePath());
         Animations.flash(loadProgressPercent);
         refreshEverything();
         hideProgressRowSoon();
+    }
+
+    /**
+     * Writes the outcome of a load into the progress row. A failure is marked with the same
+     * warning sign the dialog carries, so the row still says what happened once the dialog that
+     * explained it has been dismissed.
+     */
+    private void showLoadMessage(String message, boolean failed) {
+        loadMessageLabel.setText(message);
+        loadMessageLabel.setGraphic(failed ? Icons.warningTriangle() : null);
     }
 
     /**
@@ -182,7 +194,7 @@ public class AppController {
     private void onFileRejected(Throwable failure) {
         loadProgressBar.setProgress(0);
         loadProgressPercent.setText("");
-        loadMessageLabel.setText("The file was not loaded.");
+        showLoadMessage("The file was not loaded.", true);
 
         if (failure instanceof InvalidFileContentException invalidFile) {
             Dialogs.fileRejected(window(), "The file was not loaded",
@@ -233,7 +245,8 @@ public class AppController {
         try {
             StateFileResultDto result = engine.loadSystemState(chosenFile.getAbsolutePath());
             loadedFilePath.setText(result.filePath());
-            loadMessageLabel.setText("Restored " + result.eventCount() + " events from a saved system");
+            showLoadMessage("Restored " + result.eventCount()
+                    + " events from a saved system", false);
             showProgressRow(true);
             loadProgressBar.setProgress(1);
             loadProgressPercent.setText("100%");
