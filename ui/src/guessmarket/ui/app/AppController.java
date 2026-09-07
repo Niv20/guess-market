@@ -54,7 +54,7 @@ public class AppController implements SettingsActions {
     private static final String STATE_FILTER_PATTERN = "*.gmstate";
 
     /** How long the outcome of a load stays on the screen before the row takes itself away. */
-    private static final Duration PROGRESS_ROW_LINGER = Duration.seconds(4);
+    private static final Duration PROGRESS_ROW_LINGER = Duration.seconds(2);
 
     @FXML private Button settingsButton;
     @FXML private Button loadFileButton;
