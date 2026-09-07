@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
@@ -8,7 +7,6 @@
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -26,10 +24,17 @@
     Neither of the two screens puts its own name at the top of it. The tab above already says
     which screen this is, and a word repeating it cost the panel a row and gave nothing back.
 
+    The one action of this screen is the last row of the list rather than a button standing
+    somewhere beside it. Creating an event adds a row to that list, so it is offered at the end of
+    it, where what it makes will appear, and it travels with the events as they are scrolled
+    instead of waiting at a fixed edge of the panel. Until a file is loaded there is no list for it
+    to end and it is not on the screen at all, which is why it is built by the controller and there
+    is no button to be found in this file.
+
     How much of the system is on the screen is said at the foot of the list that is showing it,
-    under a line the width of that list, and the one button of the screen stands at the other end
-    of that same line. The count is about the events on the left and about nothing else, so the
-    rule stops where the list stops rather than carrying on under the details beside it.
+    under a line the width of that list. The count is about the events on the left and about
+    nothing else, so the rule stops where the list stops rather than carrying on under the details
+    beside it.
 -->
 <SplitPane fx:id="rootPane" dividerPositions="0.44"
            xmlns="http://javafx.com/javafx"
@@ -61,23 +66,8 @@
             <ListView fx:id="eventsList" styleClass="tile-list"
                       VBox.vgrow="ALWAYS" minHeight="150"/>
 
-            <!--
-                What the list holds, and the one thing that can be done about it, on the line
-                that closes the panel.
-
-                Creating an event belongs on this screen rather than on the users screen: it is
-                the one action here, and it makes an event, which is what this screen is a list
-                of; who is making it is asked for in the form itself, where the rest of the event
-                is asked for too. It stands at the foot and not at the head because the head of
-                this panel narrows the list and this button narrows nothing. It keeps its own
-                width, so when the panel is dragged narrow it is the count that gives way, the
-                button being the part of the line that has to stay usable.
-            -->
-            <HBox styleClass="panel-footer" alignment="CENTER_LEFT" spacing="10">
+            <HBox styleClass="panel-footer" alignment="CENTER_LEFT">
                 <Label fx:id="countLabel" styleClass="faint"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Button fx:id="createEventButton" text="Create an event"
-                        minWidth="-Infinity" onAction="#onCreateEvent"/>
             </HBox>
         </VBox>
 
