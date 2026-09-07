@@ -1,59 +1,63 @@
 /*
- * Neon - a deep violet skin with a cyan accent.
+ * Neon - a deep indigo skin lit from within.
  *
- * The window is almost black but tinted purple, the panels are lit from within, and the accent
- * glows rather than merely colours. The label font is wider and larger again, so the three
- * skins differ in typeface and in size as well as in colour.
+ * Where the other two skins are warm and quiet, this one is cool and lit. The window is a deep
+ * indigo rather than a grey, the panels are raised out of it in blue tinted steps, and the accent
+ * is an electric violet that carries a faint halo instead of merely colouring an edge. The
+ * colours are held one step back from full saturation on purpose: a market screen is read for
+ * minutes at a time, and a wall of pure neon is tiring long before it is impressive. The label
+ * font is wider and larger again, so the three skins differ in typeface and in size as well as
+ * in colour.
  */
 
 .root {
-    -app-bg: #0a0713;
-    -app-surface: #150f24;
-    -app-surface-2: #1d1533;
-    -app-surface-3: #2a1e49;
+    -app-bg: #10111d;
+    -app-surface: #181a2b;
+    -app-surface-2: #1f2237;
+    -app-surface-3: #2a2e49;
 
-    -app-border: #3d2d66;
-    -app-border-soft: #291d47;
+    -app-border: #3a3f63;
+    -app-border-soft: #272b44;
 
-    -app-text: #f2ecff;
-    -app-text-dim: #b0a0d8;
-    -app-text-faint: #7a6aa3;
+    -app-text: #e8eaf7;
+    -app-text-dim: #a7adcc;
+    -app-text-faint: #79809f;
 
-    -app-accent: #00e5ff;
-    -app-accent-soft: rgba(0, 229, 255, 0.15);
-    -app-accent-contrast: #06121a;
+    -app-accent: #9b8cff;
+    -app-accent-soft: rgba(155, 140, 255, 0.16);
+    -app-accent-contrast: #10111d;
 
-    -app-yes: #39ff88;
-    -app-no: #ff4d8d;
-    -app-warn: #ffd166;
+    -app-yes: #56e0a8;
+    -app-no: #ff7a97;
+    -app-warn: #ffc978;
 
     -fx-font-family: "Trebuchet MS";
     -fx-font-size: 15px;
 }
 
-/* Square, glowing buttons: the opposite of Daylight's rounded paper ones. */
+/* Square, gently lit buttons: the opposite of Daylight's rounded paper ones. */
 .button {
-    -fx-background-color: linear-gradient(to bottom right, #2a1e49, #1d1533);
+    -fx-background-color: linear-gradient(to bottom, #2a2e49, #22263c);
     -fx-background-radius: 4;
     -fx-border-radius: 4;
-    -fx-border-color: #4b3880;
+    -fx-border-color: #3f4570;
 }
 
 .button:hover {
-    -fx-background-color: linear-gradient(to bottom right, #3a2a63, #241a41);
+    -fx-background-color: linear-gradient(to bottom, #343a5c, #292e49);
     -fx-border-color: -app-accent;
-    -fx-effect: dropshadow(gaussian, rgba(0, 229, 255, 0.45), 10, 0, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(155, 140, 255, 0.35), 10, 0, 0, 0);
 }
 
 .button-primary {
-    -fx-background-color: linear-gradient(to right, #00e5ff, #b14dff);
+    -fx-background-color: linear-gradient(to right, #9b8cff, #5fd2e6);
     -fx-border-color: transparent;
     -fx-text-fill: -app-accent-contrast;
-    -fx-effect: dropshadow(gaussian, rgba(0, 229, 255, 0.5), 14, 0, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(133, 158, 255, 0.4), 14, 0, 0, 0);
 }
 
 .button-primary:hover {
-    -fx-background-color: linear-gradient(to right, #5cf0ff, #c977ff);
+    -fx-background-color: linear-gradient(to right, #b0a3ff, #7cdeef);
 }
 
 .toggle-button {
@@ -62,14 +66,18 @@
 }
 
 .toggle-button:selected {
-    -fx-effect: dropshadow(gaussian, rgba(0, 229, 255, 0.4), 8, 0, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(155, 140, 255, 0.35), 8, 0, 0, 0);
 }
 
 .app-title {
-    -fx-effect: dropshadow(gaussian, rgba(0, 229, 255, 0.45), 14, 0, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(155, 140, 255, 0.4), 12, 0, 0, 0);
+}
+
+.card {
+    -fx-background-color: linear-gradient(to bottom, #1b1d30, #181a2b);
 }
 
 .header-bar {
-    -fx-background-color: linear-gradient(to right, #150f24, #1d1533);
-    -fx-border-color: transparent transparent #3d2d66 transparent;
+    -fx-background-color: linear-gradient(to right, #1c1f36, #171929);
+    -fx-border-color: transparent transparent #3a3f63 transparent;
 }
