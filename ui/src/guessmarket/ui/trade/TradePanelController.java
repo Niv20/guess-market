@@ -14,7 +14,6 @@ import guessmarket.dto.SubmitOrderResultDto;
 import guessmarket.dto.UserDto;
 import guessmarket.engine.exception.GuessMarketException;
 import guessmarket.ui.app.AppContext;
-import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Dialogs;
 import guessmarket.ui.common.Formats;
 import javafx.fxml.FXML;
@@ -329,13 +328,17 @@ public class TradePanelController {
      * the person, so it is shown as it is. Anything that goes through reports what happened and
      * then tells the rest of the program that the system has moved, which is what brings both
      * screens back into step.
+     *
+     * <p>The report comes first and the refresh only afterwards, so that the new figures arrive on
+     * a screen the person is actually looking at. Refreshing first would move every number while a
+     * modal dialog is holding the person's attention, and the animations that mark what changed
+     * would have played out and finished before the dialog was dismissed.
      */
     private void run(ActionWithReport action) {
         try {
             String report = action.perform();
-            context.reportSystemChanged();
-            Animations.flash(actingAsLabel);
             Dialogs.information(context.window(), "Done", report);
+            context.reportSystemChanged();
         } catch (GuessMarketException refused) {
             Dialogs.error(context.window(), "That could not be done", refused.getMessage());
         }

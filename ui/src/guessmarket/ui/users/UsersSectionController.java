@@ -93,6 +93,9 @@ public class UsersSectionController implements AppSection {
      */
     private String shownUserName;
 
+    /** The balance the panel last showed for that user, so a balance that has moved can be marked. */
+    private double shownBalance;
+
     @FXML
     private void initialize() {
         Tiles.render(usersList, UserTile::of);
@@ -143,7 +146,7 @@ public class UsersSectionController implements AppSection {
         usersList.getItems().clear();
         eventsList.getItems().clear();
         userCountLabel.setText("");
-        showDetails(null);
+        showNode(detailsBox, false);
         placeholderLabel.setText("Load a system details file to see the users.");
         showNode(placeholderLabel, true);
     }
@@ -158,15 +161,25 @@ public class UsersSectionController implements AppSection {
 
     private void showUser(UserDto user) {
         if (user == null) {
-            showDetails(null);
+            showNode(detailsBox, false);
             placeholderLabel.setText(usersList.getItems().isEmpty()
                     ? "Load a system details file to see the users."
                     : "Choose a user on the left to see their account and to act as them.");
             showNode(placeholderLabel, true);
             return;
         }
+        boolean anotherUser = !user.name().equalsIgnoreCase(shownUserName);
+        boolean balanceMoved = !anotherUser && user.balance() != shownBalance;
+        shownUserName = user.name();
+        shownBalance = user.balance();
+
         showNode(placeholderLabel, false);
-        showDetails(user);
+        showNode(detailsBox, true);
+        if (anotherUser) {
+            // Started before the panels inside it are filled, so that they are carried in by this
+            // one rather than each sliding in on its own.
+            Animations.switchIn(detailsBox);
+        }
 
         userNameLabel.setText(user.name());
         balanceLabel.setText(Formats.money(user.balance()));
@@ -180,6 +193,10 @@ public class UsersSectionController implements AppSection {
         createEventButton.setDisable(user.blocked());
         showBalanceChart(user);
         showEventsOfSelectedUser();
+
+        if (balanceMoved) {
+            Animations.flash(balanceLabel);
+        }
     }
 
     /**
@@ -319,25 +336,6 @@ public class UsersSectionController implements AppSection {
         }
         eventsList.getSelectionModel().clearSelection();
         showEvent(null);
-    }
-
-    /**
-     * Shows or hides the details panel, and slides it in whenever it has been filled with somebody
-     * other than the person it was holding.
-     *
-     * @param user the person the panel now shows, or null when it is being emptied.
-     */
-    private void showDetails(UserDto user) {
-        if (user == null) {
-            showNode(detailsBox, false);
-            return;
-        }
-        boolean anotherUser = !user.name().equalsIgnoreCase(shownUserName);
-        shownUserName = user.name();
-        showNode(detailsBox, true);
-        if (anotherUser) {
-            Animations.switchIn(detailsBox);
-        }
     }
 
     private static void showNode(Node node, boolean visible) {
