@@ -83,6 +83,21 @@ public class AppController {
         skinChooser.setValue(Skin.DEFAULT);
         animationsToggle.setSelected(Animations.isEnabled());
         Animations.enabledProperty().bind(animationsToggle.selectedProperty());
+        animateTabSwitches();
+    }
+
+    /**
+     * Slides a screen in when its tab is chosen, with the same movement a details panel makes when
+     * it is filled with something else. Moving between the two screens is the same thing happening
+     * on a larger scale, so it is answered the same way rather than with a movement of its own.
+     */
+    private void animateTabSwitches() {
+        tabPane.getSelectionModel().selectedItemProperty()
+                .addListener((observable, previous, chosen) -> {
+                    if (chosen != null) {
+                        Animations.switchIn(chosen.getContent());
+                    }
+                });
     }
 
     /**
