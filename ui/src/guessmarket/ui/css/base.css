@@ -930,6 +930,106 @@
     -fx-padding: 10;
 }
 
+/* ------------------------------------------------------------------ line drawings */
+
+/*
+ * The drawings Icons makes: a settings cog, a palette, a moon.
+ *
+ * They are outlines and nothing else - no fill, one stroke width, round ends - which is what
+ * makes a row of them read as one family rather than as a handful of separate pictures. All of
+ * that is said once here, so a drawing describes only its own shape and never how it is inked,
+ * and so a skin can re-ink every drawing in the program in one line.
+ *
+ * The stroke width is not scaled with the drawing on purpose. Every icon is described in the
+ * same twenty four unit square and then scaled to the size it is used at, so a line of a
+ * constant width stays a line of a constant width whatever size the icon is drawn at.
+ */
+.app-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -app-text-dim;
+    -fx-stroke-width: 1.7;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+/*
+ * A button that is a drawing and nothing else: the settings cog in the header, the cross that
+ * closes a panel. It is square, it has no border of its own until it is pointed at, and its
+ * drawing takes the accent then, which is the only thing that says it can be pressed.
+ *
+ * It is written as .button.icon-button rather than .icon-button because each skin restates
+ * .button for itself, and a skin is read after this file: without the second class the cog
+ * would come out as a full sized Daylight pill with a shadow under it.
+ */
+.button.icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 9;
+    -fx-border-color: transparent;
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+    -fx-padding: 7;
+    -fx-effect: null;
+    -fx-cursor: hand;
+}
+
+.button.icon-button:hover {
+    -fx-background-color: -app-surface-3;
+    -fx-border-color: -app-border;
+}
+
+.button.icon-button:hover .app-icon {
+    -fx-stroke: -app-accent;
+}
+
+/*
+ * The tinted square a drawing sits in at the head of a row of settings. It is the one place a
+ * drawing is given the accent without being pointed at, because there it is not a control: it
+ * is what the eye finds the row by when it is looking for the right one.
+ */
+.icon-badge {
+    -fx-background-color: -app-accent-soft;
+    -fx-background-radius: 10;
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+    -fx-pref-width: 36;
+    -fx-pref-height: 36;
+    -fx-max-width: 36;
+    -fx-max-height: 36;
+}
+
+.icon-badge .app-icon {
+    -fx-stroke: -app-accent;
+}
+
+/* The drawing inside a choice follows the words beside it, in both of its states. */
+.toggle-button .app-icon {
+    -fx-stroke: -app-text-dim;
+}
+
+.toggle-button:hover .app-icon {
+    -fx-stroke: -app-text;
+}
+
+.toggle-button:selected .app-icon {
+    -fx-stroke: -app-accent-contrast;
+}
+
+.button .app-icon {
+    -fx-stroke: -app-text;
+}
+
+.button-primary .app-icon {
+    -fx-stroke: -app-accent-contrast;
+}
+
+.button-quiet .app-icon {
+    -fx-stroke: -app-text-dim;
+}
+
+.button-quiet:hover .app-icon {
+    -fx-stroke: -app-text;
+}
+
 /* ------------------------------------------------------------------ charts (bonus) */
 
 .chart {
