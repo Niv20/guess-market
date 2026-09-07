@@ -4,6 +4,7 @@ import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Icons;
 import guessmarket.ui.common.Skin;
 import guessmarket.ui.common.TextSize;
+import guessmarket.ui.common.ToggleSwitch;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -34,10 +35,11 @@ import java.util.Objects;
  *
  * <p>The three appearance settings are answered here and nowhere else. Each of them is a single
  * value that the whole window reads - the skin it is dressed in, the size of its writing, whether
- * its actions are accompanied by a movement - so the controls are bound to those values rather
- * than copied into them, and no part of the program has to be told that any of the three has
- * changed. The two remaining rows are actions belonging to the window, and are handed straight
- * back to it through {@link SettingsActions}.
+ * its actions are accompanied by a movement - so answering one of them here is the whole of the
+ * change: the control writes it into the one value the window is laid out against, and no part of
+ * the program has to be told that any of the three has changed. The two remaining rows are
+ * actions belonging to the window, and are handed straight back to it through
+ * {@link SettingsActions}.
  */
 public class SettingsController {
 
@@ -67,7 +69,7 @@ public class SettingsController {
     @FXML private HBox skinChoices;
     @FXML private Slider textSizeSlider;
     @FXML private Label textSizePercent;
-    @FXML private ToggleButton animationsToggle;
+    @FXML private ToggleSwitch animationsToggle;
 
     /** Holds the three skins together, so that exactly one of them is chosen at any moment. */
     private final ToggleGroup skins = new ToggleGroup();
@@ -182,30 +184,54 @@ public class SettingsController {
     }
 
     /**
-     * Points the slider at the size of the writing.
+     * Points the slider at the size of the writing, and states the size once it has been let go of.
      *
-     * <p>The value is bound rather than copied, so the slider is the size of the writing rather
-     * than a control that has to remember to go and set it. Moving it re-states the size on the
-     * scene, which every label in the window is measured against, so the whole window is laid out
-     * again around the new one.
+     * <p>Binding the size to the slider is the obvious way of writing this and the wrong one.
+     * Every panel, table and figure in the window is measured against the size of the writing, so
+     * each step of the slider lays the whole window out again - and the slider is in that window.
+     * Dragging it then moves the very thing under the hand: the sheet grows around the grip, the
+     * slider slides out from under the cursor, and choosing a size turns into chasing one.
+     *
+     * <p>So the size is stated when the drag ends rather than while it is going on. What does
+     * follow the slider the whole way is the percentage beside it, which is what says that the
+     * drag is doing anything at all; the window itself is laid out once, at the size let go of.
+     *
+     * <p>A slider can also be moved without being dragged - by a click on its track, or by an
+     * arrow key - and neither of those ever announces a drag that has ended. They are answered by
+     * the second listener, which states the size at once precisely because nothing is being
+     * dragged at the time.
      */
     private void followTheTextSizeSlider() {
         textSizeSlider.setMin(TextSize.SMALLEST);
         textSizeSlider.setMax(TextSize.LARGEST);
         textSizeSlider.setBlockIncrement(TextSize.STEP);
         textSizeSlider.setValue(TextSize.get());
-        TextSize.scaleProperty().bind(textSizeSlider.valueProperty());
+
+        textSizeSlider.valueChangingProperty().addListener(
+                (observable, wasDragging, dragging) -> {
+                    if (!dragging) {
+                        TextSize.set(textSizeSlider.getValue());
+                    }
+                });
+        textSizeSlider.valueProperty().addListener((observable, previous, chosen) -> {
+            if (!textSizeSlider.isValueChanging()) {
+                TextSize.set(chosen.doubleValue());
+            }
+        });
 
         textSizePercent.textProperty().bind(Bindings.format(Locale.US, PERCENTAGE,
                 textSizeSlider.valueProperty().multiply(100)));
         TextSize.scaleProperty().addListener((observable, previous, chosen) -> resize());
     }
 
-    /** Points the switch at the one that turns every animation in the program on and off. */
+    /**
+     * Points the switch at the one that turns every animation in the program on and off.
+     *
+     * <p>Nothing is written on it. A switch says which way it is by which way it is, and the row
+     * it stands in has already said what it is a switch for.
+     */
     private void followTheAnimationsSwitch() {
         animationsToggle.setSelected(Animations.ENABLED_AT_START);
-        animationsToggle.textProperty().bind(Bindings
-                .when(animationsToggle.selectedProperty()).then("On").otherwise("Off"));
         Animations.enabledProperty().bind(animationsToggle.selectedProperty());
     }
 
