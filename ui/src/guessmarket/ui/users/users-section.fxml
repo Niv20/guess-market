@@ -60,7 +60,7 @@
                 </padding>
 
                 <Label fx:id="placeholderLabel" styleClass="placeholder-text" wrapText="true"
-                       StackPane.alignment="CENTER_LEFT"
+                       StackPane.alignment="CENTER" textAlignment="CENTER"
                        text="Load a system details file to see the users."/>
 
                 <VBox fx:id="detailsBox" spacing="12" managed="false" visible="false"
