@@ -3,7 +3,6 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -15,9 +14,9 @@
     is pressed.
 
     Everything here is a decision about the program rather than about a market: what the window is
-    coloured and lettered in, how large the writing is, whether an action is accompanied by a
-    movement, and what to do with the system as a whole. None of it is needed while a market is
-    being read, which is why none of it stands in the header any more.
+    coloured and lettered in, whether an action is accompanied by a movement, and what to do with
+    the system as a whole. None of it is needed while a market is being read, which is why none of
+    it stands in the header any more.
 
     Every row is built the same way: a drawing to find the row by, its name, a line saying what it
     actually does, and the control that changes it. The drawings are not in this file because they
@@ -69,19 +68,6 @@
                         </padding>
                     </HBox>
                 </VBox>
-
-                <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
-                    <StackPane fx:id="textSizeIcon" styleClass="icon-badge"/>
-                    <VBox spacing="2" minWidth="150" HBox.hgrow="ALWAYS">
-                        <Label text="Text size" styleClass="settings-title"/>
-                        <Label styleClass="settings-note" wrapText="true"
-                               text="On top of the size the skin asks for. Every panel, table and figure is measured against the writing, so the whole window grows with it."/>
-                    </VBox>
-                    <Slider fx:id="textSizeSlider" prefWidth="140" minWidth="90"
-                            majorTickUnit="0.05" minorTickCount="0" snapToTicks="true"/>
-                    <Label fx:id="textSizePercent" styleClass="value"
-                           minWidth="-Infinity" alignment="CENTER_RIGHT"/>
-                </HBox>
 
                 <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
                     <StackPane fx:id="animationsIcon" styleClass="icon-badge"/>

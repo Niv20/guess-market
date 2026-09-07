@@ -3,15 +3,12 @@ package guessmarket.ui.settings;
 import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Icons;
 import guessmarket.ui.common.Skin;
-import guessmarket.ui.common.TextSize;
 import guessmarket.ui.common.ToggleSwitch;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Slider;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
@@ -23,7 +20,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -33,28 +29,19 @@ import java.util.Objects;
  * nothing on it is part of reading a market. While it is open there is nothing else to be doing,
  * and while it is closed the header is a header again instead of a shelf of switches.
  *
- * <p>The three appearance settings are answered here and nowhere else. Each of them is a single
- * value that the whole window reads - the skin it is dressed in, the size of its writing, whether
- * its actions are accompanied by a movement - so answering one of them here is the whole of the
- * change: the control writes it into the one value the window is laid out against, and no part of
- * the program has to be told that any of the three has changed. The two remaining rows are
- * actions belonging to the window, and are handed straight back to it through
- * {@link SettingsActions}.
+ * <p>Both appearance settings are answered here and nowhere else. Each of them is a single value
+ * that the whole window reads - the skin it is dressed in, and whether its actions are
+ * accompanied by a movement - so answering one of them here is the whole of the change: the
+ * control writes it into the one value the window is laid out against, and no part of the program
+ * has to be told that either has changed. The two remaining rows are actions belonging to the
+ * window, and are handed straight back to it through {@link SettingsActions}.
  */
 public class SettingsController {
-
-    /**
-     * How the multiplier is written out beside the slider. The figure is padded to three columns
-     * and set in the monospaced face of {@code .value}, so that the slider beside it does not
-     * shift the moment the reading goes from two figures to three.
-     */
-    private static final String PERCENTAGE = "%3.0f%%";
 
     @FXML private StackPane rootPane;
 
     @FXML private StackPane titleIcon;
     @FXML private StackPane skinIcon;
-    @FXML private StackPane textSizeIcon;
     @FXML private StackPane animationsIcon;
     @FXML private StackPane saveStateIcon;
     @FXML private StackPane loadStateIcon;
@@ -67,8 +54,6 @@ public class SettingsController {
     @FXML private ScrollPane settingsScroll;
     @FXML private VBox settingsBody;
     @FXML private HBox skinChoices;
-    @FXML private Slider textSizeSlider;
-    @FXML private Label textSizePercent;
     @FXML private ToggleSwitch animationsToggle;
 
     /** Holds the three skins together, so that exactly one of them is chosen at any moment. */
@@ -83,7 +68,6 @@ public class SettingsController {
     private void initialize() {
         titleIcon.getChildren().setAll(Icons.gear(Icons.ROW));
         skinIcon.getChildren().setAll(Icons.palette(Icons.ROW));
-        textSizeIcon.getChildren().setAll(Icons.letter(Icons.ROW));
         animationsIcon.getChildren().setAll(Icons.sparkles(Icons.ROW));
         saveStateIcon.getChildren().setAll(Icons.floppyDisk(Icons.ROW));
         loadStateIcon.getChildren().setAll(Icons.openFolder(Icons.ROW));
@@ -94,7 +78,6 @@ public class SettingsController {
 
         askForExactlyTheHeightOfTheSettings();
         offerEverySkin();
-        followTheTextSizeSlider();
         followTheAnimationsSwitch();
 
         // A click that lands on the darkened backing rather than on the sheet is a click outside
@@ -143,16 +126,15 @@ public class SettingsController {
      * inside it. So the height is worked out at the width the settings are actually laid out at,
      * which is the same question asked properly.
      *
-     * <p>It is asked again whenever one of the three things that can change the answer changes:
-     * how wide the sheet is, how large the writing is, and which skin is being worn, since each
-     * skin letters the window in a face of its own. It is never asked again because the sheet
-     * grew, which is what would make the question chase its own answer.
+     * <p>It is asked again whenever one of the two things that can change the answer changes: how
+     * wide the sheet is, and which skin is being worn, since each skin letters the window in a
+     * face of its own. It is never asked again because the sheet grew, which is what would make
+     * the question chase its own answer.
      */
     private void askForExactlyTheHeightOfTheSettings() {
         settingsScroll.prefViewportHeightProperty().bind(Bindings.createDoubleBinding(
                 () -> settingsBody.prefHeight(settingsBody.getWidth()),
                 settingsBody.widthProperty(),
-                TextSize.scaleProperty(),
                 skins.selectedToggleProperty()));
     }
 
@@ -184,47 +166,6 @@ public class SettingsController {
     }
 
     /**
-     * Points the slider at the size of the writing, and states the size once it has been let go of.
-     *
-     * <p>Binding the size to the slider is the obvious way of writing this and the wrong one.
-     * Every panel, table and figure in the window is measured against the size of the writing, so
-     * each step of the slider lays the whole window out again - and the slider is in that window.
-     * Dragging it then moves the very thing under the hand: the sheet grows around the grip, the
-     * slider slides out from under the cursor, and choosing a size turns into chasing one.
-     *
-     * <p>So the size is stated when the drag ends rather than while it is going on. What does
-     * follow the slider the whole way is the percentage beside it, which is what says that the
-     * drag is doing anything at all; the window itself is laid out once, at the size let go of.
-     *
-     * <p>A slider can also be moved without being dragged - by a click on its track, or by an
-     * arrow key - and neither of those ever announces a drag that has ended. They are answered by
-     * the second listener, which states the size at once precisely because nothing is being
-     * dragged at the time.
-     */
-    private void followTheTextSizeSlider() {
-        textSizeSlider.setMin(TextSize.SMALLEST);
-        textSizeSlider.setMax(TextSize.LARGEST);
-        textSizeSlider.setBlockIncrement(TextSize.STEP);
-        textSizeSlider.setValue(TextSize.get());
-
-        textSizeSlider.valueChangingProperty().addListener(
-                (observable, wasDragging, dragging) -> {
-                    if (!dragging) {
-                        TextSize.set(textSizeSlider.getValue());
-                    }
-                });
-        textSizeSlider.valueProperty().addListener((observable, previous, chosen) -> {
-            if (!textSizeSlider.isValueChanging()) {
-                TextSize.set(chosen.doubleValue());
-            }
-        });
-
-        textSizePercent.textProperty().bind(Bindings.format(Locale.US, PERCENTAGE,
-                textSizeSlider.valueProperty().multiply(100)));
-        TextSize.scaleProperty().addListener((observable, previous, chosen) -> resize());
-    }
-
-    /**
      * Points the switch at the one that turns every animation in the program on and off.
      *
      * <p>Nothing is written on it. A switch says which way it is by which way it is, and the row
@@ -242,31 +183,18 @@ public class SettingsController {
         }
     }
 
-    /** States the size of the writing again, without going back through the stylesheets. */
-    private void resize() {
-        if (scene != null) {
-            chosenSkin().applyTextSizeTo(scene);
-        }
-    }
-
-    private Skin chosenSkin() {
-        Toggle chosen = skins.getSelectedToggle();
-        return chosen == null ? Skin.DEFAULT : (Skin) chosen.getUserData();
-    }
-
     @FXML
     private void onClose() {
         close();
     }
 
     /**
-     * Puts the three appearance settings back to the ones the program opens with. It says nothing
-     * about the system that is loaded: nothing on this sheet is allowed to throw that away.
+     * Puts both appearance settings back to the ones the program opens with. It says nothing about
+     * the system that is loaded: nothing on this sheet is allowed to throw that away.
      */
     @FXML
     private void onReset() {
         select(Skin.DEFAULT);
-        textSizeSlider.setValue(TextSize.NORMAL);
         animationsToggle.setSelected(Animations.ENABLED_AT_START);
     }
 

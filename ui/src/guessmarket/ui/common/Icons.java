@@ -72,13 +72,6 @@ public final class Icons {
             circle(8.5, 7.5, 0.6)
     };
 
-    /** A capital letter standing under the bar of a typesetter's rule: the size of the writing. */
-    private static final String[] LETTER = {
-            "M4 7V4h16v3",
-            "M9 20h6",
-            "M12 4v16"
-    };
-
     /** Three four pointed stars, one large and two small: something happening rather than being. */
     private static final String[] SPARKLES = {
             "M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5"
@@ -161,11 +154,6 @@ public final class Icons {
     /** The skin: what the window is coloured and lettered in. */
     public static Node palette(double size) {
         return drawing(size, PALETTE);
-    }
-
-    /** The size of the writing. */
-    public static Node letter(double size) {
-        return drawing(size, LETTER);
     }
 
     /** The animations: the movements an action is accompanied by. */
