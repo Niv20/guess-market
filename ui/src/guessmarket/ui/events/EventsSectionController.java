@@ -6,17 +6,17 @@ import guessmarket.dto.EventStatus;
 import guessmarket.dto.TradingMethod;
 import guessmarket.ui.app.AppContext;
 import guessmarket.ui.app.AppSection;
+import guessmarket.ui.common.Filters;
+import guessmarket.ui.common.Filters.Choice;
 import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Tables;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableView;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,32 +29,21 @@ import java.util.List;
  * because an action always belongs to somebody; what shows up here is the result of those actions,
  * which is why every refresh reads the engine again rather than keeping a copy of anything.
  *
- * <p>Each of the three filters is a set of toggle buttons with an "All" among them, and each set is
- * a toggle group, so exactly one of them is chosen at any moment and the filters cannot contradict
- * each other.
+ * <p>Each of the three filters is a dropdown whose first line is "All", so exactly one thing is
+ * chosen in each of them at any moment, the filters cannot contradict each other, and the row of
+ * filters stays the same size however many values a filter has to offer.
  */
 public class EventsSectionController implements AppSection {
 
-    @FXML private ToggleButton allTypesButton;
-    @FXML private ToggleButton lmsrButton;
-    @FXML private ToggleButton orderBookButton;
-    @FXML private ToggleButton allStatusesButton;
-    @FXML private ToggleButton notStartedButton;
-    @FXML private ToggleButton activeButton;
-    @FXML private ToggleButton closedButton;
-    @FXML private ToggleButton allCommissionsButton;
-    @FXML private ToggleButton onPurchaseButton;
-    @FXML private ToggleButton onCloseButton;
+    @FXML private ComboBox<Choice<TradingMethod>> typeChooser;
+    @FXML private ComboBox<Choice<EventStatus>> statusChooser;
+    @FXML private ComboBox<Choice<CommissionType>> commissionChooser;
 
     @FXML private TableView<EventDto> eventsTable;
     @FXML private Label countLabel;
     @FXML private Label placeholderLabel;
     @FXML private ScrollPane detailsScroll;
     @FXML private EventDetailsController eventDetailsController;
-
-    private final ToggleGroup typeFilter = new ToggleGroup();
-    private final ToggleGroup statusFilter = new ToggleGroup();
-    private final ToggleGroup commissionFilter = new ToggleGroup();
 
     private AppContext context;
 
@@ -67,7 +56,7 @@ public class EventsSectionController implements AppSection {
         buildFilters();
         eventsTable.getSelectionModel().selectedItemProperty()
                 .addListener((observable, previous, selected) -> showDetailsOf(selected));
-        Tables.emptyMessage(eventsTable, "No event matches the filters that are switched on.");
+        Tables.emptyMessage(eventsTable, "No event matches the filters that are chosen.");
     }
 
     @Override
@@ -113,47 +102,13 @@ public class EventsSectionController implements AppSection {
     }
 
     /**
-     * Puts each row of filter buttons into a group of its own and remembers what each button
-     * stands for. An "All" button stands for nothing in particular, which is exactly what makes it
-     * match everything.
+     * Offers every value of each of the three things an event can be filtered by, with an "All"
+     * above them. Every filter starts on its "All", so the screen opens showing the whole system.
      */
     private void buildFilters() {
-        group(typeFilter, allTypesButton, null);
-        group(typeFilter, lmsrButton, TradingMethod.LMSR);
-        group(typeFilter, orderBookButton, TradingMethod.ORDER_BOOK);
-
-        group(statusFilter, allStatusesButton, null);
-        group(statusFilter, notStartedButton, EventStatus.NOT_STARTED);
-        group(statusFilter, activeButton, EventStatus.ACTIVE);
-        group(statusFilter, closedButton, EventStatus.CLOSED);
-
-        group(commissionFilter, allCommissionsButton, null);
-        group(commissionFilter, onPurchaseButton, CommissionType.ON_PURCHASE);
-        group(commissionFilter, onCloseButton, CommissionType.ON_CLOSE);
-
-        keepOneChosen(typeFilter, allTypesButton);
-        keepOneChosen(statusFilter, allStatusesButton);
-        keepOneChosen(commissionFilter, allCommissionsButton);
-    }
-
-    private static void group(ToggleGroup toggleGroup, ToggleButton button, Object stands) {
-        button.setToggleGroup(toggleGroup);
-        button.setUserData(stands);
-    }
-
-    /**
-     * A toggle group lets its chosen button be switched off again, which would leave a filter row
-     * with nothing chosen and no way to tell what it means. Clicking the chosen button therefore
-     * falls back to "All" rather than to nothing.
-     */
-    private void keepOneChosen(ToggleGroup toggleGroup, ToggleButton fallback) {
-        toggleGroup.selectedToggleProperty().addListener((observable, previous, chosen) -> {
-            if (chosen == null) {
-                fallback.setSelected(true);
-            } else {
-                applyFilters();
-            }
-        });
+        Filters.fill(typeChooser, TradingMethod.values(), this::applyFilters);
+        Filters.fill(statusChooser, EventStatus.values(), this::applyFilters);
+        Filters.fill(commissionChooser, CommissionType.values(), this::applyFilters);
     }
 
     private void applyFilters() {
@@ -170,22 +125,15 @@ public class EventsSectionController implements AppSection {
             showPlaceholder("Load a system details file to see the events.");
         } else if (shown.isEmpty()) {
             eventDetailsController.clear();
-            showPlaceholder("No event matches the filters that are switched on.");
+            showPlaceholder("No event matches the filters that are chosen.");
         }
         reselect(previouslySelected);
     }
 
     private boolean matchesFilters(EventDto event) {
-        return matches(typeFilter, event.tradingMethod())
-                && matches(statusFilter, event.status())
-                && matches(commissionFilter, event.commissionType());
-    }
-
-    /** @return whether the chosen button of a filter row lets this value through. */
-    private static boolean matches(ToggleGroup toggleGroup, Object value) {
-        Toggle chosen = toggleGroup.getSelectedToggle();
-        Object wanted = chosen == null ? null : chosen.getUserData();
-        return wanted == null || wanted.equals(value);
+        return Filters.allows(typeChooser, event.tradingMethod())
+                && Filters.allows(statusChooser, event.status())
+                && Filters.allows(commissionChooser, event.commissionType());
     }
 
     private static String describeCount(int shown, int total) {

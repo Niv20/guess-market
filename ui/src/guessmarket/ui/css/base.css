@@ -196,7 +196,7 @@
     -fx-text-fill: -app-text;
 }
 
-/* ------------------------------------------------------------------ toggle buttons (filters) */
+/* ------------------------------------------------------------------ the filter bar and toggles */
 
 .filter-bar {
     -fx-background-color: -app-surface-2;
@@ -205,6 +205,17 @@
     -fx-border-radius: 10;
     -fx-border-width: 1;
     -fx-padding: 10 12 10 12;
+}
+
+/* A filter dropdown sits in a bar rather than in a form, so it is a size smaller than one. */
+.filter-bar .combo-box {
+    -fx-font-size: 0.9em;
+    -fx-padding: 2 6 2 6;
+}
+
+/* Says at a glance that a list is short because of a filter, not because it is nearly empty. */
+.filter-bar .combo-box.filter-on {
+    -fx-border-color: -app-accent;
 }
 
 .toggle-button {
