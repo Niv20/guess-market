@@ -41,9 +41,11 @@ import java.util.List;
  * application controller asks both screens to rebuild, and this screen reads the engine again and
  * puts the selection back where it was.
  *
- * <p>Both lists are columns of tiles rather than tables. A user is read as a name and a balance
- * and an event as a name and a state, and a tile can put those first and let everything else fall
- * in behind them, which is what keeps both lists readable when the window is made narrow.
+ * <p>Both lists are tiles rather than tables. A user is read as a name and a balance and an event
+ * as a name and a state, and a tile can put those first and let everything else fall in behind
+ * them, which is what keeps both lists readable when the window is made narrow. The users run down
+ * the left because that list is the screen; the events run across because that one is a panel on
+ * it, and everything worth opening the panel for is underneath them.
  */
 public class UsersSectionController implements AppSection {
 
@@ -109,7 +111,7 @@ public class UsersSectionController implements AppSection {
     @FXML
     private void initialize() {
         Tiles.render(usersList, UserTile::of);
-        Tiles.render(eventsList, event -> EventTile.of(event, roleOf(event)));
+        Tiles.renderStrip(eventsList, event -> EventTile.compact(event, roleOf(event)), 250);
 
         allEventsButton.setToggleGroup(eventScope);
         myEventsButton.setToggleGroup(eventScope);

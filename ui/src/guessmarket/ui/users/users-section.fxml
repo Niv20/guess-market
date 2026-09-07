@@ -23,9 +23,11 @@
     An action always belongs to somebody, which is why it happens here: the person acting is the one
     selected on the left, and there is never any doubt about whose money is moving.
 
-    Both lists of this screen are columns of tiles rather than tables, so that they keep everything
-    they have to say however narrow the window is made: a name and a balance for a user, and for an
-    event how it is doing, whose it is and what this user is to it.
+    Both lists of this screen are tiles rather than tables, so that they keep everything they have
+    to say however narrow the window is made: a name and a balance for a user, and for an event how
+    it is doing, whose it is and what this user is to it. The users are a column down the left,
+    because that list is the screen; the events are a strip read across, because everything worth
+    choosing an event for is on the screen underneath them.
 -->
 <SplitPane fx:id="rootPane" dividerPositions="0.30"
            xmlns="http://javafx.com/javafx"
@@ -114,7 +116,21 @@
                         </LineChart>
                     </VBox>
 
-                    <!-- the events they run or take part in, and everything else they may join -->
+                    <!--
+                        The events they run or take part in, and everything else they may join.
+
+                        A strip of cards read across rather than a column read down. Everything
+                        under it — what this user has in the chosen event, what they may do about
+                        it, and the event itself — is the reason the panel is open, and a column
+                        of events pushed all of it below the fold. Laid on its side the list takes
+                        one card's height however many events are loaded, and the ones that do not
+                        fit are one scroll to the right instead of half a screen further down.
+
+                        Its height is fixed rather than grown, because the cards are what has to
+                        stay the same size, not the strip: see EventTile.compact for what a card
+                        this size can carry. The orientation is set by Tiles.renderStrip, which is
+                        also what gives every card its width.
+                    -->
                     <VBox styleClass="card" spacing="8">
                         <HBox alignment="CENTER_LEFT" spacing="10">
                             <Label text="EVENTS" styleClass="panel-title"/>
@@ -122,8 +138,8 @@
                             <ToggleButton fx:id="allEventsButton" text="All events" selected="true"/>
                             <ToggleButton fx:id="myEventsButton" text="Only mine"/>
                         </HBox>
-                        <ListView fx:id="eventsList" styleClass="tile-list"
-                                  prefHeight="300" minHeight="150"/>
+                        <ListView fx:id="eventsList" styleClass="tile-list, tile-strip"
+                                  prefHeight="152" minHeight="152" maxHeight="152"/>
                     </VBox>
 
                     <fx:include fx:id="userInvolvement" source="user-involvement.fxml"/>
