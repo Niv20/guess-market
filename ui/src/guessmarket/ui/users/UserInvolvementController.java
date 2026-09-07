@@ -50,30 +50,30 @@ public class UserInvolvementController {
     @FXML
     private void initialize() {
         Tables.columns(holdingsTable,
-                Tables.text("OPTION", 200, HoldingDto::optionName),
-                Tables.number("SHARES", 100, holding -> Formats.shares(holding.shares())),
-                Tables.number("PAID", 110, holding -> Formats.money(holding.amountPaid())),
-                Tables.number("WORTH NOW", 120, holding -> Formats.money(holding.currentValue())));
+                Tables.text("OPTION", HoldingDto::optionName),
+                Tables.number("SHARES", holding -> Formats.shares(holding.shares())),
+                Tables.number("PAID", holding -> Formats.money(holding.amountPaid())),
+                Tables.number("WORTH NOW", holding -> Formats.money(holding.currentValue())));
 
         Tables.columns(tradesTable,
-                Tables.number("#", 50, trade -> String.valueOf(trade.serialNumber())),
-                Tables.text("OPTION", 180, TradeRecordDto::optionName),
-                Tables.number("SHARES", 90, trade -> Formats.shares(trade.shares())),
-                Tables.number("PRICE PAID", 110,
+                Tables.number("#", trade -> String.valueOf(trade.serialNumber())),
+                Tables.text("OPTION", TradeRecordDto::optionName),
+                Tables.number("SHARES", trade -> Formats.shares(trade.shares())),
+                Tables.number("PRICE PAID",
                         trade -> Formats.money(trade.amountPaidForShares())),
-                Tables.number("COMMISSION", 110, trade -> Formats.money(trade.commissionPaid())),
-                Tables.number("TOTAL", 110, trade -> Formats.money(trade.totalPaid())));
+                Tables.number("COMMISSION", trade -> Formats.money(trade.commissionPaid())),
+                Tables.number("TOTAL", trade -> Formats.money(trade.totalPaid())));
 
         Tables.columns(ordersTable,
-                Tables.text("SIDE", 80, order -> order.side().getDisplayName()),
-                Tables.number("SHARES LEFT", 110, order -> Formats.shares(order.remaining())),
-                Tables.number("OF", 70, order -> Formats.shares(order.quantity())),
-                Tables.number("PRICE", 90, order -> Formats.price(order.pricePerShare())),
-                Tables.number("WORTH", 110, order -> Formats.money(order.remainingValue())));
+                Tables.text("SIDE", order -> order.side().getDisplayName()),
+                Tables.number("SHARES LEFT", order -> Formats.shares(order.remaining())),
+                Tables.number("OF", order -> Formats.shares(order.quantity())),
+                Tables.number("PRICE", order -> Formats.price(order.pricePerShare())),
+                Tables.number("WORTH", order -> Formats.money(order.remainingValue())));
 
         Tables.columns(finalTotalsTable,
-                Tables.text("OPTION", 200, OptionStateDto::name),
-                Tables.number("SHARES BOUGHT ALTOGETHER", 200,
+                Tables.text("OPTION", OptionStateDto::name),
+                Tables.number("SHARES BOUGHT ALTOGETHER",
                         option -> Formats.shares(option.sharesPurchased())));
 
         Tables.emptyMessage(holdingsTable, "No shares held.");

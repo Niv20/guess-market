@@ -546,6 +546,27 @@
     -fx-text-fill: -app-text-faint;
 }
 
+/*
+ * A table with nothing in it, which is not shown as a table at all.
+ *
+ * Column names standing over an empty box say nothing that the sentence in the middle of it does
+ * not say better, and if there are more of them than fit they are cut off with no way to reach
+ * the rest, since a table only grows a bar along its bottom edge once it has rows to scroll. So
+ * while a table is empty its headings and its frame are taken away, and what is left on the card
+ * is the sentence saying why it is empty.
+ */
+.table-view:no-rows {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.table-view:no-rows > .column-header-background {
+    visibility: hidden;
+    -fx-pref-height: 0;
+    -fx-min-height: 0;
+    -fx-max-height: 0;
+}
+
 .numeric-column {
     -fx-alignment: center-right;
     -fx-font-family: "Menlo", "Consolas", "Courier New", monospace;

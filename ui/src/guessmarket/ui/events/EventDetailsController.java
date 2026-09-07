@@ -140,7 +140,7 @@ public class EventDetailsController {
         buildHistoryTable();
         // The participants table has its columns rebuilt for every event, so it is the one table
         // asked here rather than where its columns are made.
-        Tables.shareWidth(participantsTable);
+        Tables.fit(participantsTable);
         Tables.emptyMessage(participantsTable, "Nobody has taken part in this event yet.");
         Tables.emptyMessage(historyTable, "Nothing has been traded in this event yet.");
         Tables.emptyMessage(optionsTable, "This event has no options.");
@@ -342,22 +342,22 @@ public class EventDetailsController {
         }
         participantColumnsFor = List.copyOf(optionNames);
         participantsTable.getColumns().setAll(List.of(
-                Tables.text("USER", 130, ParticipantDto::userName),
-                Tables.text("ROLE", 115, p -> p.marketMaker() ? "Market maker" : "Participant")));
+                Tables.text("USER", ParticipantDto::userName),
+                Tables.text("ROLE", p -> p.marketMaker() ? "Market maker" : "Participant")));
         for (int i = 0; i < optionNames.size(); i++) {
             int optionIndex = i;
             participantsTable.getColumns().add(Tables.group(optionNames.get(i),
-                    Tables.number("SHARES", 85,
+                    Tables.number("SHARES",
                             p -> Formats.shares(holding(p, optionIndex).shares())),
-                    Tables.number("VALUE", 90,
+                    Tables.number("VALUE",
                             p -> Formats.money(holding(p, optionIndex).currentValue())),
-                    Tables.number("PAID", 90,
+                    Tables.number("PAID",
                             p -> Formats.money(holding(p, optionIndex).amountPaid()))));
         }
         participantsTable.getColumns().addAll(List.of(
-                Tables.number("OPEN ORDERS", 100,
+                Tables.number("OPEN ORDERS",
                         p -> p.openOrders() == 0 ? Formats.NOTHING : String.valueOf(p.openOrders())),
-                Tables.number("TOTAL VALUE", 110, p -> Formats.money(p.totalValue()))));
+                Tables.number("TOTAL VALUE", p -> Formats.money(p.totalValue()))));
     }
 
     private static HoldingDto holding(ParticipantDto participant, int optionIndex) {
@@ -392,24 +392,24 @@ public class EventDetailsController {
 
     private void buildOptionsTable() {
         Tables.columns(optionsTable,
-                Tables.text("OPTION", 220, OptionStateDto::name),
-                Tables.number("VALUE", 100, option -> Formats.decimal(option.value())),
-                Tables.number("PROBABILITY", 120, option -> Formats.probability(option.value())),
-                Tables.number("SHARES BOUGHT", 140,
+                Tables.text("OPTION", OptionStateDto::name),
+                Tables.number("VALUE", option -> Formats.decimal(option.value())),
+                Tables.number("PROBABILITY", option -> Formats.probability(option.value())),
+                Tables.number("SHARES BOUGHT",
                         option -> Formats.shares(option.sharesPurchased())));
     }
 
     private void buildHistoryTable() {
         Tables.columns(historyTable,
-                Tables.number("#", 50, trade -> String.valueOf(trade.serialNumber())),
-                Tables.text("TYPE", 100, trade -> trade.kind().getDisplayName()),
-                Tables.text("OPTION", 130, MarketTradeDto::optionName),
-                Tables.number("SHARES", 90, trade -> Formats.shares(trade.shares())),
-                Tables.number("PRICE", 90, trade -> Formats.price(trade.pricePerShare())),
-                Tables.number("TOTAL", 100, trade -> Formats.money(trade.totalPrice())),
-                Tables.number("COMMISSION", 110, trade -> Formats.money(trade.commission())),
-                Tables.text("BUYER", 105, MarketTradeDto::buyerName),
-                Tables.text("SELLER", 105, MarketTradeDto::sellerName));
+                Tables.number("#", trade -> String.valueOf(trade.serialNumber())),
+                Tables.text("TYPE", trade -> trade.kind().getDisplayName()),
+                Tables.text("OPTION", MarketTradeDto::optionName),
+                Tables.number("SHARES", trade -> Formats.shares(trade.shares())),
+                Tables.number("PRICE", trade -> Formats.price(trade.pricePerShare())),
+                Tables.number("TOTAL", trade -> Formats.money(trade.totalPrice())),
+                Tables.number("COMMISSION", trade -> Formats.money(trade.commission())),
+                Tables.text("BUYER", MarketTradeDto::buyerName),
+                Tables.text("SELLER", MarketTradeDto::sellerName));
     }
 
     // ------------------------------------------------------------------ small helpers
