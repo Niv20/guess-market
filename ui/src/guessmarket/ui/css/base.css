@@ -548,19 +548,19 @@
 }
 
 /*
- * The foot of a screen: how much of the system it is showing, under a line drawn the whole way
- * across the tab.
+ * The foot of a panel: how much of the system its list is showing, under a line the width of that
+ * list.
  *
- * The line is what makes this the foot of the screen rather than one more row of the panel above
- * it, and it is deliberately drawn past the divider: the count is about the tab, not about either
- * half of it, and it does not change when the divider is dragged. Its left edge lines up with the
- * title of the panel above it, so the screen reads as one column of text and not as a bar bolted
- * underneath.
+ * The line is what makes this the foot of the panel rather than one more row inside it, and it
+ * stops where the list stops, because that is what the count is about; carried on past the divider
+ * it would be claiming the panel beside it as well. Drawn between the two edges of the list it
+ * lines up with the title above and with every tile between them, so the panel reads as one column
+ * of text all the way down.
  */
-.tab-footer {
+.panel-footer {
     -fx-border-color: -app-border-soft transparent transparent transparent;
     -fx-border-width: 1 0 0 0;
-    -fx-padding: 8 14 10 14;
+    -fx-padding: 9 0 0 0;
 }
 
 /* ------------------------------------------------------------------ tables */

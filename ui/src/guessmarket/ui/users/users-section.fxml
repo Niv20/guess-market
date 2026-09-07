@@ -29,142 +29,138 @@
     because that list is the screen; the events are a strip read across, because everything worth
     choosing an event for is on the screen underneath them.
 
-    How many people are in the system is said at the foot of the screen, under a line that runs the
-    whole way across it. It is not the last line of the list on the left: it is what the tab as a
-    whole is showing, and how far the divider has been dragged has nothing to do with it, so it
-    sits below both halves rather than inside one of them.
+    How many people are in the system is said at the foot of the list of them, under a line the
+    width of that list. The count is about the users on the left and about nothing else, so the
+    rule stops where the list stops rather than carrying on under the panel beside it.
 -->
-<VBox fx:id="rootPane"
-      xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="guessmarket.ui.users.UsersSectionController">
+<SplitPane fx:id="rootPane" dividerPositions="0.30"
+           xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="guessmarket.ui.users.UsersSectionController">
 
-    <SplitPane dividerPositions="0.30" VBox.vgrow="ALWAYS">
-        <items>
+    <items>
 
-            <VBox spacing="10" minWidth="210">
+        <VBox spacing="10" minWidth="210">
+            <padding>
+                <javafx.geometry.Insets top="14" right="10" bottom="14" left="14"/>
+            </padding>
+            <Label text="USERS" styleClass="panel-title"/>
+            <ListView fx:id="usersList" styleClass="tile-list"
+                      VBox.vgrow="ALWAYS" minHeight="150"/>
+
+            <HBox styleClass="panel-footer" alignment="CENTER_LEFT">
+                <Label fx:id="userCountLabel" styleClass="faint"/>
+            </HBox>
+        </VBox>
+
+        <ScrollPane fx:id="detailsScroll" fitToWidth="true" minWidth="360">
+            <StackPane>
                 <padding>
-                    <javafx.geometry.Insets top="14" right="10" bottom="12" left="14"/>
+                    <javafx.geometry.Insets top="14" right="14" bottom="14" left="10"/>
                 </padding>
-                <Label text="USERS" styleClass="panel-title"/>
-                <ListView fx:id="usersList" styleClass="tile-list"
-                          VBox.vgrow="ALWAYS" minHeight="150"/>
-            </VBox>
 
-            <ScrollPane fx:id="detailsScroll" fitToWidth="true" minWidth="360">
-                <StackPane>
-                    <padding>
-                        <javafx.geometry.Insets top="14" right="14" bottom="12" left="10"/>
-                    </padding>
+                <Label fx:id="placeholderLabel" styleClass="placeholder-text" wrapText="true"
+                       text="Load a system details file to see the users."/>
 
-                    <Label fx:id="placeholderLabel" styleClass="placeholder-text" wrapText="true"
-                           text="Load a system details file to see the users."/>
+                <VBox fx:id="detailsBox" spacing="12" managed="false" visible="false">
 
-                    <VBox fx:id="detailsBox" spacing="12" managed="false" visible="false">
+                    <!--
+                        Who this user is, and the money that decides what they may do next.
 
-                        <!--
-                            Who this user is, and the money that decides what they may do next.
+                        Three tiers, and no more than three. The name says whose panel this is;
+                        the band under it holds the account, which is the figure every action on
+                        this screen is measured against, and beside it what they have made or
+                        lost so far; and the counts at the foot are true but are not what
+                        anybody opened the panel for. What they started with is not a fourth
+                        figure at all, it is the line the balance is read against, so it sits
+                        under the balance as its caption rather than in a box of its own.
+                    -->
+                    <VBox styleClass="card" spacing="12">
 
-                            Three tiers, and no more than three. The name says whose panel this is;
-                            the band under it holds the account, which is the figure every action on
-                            this screen is measured against, and beside it what they have made or
-                            lost so far; and the counts at the foot are true but are not what
-                            anybody opened the panel for. What they started with is not a fourth
-                            figure at all, it is the line the balance is read against, so it sits
-                            under the balance as its caption rather than in a box of its own.
-                        -->
-                        <VBox styleClass="card" spacing="12">
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label fx:id="userNameLabel" styleClass="screen-title" text="User"/>
+                            <Label fx:id="blockedBadge" styleClass="badge, badge-closed"
+                                   text="BLOCKED" managed="false" visible="false"/>
+                        </HBox>
 
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                <Label fx:id="userNameLabel" styleClass="screen-title" text="User"/>
-                                <Label fx:id="blockedBadge" styleClass="badge, badge-closed"
-                                       text="BLOCKED" managed="false" visible="false"/>
-                            </HBox>
+                        <!-- the account, and the one figure that explains how it got there -->
+                        <FlowPane styleClass="stat-band" hgap="44" vgap="14"
+                                  rowValignment="TOP">
+                            <VBox spacing="1">
+                                <Label text="ACCOUNT BALANCE" styleClass="field-label"/>
+                                <Label fx:id="balanceLabel"
+                                       styleClass="value, value-hero, value-accent" text="—"/>
+                                <Label fx:id="initialBalanceLabel" styleClass="caption"/>
+                            </VBox>
+                            <VBox spacing="1">
+                                <Label text="MADE OR LOST" styleClass="field-label"/>
+                                <Label fx:id="netResultLabel" styleClass="value, value-strong"/>
+                            </VBox>
+                        </FlowPane>
 
-                            <!-- the account, and the one figure that explains how it got there -->
-                            <FlowPane styleClass="stat-band" hgap="44" vgap="14"
-                                      rowValignment="TOP">
-                                <VBox spacing="1">
-                                    <Label text="ACCOUNT BALANCE" styleClass="field-label"/>
-                                    <Label fx:id="balanceLabel"
-                                           styleClass="value, value-hero, value-accent" text="—"/>
-                                    <Label fx:id="initialBalanceLabel" styleClass="caption"/>
-                                </VBox>
-                                <VBox spacing="1">
-                                    <Label text="MADE OR LOST" styleClass="field-label"/>
-                                    <Label fx:id="netResultLabel" styleClass="value, value-strong"/>
-                                </VBox>
-                            </FlowPane>
-
-                            <!-- what they are doing in the system: a count, and not money -->
-                            <HBox styleClass="meta-strip" alignment="CENTER_LEFT" spacing="8">
-                                <Label text="RUNS" styleClass="field-label"/>
-                                <Label fx:id="runsLabel" styleClass="inline-value"/>
-                                <Label text="·" styleClass="faint"/>
-                                <Label text="TAKING PART IN" styleClass="field-label"/>
-                                <Label fx:id="participatesLabel" styleClass="inline-value"/>
-                            </HBox>
-
-                        </VBox>
-
-                        <!-- how their balance has moved -->
-                        <VBox fx:id="balanceChartBox" styleClass="card" spacing="8">
-                            <Label text="ACCOUNT BALANCE PER ACTION" styleClass="panel-title"/>
-                            <LineChart fx:id="balanceChart" prefHeight="210" minHeight="160"
-                                       legendVisible="false" createSymbols="true" animated="false">
-                                <xAxis>
-                                    <NumberAxis label="Action" minorTickCount="0" tickUnit="1"
-                                                forceZeroInRange="true"/>
-                                </xAxis>
-                                <yAxis>
-                                    <NumberAxis label="Balance" forceZeroInRange="false"/>
-                                </yAxis>
-                            </LineChart>
-                        </VBox>
-
-                        <!--
-                            The events they run or take part in, and everything else they may join.
-
-                            A strip of cards read across rather than a column read down. Everything
-                            under it — what this user has in the chosen event, what they may do
-                            about it, and the event itself — is the reason the panel is open, and a
-                            column of events pushed all of it below the fold. Laid on its side the
-                            list takes one card's height however many events are loaded, and the
-                            ones that do not fit are one scroll to the right instead of half a
-                            screen further down.
-
-                            Its height is fixed rather than grown, because the cards are what has to
-                            stay the same size, not the strip: see EventTile.compact for what a card
-                            this size can carry. The orientation is set by Tiles.renderStrip, which
-                            is also what gives every card its width.
-                        -->
-                        <VBox styleClass="card" spacing="8">
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                <Label text="EVENTS" styleClass="panel-title"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <ToggleButton fx:id="allEventsButton" text="All events"
-                                              selected="true"/>
-                                <ToggleButton fx:id="myEventsButton" text="Only mine"/>
-                            </HBox>
-                            <ListView fx:id="eventsList" styleClass="tile-list, tile-strip"
-                                      prefHeight="158" minHeight="158" maxHeight="158"/>
-                        </VBox>
-
-                        <fx:include fx:id="userInvolvement" source="user-involvement.fxml"/>
-                        <fx:include fx:id="tradePanel"
-                                    source="/guessmarket/ui/trade/trade-panel.fxml"/>
-                        <fx:include fx:id="eventDetails"
-                                    source="/guessmarket/ui/events/event-details.fxml"/>
+                        <!-- what they are doing in the system: a count, and not money -->
+                        <HBox styleClass="meta-strip" alignment="CENTER_LEFT" spacing="8">
+                            <Label text="RUNS" styleClass="field-label"/>
+                            <Label fx:id="runsLabel" styleClass="inline-value"/>
+                            <Label text="·" styleClass="faint"/>
+                            <Label text="TAKING PART IN" styleClass="field-label"/>
+                            <Label fx:id="participatesLabel" styleClass="inline-value"/>
+                        </HBox>
 
                     </VBox>
-                </StackPane>
-            </ScrollPane>
 
-        </items>
-    </SplitPane>
+                    <!-- how their balance has moved -->
+                    <VBox fx:id="balanceChartBox" styleClass="card" spacing="8">
+                        <Label text="ACCOUNT BALANCE PER ACTION" styleClass="panel-title"/>
+                        <LineChart fx:id="balanceChart" prefHeight="210" minHeight="160"
+                                   legendVisible="false" createSymbols="true" animated="false">
+                            <xAxis>
+                                <NumberAxis label="Action" minorTickCount="0" tickUnit="1"
+                                            forceZeroInRange="true"/>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis label="Balance" forceZeroInRange="false"/>
+                            </yAxis>
+                        </LineChart>
+                    </VBox>
 
-    <HBox styleClass="tab-footer" alignment="CENTER_LEFT">
-        <Label fx:id="userCountLabel" styleClass="faint"/>
-    </HBox>
+                    <!--
+                        The events they run or take part in, and everything else they may join.
 
-</VBox>
+                        A strip of cards read across rather than a column read down. Everything
+                        under it — what this user has in the chosen event, what they may do
+                        about it, and the event itself — is the reason the panel is open, and a
+                        column of events pushed all of it below the fold. Laid on its side the
+                        list takes one card's height however many events are loaded, and the
+                        ones that do not fit are one scroll to the right instead of half a
+                        screen further down.
+
+                        Its height is fixed rather than grown, because the cards are what has to
+                        stay the same size, not the strip: see EventTile.compact for what a card
+                        this size can carry. The orientation is set by Tiles.renderStrip, which
+                        is also what gives every card its width.
+                    -->
+                    <VBox styleClass="card" spacing="8">
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="EVENTS" styleClass="panel-title"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <ToggleButton fx:id="allEventsButton" text="All events"
+                                          selected="true"/>
+                            <ToggleButton fx:id="myEventsButton" text="Only mine"/>
+                        </HBox>
+                        <ListView fx:id="eventsList" styleClass="tile-list, tile-strip"
+                                  prefHeight="158" minHeight="158" maxHeight="158"/>
+                    </VBox>
+
+                    <fx:include fx:id="userInvolvement" source="user-involvement.fxml"/>
+                    <fx:include fx:id="tradePanel"
+                                source="/guessmarket/ui/trade/trade-panel.fxml"/>
+                    <fx:include fx:id="eventDetails"
+                                source="/guessmarket/ui/events/event-details.fxml"/>
+
+                </VBox>
+            </StackPane>
+        </ScrollPane>
+
+    </items>
+</SplitPane>
