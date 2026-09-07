@@ -467,6 +467,14 @@
     -fx-text-fill: -app-accent-contrast;
 }
 
+/*
+ * A drawing in front of a choice keeps the colour of the words beside it. The line being pointed
+ * at is laid over the accent, and a drawing left at its own grey would all but vanish into it.
+ */
+.combo-box-popup .list-cell:filled:hover .app-icon {
+    -fx-stroke: -app-accent-contrast;
+}
+
 .check-box {
     -fx-text-fill: -app-text-dim;
     -fx-font-size: 0.9em;

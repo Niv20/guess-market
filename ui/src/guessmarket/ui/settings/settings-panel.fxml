@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.HBox?>
@@ -44,27 +45,15 @@
 
                 <Label text="APPEARANCE" styleClass="settings-group"/>
 
-                <!--
-                    The skin is the one setting whose control is under its description rather than
-                    beside it. Three choices shown at once take a row of their own; folded into a
-                    dropdown they would take less room, but then two of the three skins are things
-                    the person has to go looking for rather than things the program is offering.
-                -->
-                <VBox styleClass="settings-row" spacing="11">
-                    <HBox spacing="13" alignment="CENTER_LEFT">
-                        <StackPane fx:id="skinIcon" styleClass="icon-badge"/>
-                        <VBox spacing="2" HBox.hgrow="ALWAYS">
-                            <Label text="Skin" styleClass="settings-title"/>
-                            <Label styleClass="settings-note" wrapText="true"
-                                   text="The colours of the window, the shape of its buttons and the typeface every label is set in."/>
-                        </VBox>
-                    </HBox>
-                    <HBox fx:id="skinChoices" spacing="8" alignment="CENTER_LEFT">
-                        <padding>
-                            <javafx.geometry.Insets left="49"/>
-                        </padding>
-                    </HBox>
-                </VBox>
+                <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
+                    <StackPane fx:id="skinIcon" styleClass="icon-badge"/>
+                    <VBox spacing="2" minWidth="150" HBox.hgrow="ALWAYS">
+                        <Label text="Skin" styleClass="settings-title"/>
+                        <Label styleClass="settings-note" wrapText="true"
+                               text="The colours of the window, the shape of its buttons and the typeface every label is set in."/>
+                    </VBox>
+                    <ComboBox fx:id="skinChooser" prefWidth="160" minWidth="-Infinity"/>
+                </HBox>
 
                 <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
                     <StackPane fx:id="animationsIcon" styleClass="icon-badge"/>
