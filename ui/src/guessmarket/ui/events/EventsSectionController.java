@@ -13,6 +13,7 @@ import guessmarket.ui.trade.CreateEventController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -32,6 +33,10 @@ import java.util.List;
  * those actions, which is why every refresh reads the engine again rather than keeping a copy of
  * anything.
  *
+ * <p>That one action is the last row of the list rather than a button beside it. It is offered
+ * where what it makes will appear, it is scrolled to like anything else in the list, and while
+ * there is nothing loaded there is no list and no row.
+ *
  * <p>Each of the three filters is a dropdown whose first line is "All", so exactly one thing is
  * chosen in each of them at any moment, the filters cannot contradict each other, and the row of
  * filters stays the same size however many values a filter has to offer.
@@ -44,11 +49,22 @@ import java.util.List;
  */
 public class EventsSectionController implements AppSection {
 
+    /**
+     * The row that ends the list and is not an event: the button that makes one.
+     *
+     * <p>It is put among the events so that it is laid out and scrolled with them, and it is
+     * recognised by being this object and no other. Nothing ever reads what is in it — the cell
+     * factory checks it before it draws, the filters are applied before it is added, and its id
+     * is negative, so no search for an event can land on it.
+     */
+    private static final EventDto CREATE_ROW = new EventDto(
+            -1, "", "", 0, CommissionType.ON_PURCHASE, List.of(), EventStatus.NOT_STARTED,
+            TradingMethod.LMSR, "", 0, 0, null, null, null);
+
     @FXML private ComboBox<Choice<TradingMethod>> typeChooser;
     @FXML private ComboBox<Choice<EventStatus>> statusChooser;
     @FXML private ComboBox<Choice<CommissionType>> commissionChooser;
 
-    @FXML private Button createEventButton;
     @FXML private ListView<EventDto> eventsList;
     @FXML private Label countLabel;
     @FXML private Label placeholderLabel;
@@ -60,14 +76,21 @@ public class EventsSectionController implements AppSection {
     /** Every event the engine last reported, before any filter is applied. */
     private final List<EventDto> loadedEvents = new ArrayList<>();
 
+    /**
+     * Whether there is anybody who could finance an event. An event must have a market maker, so
+     * until there is one there is nothing to create and the row that creates it is left out.
+     */
+    private boolean anybodyCouldBeMarketMaker;
+
     @FXML
     private void initialize() {
-        Tiles.render(eventsList, EventTile::of);
+        Tiles.render(eventsList, row -> row == CREATE_ROW ? createRow() : EventTile.of(row));
         buildFilters();
         eventsList.getSelectionModel().selectedItemProperty()
                 .addListener((observable, previous, selected) -> showDetailsOf(selected));
-        Tiles.emptyMessage(eventsList, "No event matches the filters that are chosen.");
-        createEventButton.setDisable(true);
+        // The only way this list can be empty now is that nothing has been loaded: once a file is
+        // in, the row that creates an event is in the list whatever the filters are hiding.
+        Tiles.emptyMessage(eventsList, "No events have been loaded yet.");
     }
 
     @Override
@@ -80,9 +103,7 @@ public class EventsSectionController implements AppSection {
         int previouslySelected = selectedEventId();
         loadedEvents.clear();
         loadedEvents.addAll(context.engine().getAllEvents());
-        // An event must have a market maker, so there is nothing to create until there is somebody
-        // who could be one.
-        createEventButton.setDisable(context.engine().getAllUsers().isEmpty());
+        anybodyCouldBeMarketMaker = !context.engine().getAllUsers().isEmpty();
         applyFilters();
         reselect(previouslySelected);
     }
@@ -91,7 +112,7 @@ public class EventsSectionController implements AppSection {
     public void clear() {
         loadedEvents.clear();
         eventsList.getItems().clear();
-        createEventButton.setDisable(true);
+        anybodyCouldBeMarketMaker = false;
         countLabel.setText("");
         eventDetailsController.clear();
         showPlaceholder("Load a system details file to see the events.");
@@ -101,9 +122,20 @@ public class EventsSectionController implements AppSection {
      * Opens the form for creating an event. Whatever comes out of it is an ordinary event that has
      * not started yet, so nothing else here has to know that it was not in the file.
      */
-    @FXML
     private void onCreateEvent() {
         CreateEventController.open(context);
+    }
+
+    /**
+     * @return the row that ends the list: an outline the width and shape of a tile, standing where
+     *         the event it makes will stand once it exists
+     */
+    private Node createRow() {
+        Button create = new Button("+  Create an event");
+        create.getStyleClass().add("tile-create");
+        create.setMaxWidth(Double.MAX_VALUE);
+        create.setOnAction(pressed -> onCreateEvent());
+        return create;
     }
 
     // ------------------------------------------------------------------ the list and its filters
@@ -126,11 +158,15 @@ public class EventsSectionController implements AppSection {
                 shown.add(event);
             }
         }
+        int matched = shown.size();
+        if (anybodyCouldBeMarketMaker) {
+            shown.add(CREATE_ROW);
+        }
         eventsList.setItems(shown);
-        countLabel.setText(describeCount(shown.size(), loadedEvents.size()));
+        countLabel.setText(describeCount(matched, loadedEvents.size()));
         if (loadedEvents.isEmpty()) {
             showPlaceholder("Load a system details file to see the events.");
-        } else if (shown.isEmpty()) {
+        } else if (matched == 0) {
             eventDetailsController.clear();
             showPlaceholder("No event matches the filters that are chosen.");
         }
@@ -155,7 +191,7 @@ public class EventsSectionController implements AppSection {
     // ------------------------------------------------------------------ the details beside it
 
     private void showDetailsOf(EventDto event) {
-        if (event == null) {
+        if (event == null || event == CREATE_ROW) {
             eventDetailsController.clear();
             showPlaceholder(loadedEvents.isEmpty()
                     ? "Load a system details file to see the events."

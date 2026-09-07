@@ -746,6 +746,41 @@
     -fx-border-color: -app-accent;
 }
 
+/*
+ * The last row of the list of events, which is not an event but the one thing that makes one.
+ *
+ * It is drawn as an empty tile: the same width, the same corners, and an outline that is broken
+ * rather than solid, because it is the place an event will be rather than an event. Standing at
+ * the end of the list it is scrolled to like everything else in it, and being a shape of that
+ * list rather than a button beside it, it is gone whenever the list is.
+ *
+ * It is written as .button.tile-create rather than .tile-create because each skin restates
+ * .button for itself and a skin is read after this file: without the second class this would
+ * come out as an ordinary Daylight pill with a shadow under it.
+ */
+.button.tile-create {
+    -fx-background-color: transparent;
+    -fx-background-radius: 12;
+    -fx-border-color: -app-border-soft;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-border-style: segments(7, 6) line-cap butt;
+    -fx-padding: 12 14 12 14;
+    -fx-text-fill: -app-text-dim;
+    -fx-effect: null;
+}
+
+.button.tile-create:hover {
+    -fx-background-color: -app-accent-soft;
+    -fx-border-color: -app-accent;
+    -fx-text-fill: -app-accent;
+}
+
+.button.tile-create:pressed {
+    -fx-background-color: -app-accent-soft;
+    -fx-border-color: -app-accent;
+}
+
 /* The name of the thing. The one part of a tile that is read before anything else on it. */
 .tile-title {
     -fx-font-size: 1.08em;
