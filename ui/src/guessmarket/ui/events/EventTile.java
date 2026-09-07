@@ -20,7 +20,9 @@ import java.util.Locale;
  * running; the name is the largest thing on the tile, because that is what they are looking
  * <em>at</em>; who runs it and what it charges are underneath in a quieter colour, because they
  * explain the name rather than compete with it; and the money is last, set apart under a caption
- * of its own so a column of tiles can be read down the figures alone.
+ * of its own so a column of tiles can be read down the figures alone. On a tile with the width
+ * for it the money is last in the other direction — out to the right of the name rather than
+ * under it — which is the same order and a straighter column to read down.
  *
  * <p>The number the file gave the event is put last of all in the top row and in the faintest
  * colour there is. It has to be there — it is how the event is referred to — but nobody scans a
@@ -54,9 +56,9 @@ public final class EventTile {
         VBox tile = Tiles.tile();
         tile.getChildren().addAll(
                 topRow(event, role, true),
-                Tiles.title(event.name()),
-                Tiles.meta(describeRun(event)),
-                figures(event));
+                Tiles.body(Tiles.title(event.name()),
+                        Tiles.meta(describeRun(event)),
+                        figures(event)));
         return tile;
     }
 
