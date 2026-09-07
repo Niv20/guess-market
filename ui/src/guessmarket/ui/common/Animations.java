@@ -10,6 +10,7 @@ import javafx.animation.SequentialTransition;
 import javafx.animation.TranslateTransition;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.HorizontalDirection;
 import javafx.scene.Node;
 import javafx.util.Duration;
@@ -26,7 +27,8 @@ import java.util.Set;
  * <p>They are off when the program starts. Nothing here decides what ends up on the screen, only
  * how it gets there, so with the switch off the interface shows exactly what it would show if
  * this class did not exist — it simply shows it at once. No animation is longer than
- * {@link #LONGEST}.
+ * {@link #LONGEST}, {@link #pulse} included: a pulse is one short beat played again rather than
+ * one long movement, and it answers the switch between one beat and the next.
  *
  * <p>Two of them answer something new arriving on the screen, and which one is used says what kind
  * of arrival it was. A panel that appears where nothing was fades in, {@link #switchIn}: it is
@@ -49,7 +51,15 @@ public final class Animations {
     private static final Duration SWITCH = Duration.millis(320);
     private static final Duration SLIDE = Duration.millis(360);
     private static final Duration FLASH_HALF = Duration.millis(180);
+    private static final Duration PULSE_HALF = Duration.millis(760);
     private static final Duration FADE_OUT = Duration.millis(420);
+
+    /**
+     * How faint a pulse goes at the bottom of a beat. Not out: the thing that is pulsing is
+     * saying that something is live, and a mark that disappears every second second is read as a
+     * mark that is not there rather than as one that is breathing.
+     */
+    private static final double PULSE_TO_OPACITY = 0.28;
 
     /** How faint a panel begins before it comes up to full strength. */
     private static final double SWITCH_FROM_OPACITY = 0;
@@ -233,6 +243,57 @@ public final class Animations {
             node.setScaleY(1);
         });
         pulse.playFromStart();
+    }
+
+    /**
+     * Fades a small mark down and up again, over and over, for as long as it is on the screen and
+     * the switch is on: the one movement in the program that says something is happening now
+     * rather than that something has just happened.
+     *
+     * <p>Everything else here is played once, because it answers something the person did. This
+     * answers nothing — it is a property of what is on the screen, an event that is open and
+     * taking trades, and a property that stopped being shown after two seconds would only be a
+     * flicker. So it runs while the mark is there and stops the moment it is not.
+     *
+     * <p>It follows the switch while it runs, rather than reading it once on the way past. A tile
+     * is built when the list scrolls it into view and not when the settings sheet is closed, so a
+     * pulse that had asked the switch only at the start would go on beating on every tile already
+     * drawn after the person turned the animations off, and the list would have to be rebuilt to
+     * make it stop.
+     *
+     * <p>The switch is asked to tell the mark only while the mark is on the screen. It is one
+     * property belonging to the whole program and the marks are made and thrown away by the
+     * thousand as a long list is scrolled; a mark that stayed on its list of listeners after it
+     * had left the screen would be kept alive by it for as long as the program ran, and would go
+     * on being told about a switch that no longer has anything to do with it.
+     */
+    public static void pulse(Node node) {
+        FadeTransition beat = new FadeTransition(PULSE_HALF, node);
+        beat.setFromValue(1);
+        beat.setToValue(PULSE_TO_OPACITY);
+        beat.setInterpolator(Interpolator.EASE_BOTH);
+        beat.setAutoReverse(true);
+        beat.setCycleCount(Animation.INDEFINITE);
+
+        ChangeListener<Boolean> switched = (property, was, on) -> {
+            if (on) {
+                beat.playFromStart();
+            } else {
+                beat.stop();
+                node.setOpacity(1);
+            }
+        };
+        node.sceneProperty().addListener((property, left, joined) -> {
+            ENABLED.removeListener(switched);
+            beat.stop();
+            node.setOpacity(1);
+            if (joined != null) {
+                ENABLED.addListener(switched);
+                if (isEnabled()) {
+                    beat.playFromStart();
+                }
+            }
+        });
     }
 
     /**

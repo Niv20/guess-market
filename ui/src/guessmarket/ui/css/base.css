@@ -701,9 +701,9 @@
  *
  * A table cannot be made narrower than the sum of its columns, so a narrow window either loses
  * the right hand columns or grows a scroll bar under them. A tile is one column that reflows,
- * and what a table said by the position of a column it says by weight and colour instead: a bold
- * name to find the row by, badges above it for what kind of thing it is, a dimmer line of
- * context under it, and the money at the foot under a caption of its own.
+ * and what a table said by the position of a column it says by weight and colour instead: a
+ * coloured dot at the left for how the thing is doing, a bold name to find the row by, a dimmer
+ * line of context under it, and the money at the foot under a caption of its own.
  *
  * A tile is a .card as well, so each skin dresses it exactly as it dresses every other panel.
  */
@@ -815,17 +815,53 @@
     -fx-text-fill: -app-no;
 }
 
+/* Having money in an event is worn in the accent: it is the colour that money is already in. */
+.tile-tag-part {
+    -fx-text-fill: -app-accent;
+}
+
 /* What the name means. Read once the name has been found, and never before it. */
 .tile-meta {
     -fx-font-size: 0.88em;
     -fx-text-fill: -app-text-dim;
 }
 
-/* The number the file gave an event: needed to refer to it, never scanned for. */
-.tile-id {
+/*
+ * The number the file gave an event, said in front of its name.
+ *
+ * It is set in a typewriter face and in the colour of the line underneath rather than the colour
+ * of the name, so that it is plainly not part of the name it stands in front of: a column of
+ * tiles is still read down the names, and the numbers are a second column beside them for
+ * whoever came looking for one. Not bold, and a size smaller than the name, for the same reason.
+ */
+.tile-number {
     -fx-font-family: "Menlo", "Consolas", "Courier New", monospace;
-    -fx-font-size: 0.82em;
-    -fx-text-fill: -app-text-faint;
+    -fx-font-size: 0.92em;
+    -fx-text-fill: -app-text-dim;
+}
+
+/*
+ * How a thing is doing, said in colour alone at the head of the row it belongs to.
+ *
+ * A list is scanned for the rows that are still running before a word of it is read, and one
+ * colour repeated down the left hand edge is found in a single pass where a word has to be read
+ * row by row. The three colours are the ones the rest of the program already means these things
+ * in — the colour of a loss for an event that is over, the colour of a gain for one that is
+ * open — so nothing here has to be learned twice.
+ *
+ * The size is set in Tiles rather than here, because a shape is drawn at a radius and not at a
+ * font size, and saying it twice is how the two come to disagree.
+ */
+.status-dot-idle {
+    -fx-fill: -app-text-faint;
+}
+
+.status-dot-live {
+    -fx-fill: -app-yes;
+}
+
+.status-dot-over {
+    -fx-fill: -app-no;
 }
 
 /* The figures stand a little away from the words above them, so they read as a row of their own. */
