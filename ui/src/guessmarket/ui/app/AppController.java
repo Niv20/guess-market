@@ -94,15 +94,16 @@ public class AppController implements SettingsActions {
     }
 
     /**
-     * Slides a screen in from the side when its tab is chosen, in whichever direction the person
-     * moved along the tabs: going from Events to Users the screen travels rightwards, and coming
-     * back from Users to Events it travels leftwards.
+     * Fades a screen in when its tab is chosen, leaning it in from whichever side the person came
+     * from: going from Events to Users the screen settles rightwards, and coming back from Users
+     * to Events it settles leftwards.
      *
      * <p>The tabs are the one place in the window where two things sit beside each other in a
-     * fixed order, so they are the one place where a movement can say something a fade cannot —
-     * not only that the screen has changed, but which of the two the person is now on and which
-     * way they went to get there. The screens themselves are told nothing about this; they are
-     * moved from here as whole panels, exactly as the tab pane hands them over.
+     * fixed order, so they are the one place where a direction can say something a fade cannot —
+     * not only that the screen has changed, but which way the person went to get here. It is a
+     * lean and not a journey: the direction is a remark made in passing, and the fade is still
+     * what brings the screen in. The screens themselves are told nothing about any of this; they
+     * are moved from here as whole panels, exactly as the tab pane hands them over.
      */
     private void animateTabSwitches() {
         tabPane.getSelectionModel().selectedItemProperty()

@@ -3,6 +3,7 @@ package guessmarket.ui.common;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
+import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.SequentialTransition;
@@ -31,9 +32,9 @@ import java.util.Set;
  * of arrival it was. A panel that appears where nothing was fades in, {@link #switchIn}: it is
  * already where it belongs, so it has no reason to travel there, and a movement that only changes
  * the strength of what is on the screen stays out of the way of somebody reading it. A screen that
- * takes the place of another one slides in from the side, {@link #slideIn}, in the direction the
- * person moved along the tabs, because there the two screens sit beside each other and the
- * movement is what says which way they went.
+ * takes the place of another one fades in as well, {@link #slideIn}, but leaning a little way in
+ * from the side the person came from, because there the two screens sit beside each other in a
+ * fixed order and the lean is what says which way they went.
  *
  * <p>Neither of them is repeated for a panel that is merely being refilled. Choosing a second
  * event after a first one is not an arrival — the panel is already on the screen and only its
@@ -46,12 +47,24 @@ public final class Animations {
     public static final Duration LONGEST = Duration.seconds(2);
 
     private static final Duration SWITCH = Duration.millis(320);
-    private static final Duration SLIDE = Duration.millis(320);
+    private static final Duration SLIDE = Duration.millis(360);
     private static final Duration FLASH_HALF = Duration.millis(180);
     private static final Duration FADE_OUT = Duration.millis(420);
 
     /** How faint a panel begins before it comes up to full strength. */
     private static final double SWITCH_FROM_OPACITY = 0;
+
+    /**
+     * How far a screen leans out of its place before it settles into it, in pixels.
+     *
+     * <p>Small on purpose, and fixed rather than measured from the width of the window: this is a
+     * hint about which way the person went and not a journey across the screen, and it should read
+     * the same in a small window as in a large one.
+     */
+    private static final double SLIDE_LEAN = 56;
+
+    /** How faint a screen begins before it leans into place. Not nothing, so it is never a blink. */
+    private static final double SLIDE_FROM_OPACITY = 0.15;
 
     /**
      * Whether the animations are on when the program starts. They are not: an interface that has
@@ -68,7 +81,7 @@ public final class Animations {
     private static final Set<Node> SWITCHING_IN = new HashSet<>();
 
     /** The screens that are sliding in at this moment, so that one can be called off part way. */
-    private static final Map<Node, TranslateTransition> SLIDING = new HashMap<>();
+    private static final Map<Node, Animation> SLIDING = new HashMap<>();
 
     private Animations() {
     }
@@ -115,70 +128,72 @@ public final class Animations {
     }
 
     /**
-     * Brings a whole screen in from one side, for a screen that has just taken the place of
-     * another one.
+     * Brings a screen in from a little way off to one side, fading it up as it comes, for a screen
+     * that has just taken the place of another one.
      *
-     * <p>This is what the tabs use, and the screen travels the way the person moved along them:
-     * going to the tab on the right, the screen behind it comes in from the left edge and travels
-     * rightwards, and going back to the tab on the left it comes in from the right edge and
-     * travels leftwards. The movement is the whole animation. Which way the person went is the one
-     * thing it has to say, and a fade on top of it would only make the screen harder to read while
-     * it arrives.
+     * <p>This is what the tabs use. The screen leans the way the person moved along them: going to
+     * the tab on the right it starts a little to the left and settles rightwards, and going back
+     * to the tab on the left it starts a little to the right and settles leftwards.
+     *
+     * <p>It only ever moves {@link #SLIDE_LEAN}, which is a small step and nowhere near the width
+     * of the screen. A whole screen thrown across the window is a journey, and there is nothing to
+     * be learned from watching it that the first moment of it has not already said; a short lean
+     * says the same thing and then gets out of the way. The fade is what actually carries the
+     * screen in, and the movement only points, which is why the two run together and end together
+     * rather than the panel arriving and then filling in.
      *
      * <p>The screen that is leaving is not animated. A tab pane takes it off the screen the moment
      * the choice is made and there is no honest way to hold it there afterwards, so the arrival is
      * animated alone rather than reaching around the control to fake a departure.
      *
-     * @param travel the direction the screen moves in as it comes to rest, so {@code RIGHT} enters
-     *               from the left edge and {@code LEFT} from the right edge.
+     * @param travel the direction the screen leans in as it comes to rest, so {@code RIGHT} starts
+     *               a little to the left and {@code LEFT} a little to the right.
      */
     public static void slideIn(Node node, HorizontalDirection travel) {
         if (node == null || !isEnabled()) {
             return;
         }
-        double distance = distanceOffScreen(node);
-        if (distance <= 0) {
-            return;
-        }
-
         // A screen the person is clicking through quickly is still on its way in when it is asked
         // to leave, and the movement it was making has to be called off before another one starts
         // on the same node, or the two fight over where it sits and it lands anywhere but home.
         stopSliding(node);
 
-        TranslateTransition slide = new TranslateTransition(SLIDE, node);
-        slide.setFromX(travel == HorizontalDirection.RIGHT ? -distance : distance);
-        slide.setToX(0);
-        slide.setInterpolator(Interpolator.EASE_OUT);
+        // Eased at both ends rather than only at the finish: the screen is meant to gather itself
+        // and settle again, and a movement that starts at full speed reads as a jump however
+        // gently it lands.
+        TranslateTransition lean = new TranslateTransition(SLIDE, node);
+        lean.setFromX(travel == HorizontalDirection.RIGHT ? -SLIDE_LEAN : SLIDE_LEAN);
+        lean.setToX(0);
+        lean.setInterpolator(Interpolator.EASE_BOTH);
 
-        SLIDING.put(node, slide);
-        slide.setOnFinished(event -> {
+        FadeTransition fade = new FadeTransition(SLIDE, node);
+        fade.setFromValue(SLIDE_FROM_OPACITY);
+        fade.setToValue(1);
+        fade.setInterpolator(Interpolator.EASE_BOTH);
+
+        ParallelTransition arrival = new ParallelTransition(node, lean, fade);
+
+        SLIDING.put(node, arrival);
+        arrival.setOnFinished(event -> {
             SLIDING.remove(node);
-            node.setTranslateX(0);
+            settle(node);
         });
-        slide.playFromStart();
+        arrival.playFromStart();
     }
 
     /** Calls off a slide this node is in the middle of and puts it back where it belongs. */
     private static void stopSliding(Node node) {
-        TranslateTransition running = SLIDING.remove(node);
+        Animation running = SLIDING.remove(node);
         if (running != null) {
             running.stop();
-            node.setTranslateX(0);
+            settle(node);
         }
     }
 
-    /**
-     * @return how far a screen has to be moved to be completely outside the place it occupies,
-     *         which is its own width, or the width of the window when it has not been laid out
-     *         yet because this is the first time its tab has been chosen.
-     */
-    private static double distanceOffScreen(Node node) {
-        double width = node.getLayoutBounds().getWidth();
-        if (width > 0) {
-            return width;
-        }
-        return node.getScene() == null ? 0 : node.getScene().getWidth();
+    /** Puts a screen back exactly where it belongs, at full strength, however it got there. */
+    private static void settle(Node node) {
+        node.setTranslateX(0);
+        node.setOpacity(1);
     }
 
     /** @return whether an ancestor of this node is fading in and taking the node with it. */
