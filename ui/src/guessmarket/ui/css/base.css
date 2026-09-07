@@ -765,12 +765,12 @@
  *
  * It is the same list in every other way — the same cards, dressed and picked out the same — so
  * only what changes with the direction is set here. The gap between one card and the next moves
- * from under it to beside it, and a card is held clear of the bottom of the strip, because a card
- * is given the whole height of the strip and the bar that says the row carries on to the right is
- * drawn across the foot of it.
+ * from under it to beside it, and the card is held clear of both edges of the strip: a card is
+ * given the whole height of the strip, and left at that it loses its top border over the top edge
+ * and its foot under the bar that says the row carries on to the right.
  */
 .tile-strip .list-cell {
-    -fx-padding: 0 10 16 0;
+    -fx-padding: 4 10 8 0;
 }
 
 /*
