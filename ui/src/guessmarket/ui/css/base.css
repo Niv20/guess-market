@@ -1106,6 +1106,18 @@
 }
 
 /*
+ * The cog in the header is quieter still. It sits on the title line rather than inside a panel
+ * of controls, and drawn at the weight of the words beside it - all but white on a dark skin,
+ * all but black on a light one - it reads as the first thing on the screen to be pressed, which
+ * it is not: it is there for the once in a session it is wanted. So it is drawn in the faintest
+ * grey the skin offers, which is a grey on every one of them, and finds its colour only when it
+ * is pointed at.
+ */
+.button.icon-button-quiet .app-icon {
+    -fx-stroke: -app-text-faint;
+}
+
+/*
  * The tinted square a drawing sits in at the head of a row of settings. It is the one place a
  * drawing is given the accent without being pointed at, because there it is not a control: it
  * is what the eye finds the row by when it is looking for the right one.
