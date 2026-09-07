@@ -64,12 +64,37 @@ public final class Formats {
         return percent + "%";
     }
 
+    /**
+     * @return how many there are of something, with the noun made plural to match, for example
+     *         {@code 1 event} or {@code 3 events}
+     */
+    public static String count(int howMany, String noun) {
+        return howMany + " " + noun + (howMany == 1 ? "" : "s");
+    }
+
     /** @return an amount of money with an explicit sign, for a profit or a loss. */
     public static String signedMoney(double amount) {
         if (isZero(amount)) {
             return "$" + MONEY.format(0);
         }
         return (isNegative(amount) ? "-$" : "+$") + MONEY.format(Math.abs(amount));
+    }
+
+    /**
+     * Says how a profit or a loss should be coloured.
+     *
+     * <p>It lives here rather than with the screens because the question it answers is the same
+     * one {@link #signedMoney} answers: an amount too small to appear in two decimal places has
+     * not happened as far as anybody looking at the screen is concerned, and a figure reading
+     * {@code $0.00} in the green of a profit claims something that is not so.
+     *
+     * @return the style class to put beside {@code value}
+     */
+    public static String resultStyle(double amount) {
+        if (isZero(amount)) {
+            return "value-neutral";
+        }
+        return isNegative(amount) ? "value-negative" : "value-positive";
     }
 
     /** Money is compared against half a cent, because anything smaller cannot be shown anyway. */

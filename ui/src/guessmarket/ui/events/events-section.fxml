@@ -2,9 +2,9 @@
 
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
@@ -16,6 +16,10 @@
     On the left, every event in the system with a row of filter dropdowns above it; on the right,
     whichever one is selected, shown by the event details component. The divider can be dragged, and
     the details side scrolls, so the screen stays usable when the window is made small.
+
+    The list on the left is a column of tiles rather than a table, so that it keeps its whole
+    contents however narrow it is dragged: a table of seven columns has a width below which it can
+    only start hiding things, and this list has none.
 -->
 <SplitPane fx:id="rootPane" dividerPositions="0.44"
            xmlns="http://javafx.com/javafx"
@@ -24,7 +28,7 @@
 
     <items>
 
-        <VBox spacing="10" minWidth="260">
+        <VBox spacing="10" minWidth="220">
             <padding>
                 <javafx.geometry.Insets top="14" right="10" bottom="14" left="14"/>
             </padding>
@@ -44,7 +48,8 @@
                 </HBox>
             </FlowPane>
 
-            <TableView fx:id="eventsTable" VBox.vgrow="ALWAYS" minHeight="150"/>
+            <ListView fx:id="eventsList" styleClass="tile-list"
+                      VBox.vgrow="ALWAYS" minHeight="150"/>
             <Label fx:id="countLabel" styleClass="faint"/>
         </VBox>
 

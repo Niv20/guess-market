@@ -8,15 +8,14 @@ import guessmarket.ui.app.AppContext;
 import guessmarket.ui.app.AppSection;
 import guessmarket.ui.common.Filters;
 import guessmarket.ui.common.Filters.Choice;
-import guessmarket.ui.common.Formats;
-import guessmarket.ui.common.Tables;
+import guessmarket.ui.common.Tiles;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TableView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +31,12 @@ import java.util.List;
  * <p>Each of the three filters is a dropdown whose first line is "All", so exactly one thing is
  * chosen in each of them at any moment, the filters cannot contradict each other, and the row of
  * filters stays the same size however many values a filter has to offer.
+ *
+ * <p>The events themselves are a column of tiles rather than a table. This half of the screen is
+ * the narrow one and it is meant to be dragged narrower still, and a table would answer that by
+ * hiding whichever columns no longer fit, which are the columns furthest to the right rather than
+ * the ones that matter least. A tile decides that question once, by how it is laid out, and then
+ * gives the same answer at every width.
  */
 public class EventsSectionController implements AppSection {
 
@@ -39,7 +44,7 @@ public class EventsSectionController implements AppSection {
     @FXML private ComboBox<Choice<EventStatus>> statusChooser;
     @FXML private ComboBox<Choice<CommissionType>> commissionChooser;
 
-    @FXML private TableView<EventDto> eventsTable;
+    @FXML private ListView<EventDto> eventsList;
     @FXML private Label countLabel;
     @FXML private Label placeholderLabel;
     @FXML private ScrollPane detailsScroll;
@@ -52,11 +57,11 @@ public class EventsSectionController implements AppSection {
 
     @FXML
     private void initialize() {
-        buildEventsTable();
+        Tiles.render(eventsList, EventTile::of);
         buildFilters();
-        eventsTable.getSelectionModel().selectedItemProperty()
+        eventsList.getSelectionModel().selectedItemProperty()
                 .addListener((observable, previous, selected) -> showDetailsOf(selected));
-        Tables.emptyMessage(eventsTable, "No event matches the filters that are chosen.");
+        Tiles.emptyMessage(eventsList, "No event matches the filters that are chosen.");
     }
 
     @Override
@@ -76,30 +81,13 @@ public class EventsSectionController implements AppSection {
     @Override
     public void clear() {
         loadedEvents.clear();
-        eventsTable.getItems().clear();
+        eventsList.getItems().clear();
         countLabel.setText("");
         eventDetailsController.clear();
         showPlaceholder("Load a system details file to see the events.");
     }
 
     // ------------------------------------------------------------------ the list and its filters
-
-    private void buildEventsTable() {
-        Tables.columns(eventsTable,
-                Tables.number("ID", 44, event -> String.valueOf(event.id())),
-                Tables.text("NAME", 190, EventDto::name),
-                Tables.text("STATUS", 95, event -> event.status().getDisplayName()),
-                Tables.text("TYPE", 100, event -> event.tradingMethod().getDisplayName()),
-                Tables.text("COMMISSION", 125, EventsSectionController::describeCommission),
-                Tables.number("ACCOUNT", 100, event -> Formats.money(event.accountBalance())),
-                Tables.text("MARKET MAKER", 120, EventDto::marketMakerName));
-    }
-
-    /** @return the commission of an event as one phrase: how much, and when it is taken. */
-    private static String describeCommission(EventDto event) {
-        return Formats.percent(event.commissionPercent()) + " "
-                + event.commissionType().getDisplayName().toLowerCase();
-    }
 
     /**
      * Offers every value of each of the three things an event can be filtered by, with an "All"
@@ -119,7 +107,7 @@ public class EventsSectionController implements AppSection {
                 shown.add(event);
             }
         }
-        eventsTable.setItems(shown);
+        eventsList.setItems(shown);
         countLabel.setText(describeCount(shown.size(), loadedEvents.size()));
         if (loadedEvents.isEmpty()) {
             showPlaceholder("Load a system details file to see the events.");
@@ -169,26 +157,26 @@ public class EventsSectionController implements AppSection {
 
     /** @return the id of the selected event, or -1 when nothing is selected. */
     private int selectedEventId() {
-        EventDto selected = eventsTable.getSelectionModel().getSelectedItem();
+        EventDto selected = eventsList.getSelectionModel().getSelectedItem();
         return selected == null ? -1 : selected.id();
     }
 
     /**
-     * Puts the selection back on the event it was on, now that the rows are new objects. Without
+     * Puts the selection back on the event it was on, now that the tiles are new objects. Without
      * this, every refresh would throw the person out of whatever they were looking at.
      */
     private void reselect(int eventId) {
         if (eventId < 0) {
             return;
         }
-        for (EventDto event : eventsTable.getItems()) {
+        for (EventDto event : eventsList.getItems()) {
             if (event.id() == eventId) {
-                eventsTable.getSelectionModel().select(event);
+                eventsList.getSelectionModel().select(event);
                 showDetailsOf(event);
                 return;
             }
         }
-        eventsTable.getSelectionModel().clearSelection();
+        eventsList.getSelectionModel().clearSelection();
         showDetailsOf(null);
     }
 }
