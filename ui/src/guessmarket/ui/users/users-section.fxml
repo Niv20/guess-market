@@ -53,16 +53,18 @@
             </HBox>
         </VBox>
 
-        <ScrollPane fx:id="detailsScroll" fitToWidth="true" minWidth="360">
+        <ScrollPane fx:id="detailsScroll" fitToWidth="true" fitToHeight="true" minWidth="360">
             <StackPane>
                 <padding>
                     <javafx.geometry.Insets top="14" right="14" bottom="14" left="10"/>
                 </padding>
 
                 <Label fx:id="placeholderLabel" styleClass="placeholder-text" wrapText="true"
+                       StackPane.alignment="CENTER_LEFT"
                        text="Load a system details file to see the users."/>
 
-                <VBox fx:id="detailsBox" spacing="12" managed="false" visible="false">
+                <VBox fx:id="detailsBox" spacing="12" managed="false" visible="false"
+                      StackPane.alignment="TOP_LEFT">
 
                     <!--
                         Who this user is, and the money that decides what they may do next.
