@@ -33,8 +33,8 @@ import java.util.Set;
  * already where it belongs, so it has no reason to travel there, and a movement that only changes
  * the strength of what is on the screen stays out of the way of somebody reading it. A screen that
  * takes the place of another one fades in as well, {@link #slideIn}, but leaning a little way in
- * from the side the person came from, because there the two screens sit beside each other in a
- * fixed order and the lean is what says which way they went.
+ * from the side its own tab is on, because there the two screens sit beside each other in a fixed
+ * order and the lean is what says which way the person went.
  *
  * <p>Neither of them is repeated for a panel that is merely being refilled. Choosing a second
  * event after a first one is not an arrival — the panel is already on the screen and only its
@@ -131,9 +131,10 @@ public final class Animations {
      * Brings a screen in from a little way off to one side, fading it up as it comes, for a screen
      * that has just taken the place of another one.
      *
-     * <p>This is what the tabs use. The screen leans the way the person moved along them: going to
-     * the tab on the right it starts a little to the left and settles rightwards, and going back
-     * to the tab on the left it starts a little to the right and settles leftwards.
+     * <p>This is what the tabs use. The screens behave as if they were a strip laid out in the
+     * order of their tabs and dragged along under the window, so going to the tab on the right
+     * brings its screen in from the right edge, settling leftwards, and going back to the tab on
+     * the left brings the other one in from the left edge, settling rightwards.
      *
      * <p>It only ever moves {@link #SLIDE_LEAN}, which is a small step and nowhere near the width
      * of the screen. A whole screen thrown across the window is a journey, and there is nothing to

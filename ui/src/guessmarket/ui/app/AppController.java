@@ -94,16 +94,20 @@ public class AppController implements SettingsActions {
     }
 
     /**
-     * Fades a screen in when its tab is chosen, leaning it in from whichever side the person came
-     * from: going from Events to Users the screen settles rightwards, and coming back from Users
-     * to Events it settles leftwards.
+     * Fades a screen in when its tab is chosen, leaning it in from the side its own tab is on:
+     * going from Events to Users the screen comes from the right and settles leftwards, and coming
+     * back from Users to Events it comes from the left and settles rightwards.
      *
      * <p>The tabs are the one place in the window where two things sit beside each other in a
      * fixed order, so they are the one place where a direction can say something a fade cannot —
-     * not only that the screen has changed, but which way the person went to get here. It is a
-     * lean and not a journey: the direction is a remark made in passing, and the fade is still
-     * what brings the screen in. The screens themselves are told nothing about any of this; they
-     * are moved from here as whole panels, exactly as the tab pane hands them over.
+     * not only that the screen has changed, but which way the person went to get here. The two
+     * screens are treated as a strip laid out in the order of their tabs, which is why the screen
+     * arrives from the side its tab sits on rather than from the side the person came from: the
+     * strip is dragged along under the window, so moving rightwards along the tabs brings the next
+     * screen in from the right. It is a lean and not a journey — the direction is a remark made in
+     * passing, and the fade is still what brings the screen in. The screens themselves are told
+     * nothing about any of this; they are moved from here as whole panels, exactly as the tab pane
+     * hands them over.
      */
     private void animateTabSwitches() {
         tabPane.getSelectionModel().selectedItemProperty()
@@ -115,15 +119,17 @@ public class AppController implements SettingsActions {
     }
 
     /**
-     * @return the direction the arriving screen moves in, which is the direction the chosen tab
-     *         lies in from the one that was open. The first screen of all is not animated: nothing
-     *         was on the screen before it, so it came from nowhere rather than from a side.
+     * @return the direction the arriving screen moves in, which is the opposite of the direction
+     *         the chosen tab lies in from the one that was open, because a screen that lies to the
+     *         right has to travel leftwards to reach the window. The first screen of all is not
+     *         animated: nothing was on the screen before it, so it came from nowhere rather than
+     *         from a side.
      */
     private HorizontalDirection travelBetween(Tab previous, Tab chosen) {
         List<Tab> tabs = tabPane.getTabs();
         return tabs.indexOf(chosen) > tabs.indexOf(previous)
-                ? HorizontalDirection.RIGHT
-                : HorizontalDirection.LEFT;
+                ? HorizontalDirection.LEFT
+                : HorizontalDirection.RIGHT;
     }
 
     /**
