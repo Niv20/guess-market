@@ -8,16 +8,18 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <!--
     The whole window.
 
-    The top of it never changes: the cog that opens the settings, the name of the program, the
-    button that loads a file, the path of the file that is currently loaded, and the bar that fills
-    up while one is being read. The rest of the window is the two screens, each of which is a
-    component of its own with its own layout file and its own controller.
+    The top of it never changes: the name of the program, the cog that opens the settings at the
+    far end of that same line, the button that loads a file, the path of the file that is currently
+    loaded, and the bar that fills up while one is being read. The rest of the window is the two
+    screens, each of which is a component of its own with its own layout file and its own
+    controller.
 
     Nothing in the header is a preference. The colours the window is wearing, the size of its
     writing, whether it moves when something happens and what to do with the system as a whole are
@@ -39,11 +41,12 @@
             <VBox styleClass="header-bar" spacing="10">
 
                 <HBox alignment="CENTER_LEFT" spacing="12">
-                    <Button fx:id="settingsButton" styleClass="icon-button"
-                            onAction="#onOpenSettings"/>
                     <Label text="Guess Market" styleClass="app-title"/>
                     <Label fx:id="subtitleLabel" styleClass="faint"
                            text="Prediction market - LMSR and Order Book"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="settingsButton" styleClass="icon-button"
+                            onAction="#onOpenSettings"/>
                 </HBox>
 
                 <HBox alignment="CENTER_LEFT" spacing="10">
