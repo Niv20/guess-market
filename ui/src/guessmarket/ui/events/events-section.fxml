@@ -82,7 +82,7 @@
                     <javafx.geometry.Insets top="14" right="14" bottom="14" left="10"/>
                 </padding>
                 <Label fx:id="placeholderLabel" styleClass="placeholder-text" wrapText="true"
-                       StackPane.alignment="CENTER_LEFT"
+                       StackPane.alignment="CENTER" textAlignment="CENTER"
                        text="Load a system details file to see the events."/>
                 <fx:include fx:id="eventDetails" source="event-details.fxml"
                             StackPane.alignment="TOP_LEFT"/>
