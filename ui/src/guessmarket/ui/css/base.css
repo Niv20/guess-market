@@ -600,6 +600,23 @@
 
 /* ------------------------------------------------------------------ dialogs */
 
+/* The warning sign, wherever it appears: in a dialog header or beside the progress row. */
+.warning-icon {
+    -fx-fill: -app-warn;
+}
+
+/* The header an error dialog builds for itself, in place of the ready made one. */
+.dialog-header {
+    -fx-background-color: -app-surface-2;
+    -fx-padding: 14 18 14 18;
+}
+
+.dialog-header .label {
+    -fx-text-fill: -app-text;
+    -fx-font-size: 1.1em;
+    -fx-font-weight: bold;
+}
+
 .dialog-pane {
     -fx-background-color: -app-surface;
 }

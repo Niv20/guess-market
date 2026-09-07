@@ -1,9 +1,12 @@
 package guessmarket.ui.common;
 
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.stage.Window;
 
 import java.util.List;
@@ -21,6 +24,9 @@ public final class Dialogs {
 
     /** Wide enough that a full explanation is not squeezed into a column of two words. */
     private static final double MESSAGE_WIDTH = 460;
+
+    /** The gap between the warning sign of an error dialog and the headline beside it. */
+    private static final double HEADER_SPACING = 10;
 
     private Dialogs() {
     }
@@ -71,10 +77,15 @@ public final class Dialogs {
                                String title, String headline, String message) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
-        alert.setHeaderText(headline);
         alert.initOwner(owner);
 
         DialogPane pane = alert.getDialogPane();
+        if (type == Alert.AlertType.ERROR) {
+            pane.setHeader(errorHeader(headline));
+        } else {
+            alert.setHeaderText(headline);
+        }
+
         // A label of our own rather than the built in content text: it wraps at a sensible width
         // and does not stretch the dialog across the whole screen for a long explanation.
         Label content = new Label(message);
@@ -83,6 +94,23 @@ public final class Dialogs {
         pane.setContent(content);
         applySkinOf(owner, pane);
         return alert;
+    }
+
+    /**
+     * The header of an error dialog, built by hand.
+     *
+     * <p>The ready made one hangs a large crossed circle in the top right corner, where every
+     * other window on the screen keeps its close button, so that is what it looks like. This one
+     * leaves that corner empty and marks the message instead: a small warning sign, and the
+     * headline immediately after it.
+     */
+    private static Node errorHeader(String headline) {
+        Label text = new Label(headline);
+        text.setWrapText(true);
+        HBox header = new HBox(HEADER_SPACING, Icons.warningTriangle(), text);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.getStyleClass().add("dialog-header");
+        return header;
     }
 
     /** Copies the stylesheets of the main window onto a dialog, which has a scene of its own. */
