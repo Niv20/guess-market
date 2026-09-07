@@ -6,6 +6,7 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -16,10 +17,17 @@
     The whole window.
 
     The top of it never changes: the name of the program, the cog that opens the settings at the
-    far end of that same line, the button that loads a file, the path of the file that is currently
-    loaded, and the bar that fills up while one is being read. The rest of the window is the two
-    screens, each of which is a component of its own with its own layout file and its own
-    controller.
+    far end of that same line, the button that loads a file, and the path of the file that is
+    currently loaded. The rest of the window is the two screens, each of which is a component of
+    its own with its own layout file and its own controller.
+
+    A load is reported in the two places it is about rather than in a row of its own. The bar that
+    fills up is laid along the top edge of the path field, because the field is the file, and a
+    file being read is that field filling rather than a separate thing happening below it; how far
+    it has got and what it is doing are said quietly at the end of the title line, where the empty
+    space between the name of the program and the cog is already there to be used. Neither of them
+    is a row, so the header is exactly as tall while a file is being read as it is before and after,
+    and nothing under it moves to make room for a bar that is about to leave again.
 
     Nothing in the header is a preference. The colours the window is wearing, the size of its
     writing, whether it moves when something happens and what to do with the system as a whole are
@@ -45,22 +53,43 @@
                     <Label fx:id="subtitleLabel" styleClass="faint"
                            text="Prediction market - LMSR and Order Book"/>
                     <Region HBox.hgrow="ALWAYS"/>
+
+                    <!--
+                        What the load has to say, at the quiet end of the line. It is kept at its
+                        own width so that a narrow window shortens the subtitle, which is a remark,
+                        rather than the percentage, which is an answer.
+                    -->
+                    <HBox fx:id="progressRow" alignment="CENTER_LEFT" spacing="8"
+                          minWidth="-Infinity" managed="false" visible="false">
+                        <Label fx:id="loadProgressPercent" styleClass="value"/>
+                        <Label fx:id="loadMessageLabel" styleClass="muted"/>
+                    </HBox>
+
                     <Button fx:id="settingsButton" styleClass="icon-button"
                             onAction="#onOpenSettings"/>
                 </HBox>
 
+                <!--
+                    The file, and the bar that fills along the top of it. The bar is a rule laid
+                    over the field rather than a control standing beside it, so it is held clear of
+                    the rounded corners, takes no room of its own and lets every click through to
+                    the field underneath. The controller shows, hides and fades it with the two
+                    labels above, which is why it says nothing here about being seen.
+                -->
                 <HBox alignment="CENTER_LEFT" spacing="10">
                     <Button fx:id="loadFileButton" text="Load File"
                             styleClass="button-primary" onAction="#onLoadFile"/>
-                    <TextField fx:id="loadedFilePath" editable="false" focusTraversable="false"
-                               promptText="No file has been loaded yet" HBox.hgrow="ALWAYS"/>
-                </HBox>
-
-                <HBox fx:id="progressRow" alignment="CENTER_LEFT" spacing="10" managed="false"
-                      visible="false">
-                    <ProgressBar fx:id="loadProgressBar" prefWidth="260" progress="0"/>
-                    <Label fx:id="loadProgressPercent" styleClass="value"/>
-                    <Label fx:id="loadMessageLabel" styleClass="muted"/>
+                    <StackPane HBox.hgrow="ALWAYS">
+                        <TextField fx:id="loadedFilePath" editable="false" focusTraversable="false"
+                                   promptText="No file has been loaded yet"/>
+                        <ProgressBar fx:id="loadProgressBar" styleClass="load-progress" progress="0"
+                                     minHeight="3" prefHeight="3" maxHeight="3" maxWidth="Infinity"
+                                     mouseTransparent="true" StackPane.alignment="TOP_CENTER">
+                            <StackPane.margin>
+                                <Insets top="1" right="9" left="9"/>
+                            </StackPane.margin>
+                        </ProgressBar>
+                    </StackPane>
                 </HBox>
 
             </VBox>
