@@ -1,31 +1,33 @@
 /*
  * Daylight - a light skin.
  *
- * The window turns to paper, the panels are white cards that sit on it, and the text is a
- * serif set a little larger, which is what makes this skin read differently rather than simply
- * look inverted. The buttons become rounded and lift off the page with a soft shadow.
+ * The light half of the Claude palette. The window is warm bone rather than white, the panels
+ * are white cards laid on it, and the text is a serif set a little larger, which is what makes
+ * this skin read differently rather than simply look inverted. The accent is the same terracotta
+ * orange as Midnight, darkened by a step so that it still carries on paper, and the buttons are
+ * rounded and lift off the page with a soft shadow.
  */
 
 .root {
-    -app-bg: #eef0f5;
+    -app-bg: #f0eee6;
     -app-surface: #ffffff;
-    -app-surface-2: #f4f5f9;
-    -app-surface-3: #e6e9f1;
+    -app-surface-2: #faf9f5;
+    -app-surface-3: #ece9df;
 
-    -app-border: #ccd2e0;
-    -app-border-soft: #e1e5ef;
+    -app-border: #dbd8cb;
+    -app-border-soft: #e9e6db;
 
-    -app-text: #171c2b;
-    -app-text-dim: #57607a;
-    -app-text-faint: #8892a8;
+    -app-text: #191917;
+    -app-text-dim: #56554e;
+    -app-text-faint: #73726a;
 
-    -app-accent: #2f5bd0;
-    -app-accent-soft: #dfe7fb;
+    -app-accent: #c96442;
+    -app-accent-soft: #f5e4db;
     -app-accent-contrast: #ffffff;
 
-    -app-yes: #10794f;
-    -app-no: #bf372e;
-    -app-warn: #8f6508;
+    -app-yes: #137a54;
+    -app-no: #b4352e;
+    -app-warn: #96690f;
 
     -fx-font-family: "Georgia";
     -fx-font-size: 14.5px;
@@ -36,22 +38,22 @@
     -fx-background-color: #ffffff;
     -fx-background-radius: 20;
     -fx-border-radius: 20;
-    -fx-border-color: #ccd2e0;
-    -fx-effect: dropshadow(gaussian, rgba(23, 28, 43, 0.12), 6, 0, 0, 1);
+    -fx-border-color: #dbd8cb;
+    -fx-effect: dropshadow(gaussian, rgba(60, 52, 42, 0.12), 6, 0, 0, 1);
 }
 
 .button:hover {
-    -fx-background-color: #f4f5f9;
+    -fx-background-color: #faf9f5;
     -fx-border-color: -app-accent;
 }
 
 .button-primary {
     -fx-background-color: -app-accent;
-    -fx-effect: dropshadow(gaussian, rgba(47, 91, 208, 0.3), 8, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(201, 100, 66, 0.28), 8, 0, 0, 2);
 }
 
 .button-primary:hover {
-    -fx-background-color: derive(-app-accent, 15%);
+    -fx-background-color: derive(-app-accent, 12%);
 }
 
 .toggle-button {
@@ -60,9 +62,9 @@
 }
 
 .card {
-    -fx-effect: dropshadow(gaussian, rgba(23, 28, 43, 0.07), 10, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(60, 52, 42, 0.08), 10, 0, 0, 2);
 }
 
 .header-bar {
-    -fx-background-color: #ffffff;
+    -fx-background-color: linear-gradient(to bottom, #ffffff, #faf9f5);
 }
