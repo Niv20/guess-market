@@ -33,13 +33,13 @@ public class OptionBookController {
     @FXML
     private void initialize() {
         Tables.columns(bidsTable,
-                Tables.text("USER", 120, OrderDto::userName),
-                Tables.number("SHARES", 80, order -> Formats.shares(order.remaining())),
-                Tables.styled("PRICE", 80, "bid-cell", order -> Formats.price(order.pricePerShare())));
+                Tables.text("USER", OrderDto::userName),
+                Tables.number("SHARES", order -> Formats.shares(order.remaining())),
+                Tables.styled("PRICE", "bid-cell", order -> Formats.price(order.pricePerShare())));
         Tables.columns(asksTable,
-                Tables.text("USER", 120, OrderDto::userName),
-                Tables.number("SHARES", 80, order -> Formats.shares(order.remaining())),
-                Tables.styled("PRICE", 80, "ask-cell", order -> Formats.price(order.pricePerShare())));
+                Tables.text("USER", OrderDto::userName),
+                Tables.number("SHARES", order -> Formats.shares(order.remaining())),
+                Tables.styled("PRICE", "ask-cell", order -> Formats.price(order.pricePerShare())));
 
         Tables.emptyMessage(bidsTable, "Nobody is offering to buy this option.");
         Tables.emptyMessage(asksTable, "Nobody is offering to sell this option.");

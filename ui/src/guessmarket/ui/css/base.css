@@ -22,9 +22,16 @@
 
 /* ------------------------------------------------------------------ window and typography */
 
+/*
+ * -fx-accent is the colour the toolkit reaches for whenever it marks something itself rather
+ * than being told to: a dragged column heading, selected text, the bar of a progress bar. Left
+ * alone it is the toolkit's own blue, which belongs to nothing in this program, so it is pointed
+ * at the accent of the skin here once instead of being chased down control by control.
+ */
 .root {
     -fx-background-color: -app-bg;
     -fx-text-fill: -app-text;
+    -fx-accent: -app-accent;
     -fx-focus-color: -app-accent;
     -fx-faint-focus-color: transparent;
 }
@@ -518,13 +525,20 @@
     -fx-background-color: -app-surface-2;
 }
 
+/*
+ * Pointing at a row and picking one are both said in grey rather than in the colour of the
+ * program. Nothing follows from picking a row in a table here - every one of them is a list to
+ * read, and none of them is a list to choose from - so a row that has been clicked should say
+ * no more than "this is the one you are looking at", and the accent is spoken for elsewhere by
+ * things that can actually be acted on.
+ */
 .table-view .table-row-cell:hover {
     -fx-background-color: -app-surface-3;
 }
 
 .table-view .table-row-cell:selected {
-    -fx-background-color: -app-accent-soft;
-    -fx-border-color: transparent transparent -app-accent transparent;
+    -fx-background-color: -app-border;
+    -fx-border-color: transparent transparent -app-border-soft transparent;
 }
 
 .table-view .table-row-cell:empty {
@@ -544,6 +558,53 @@
 
 .table-view .placeholder .label {
     -fx-text-fill: -app-text-faint;
+}
+
+/*
+ * A table with nothing in it, which is not shown as a table at all.
+ *
+ * Column names standing over an empty box say nothing that the sentence in the middle of it does
+ * not say better, and if there are more of them than fit they are cut off with no way to reach
+ * the rest, since a table only grows a bar along its bottom edge once it has rows to scroll. So
+ * while a table is empty its headings and its frame are taken away, and what is left on the card
+ * is the sentence saying why it is empty.
+ */
+.table-view:no-rows {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.table-view:no-rows > .column-header-background {
+    visibility: hidden;
+    -fx-pref-height: 0;
+    -fx-min-height: 0;
+    -fx-max-height: 0;
+}
+
+/*
+ * Dragging a column to another place in the table, and dragging its edge to another width.
+ *
+ * Both are drawn by the toolkit in its own blue, which is the one colour in the window that
+ * belongs to nothing in this program. They are given the accent instead, which is what the rest
+ * of the window uses to mark the thing being acted on.
+ */
+.table-view .column-drag-header {
+    -fx-background-color: -app-accent-soft;
+    -fx-border-color: -app-accent;
+    -fx-border-width: 0 0 2 0;
+}
+
+.table-view .column-drag-header .label {
+    -fx-text-fill: -app-text;
+}
+
+.table-view .column-resize-line {
+    -fx-background-color: -app-accent;
+    -fx-padding: 0 1 0 1;
+}
+
+.table-view .column-overlay {
+    -fx-background-color: -app-accent-soft;
 }
 
 .numeric-column {
@@ -726,17 +787,41 @@
     -fx-background-color: transparent;
 }
 
+/*
+ * A scroll bar here is a thumb and nothing else: the arrows at the two ends are taken off, so
+ * what is left says how far down something is and can be dragged, and adds no furniture.
+ *
+ * Taking the arrows off also takes away the only thing that was giving the bar a thickness,
+ * because a scroll bar is measured from the buttons at its ends. So the thickness is stated
+ * here instead. Without it the bar is laid out nought pixels thick, and a table too narrow for
+ * its columns is cut off with nothing on the screen to drag and no sign that there is more.
+ */
 .scroll-bar {
     -fx-background-color: transparent;
+    -fx-padding: 2;
+}
+
+.scroll-bar:horizontal {
+    -fx-pref-height: 11;
+}
+
+.scroll-bar:vertical {
+    -fx-pref-width: 11;
+}
+
+.scroll-bar > .track {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
 }
 
 .scroll-bar > .thumb {
-    -fx-background-color: -app-surface-3;
+    -fx-background-color: -app-border;
     -fx-background-radius: 6;
 }
 
-.scroll-bar > .thumb:hover {
-    -fx-background-color: -app-border;
+.scroll-bar > .thumb:hover,
+.scroll-bar > .thumb:pressed {
+    -fx-background-color: -app-text-faint;
 }
 
 .scroll-bar > .increment-button,
@@ -749,6 +834,22 @@
 .scroll-bar > .decrement-button > .decrement-arrow {
     -fx-shape: " ";
     -fx-padding: 0;
+}
+
+/*
+ * The bar a table grows along its bottom edge when it is narrower than its columns. It is given
+ * a track of its own, unlike the ones over a scroll pane, because it is the only thing telling
+ * anybody that the columns carry on past the right hand edge.
+ */
+.table-view > .virtual-flow > .scroll-bar:horizontal {
+    -fx-background-color: -app-surface-2;
+    -fx-background-radius: 0 0 10 10;
+}
+
+/* The small square where two bars meet, which is otherwise left in the untouched default grey. */
+.corner {
+    -fx-background-color: -app-surface-2;
+    -fx-background-radius: 0 0 10 0;
 }
 
 /* ------------------------------------------------------------------ titled panes and split panes */
