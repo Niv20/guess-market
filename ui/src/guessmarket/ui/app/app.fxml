@@ -22,12 +22,13 @@
     its own with its own layout file and its own controller.
 
     A load is reported in the two places it is about rather than in a row of its own. The bar that
-    fills up is laid along the top edge of the path field, because the field is the file, and a
-    file being read is that field filling rather than a separate thing happening below it; how far
-    it has got and what it is doing are said quietly at the end of the title line, where the empty
-    space between the name of the program and the cog is already there to be used. Neither of them
-    is a row, so the header is exactly as tall while a file is being read as it is before and after,
-    and nothing under it moves to make room for a bar that is about to leave again.
+    fills up is laid along the bottom edge of the path field, underlining the path as it is read,
+    because the field is the file, and a file being read is that field filling rather than a
+    separate thing happening below it; how far it has got and what it is doing are said quietly at
+    the end of the title line, where the empty space between the name of the program and the cog is
+    already there to be used. Neither of them is a row, so the header is exactly as tall while a
+    file is being read as it is before and after, and nothing under it moves to make room for a bar
+    that is about to leave again.
 
     Nothing in the header is a preference. The colours the window is wearing, the size of its
     writing, whether it moves when something happens and what to do with the system as a whole are
@@ -70,7 +71,7 @@
                 </HBox>
 
                 <!--
-                    The file, and the bar that fills along the top of it. The bar is a rule laid
+                    The file, and the bar that fills along the foot of it. The bar is a rule laid
                     over the field rather than a control standing beside it, so it is held clear of
                     the rounded corners, takes no room of its own and lets every click through to
                     the field underneath. The controller shows, hides and fades it with the two
@@ -84,9 +85,9 @@
                                    promptText="No file has been loaded yet"/>
                         <ProgressBar fx:id="loadProgressBar" styleClass="load-progress" progress="0"
                                      minHeight="3" prefHeight="3" maxHeight="3" maxWidth="Infinity"
-                                     mouseTransparent="true" StackPane.alignment="TOP_CENTER">
+                                     mouseTransparent="true" StackPane.alignment="BOTTOM_CENTER">
                             <StackPane.margin>
-                                <Insets top="1" right="9" left="9"/>
+                                <Insets bottom="1" right="9" left="9"/>
                             </StackPane.margin>
                         </ProgressBar>
                     </StackPane>
