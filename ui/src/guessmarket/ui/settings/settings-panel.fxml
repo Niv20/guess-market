@@ -21,7 +21,8 @@
     Every row is built the same way: a drawing to find the row by, its name, a line saying what it
     actually does, and the control that changes it. The drawings are not in this file because they
     are drawn in code rather than loaded from images; each row leaves an empty square with a name
-    on it and the controller fills it in.
+    on it and the controller fills it in. The header carries no drawing of its own: a cog over a
+    sheet that was opened by pressing a cog says nothing that pressing it did not already say.
 -->
 <StackPane fx:id="rootPane" styleClass="settings-scrim" visible="false" managed="false"
            xmlns="http://javafx.com/javafx"
@@ -31,12 +32,8 @@
     <VBox styleClass="settings-sheet" maxWidth="620" maxHeight="-Infinity">
 
         <HBox styleClass="settings-sheet-header" spacing="13" alignment="CENTER_LEFT">
-            <StackPane fx:id="titleIcon" styleClass="icon-badge"/>
-            <VBox spacing="1" HBox.hgrow="ALWAYS">
-                <Label text="Settings" styleClass="screen-title"/>
-                <Label styleClass="settings-note" wrapText="true"
-                       text="How the window looks, and what to do with the system inside it."/>
-            </VBox>
+            <Label text="Settings" styleClass="screen-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
             <Button fx:id="closeSettingsButton" styleClass="icon-button" minWidth="-Infinity"
                     onAction="#onClose"/>
         </HBox>

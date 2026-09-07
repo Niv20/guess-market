@@ -40,7 +40,6 @@ public class SettingsController {
 
     @FXML private StackPane rootPane;
 
-    @FXML private StackPane titleIcon;
     @FXML private StackPane skinIcon;
     @FXML private StackPane animationsIcon;
     @FXML private StackPane saveStateIcon;
@@ -66,7 +65,6 @@ public class SettingsController {
 
     @FXML
     private void initialize() {
-        titleIcon.getChildren().setAll(Icons.gear(Icons.ROW));
         skinIcon.getChildren().setAll(Icons.palette(Icons.ROW));
         animationsIcon.getChildren().setAll(Icons.sparkles(Icons.ROW));
         saveStateIcon.getChildren().setAll(Icons.floppyDisk(Icons.ROW));
