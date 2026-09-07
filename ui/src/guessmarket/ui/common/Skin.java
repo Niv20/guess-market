@@ -4,6 +4,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 
 import java.net.URL;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.DoubleFunction;
 
@@ -16,10 +17,11 @@ import java.util.function.DoubleFunction;
  * buttons and the font of the labels.
  *
  * <p>The font is the one part of a skin that is not entirely in its stylesheet. The family is,
- * but the size is named here, because the person may put a multiplier on top of it from the
- * settings and the two have to be multiplied together somewhere. Stating it once here rather
- * than in the stylesheet as well is what keeps the two from ever disagreeing. See
- * {@link TextSize}.
+ * but the size is named here, because a skin that changes the typeface has to be free to change
+ * the size that typeface is comfortable at, and the whole interface is measured against that one
+ * number. It is written onto the root of the scene rather than into a stylesheet, because the
+ * whole window inherits its font from that one node: nothing else has to be told, since a label
+ * two panels down is already stated in multiples of it.
  *
  * <p>{@link #MIDNIGHT} is the one the program starts in, so the two extra schemes are only ever
  * seen once they are chosen deliberately.
@@ -38,13 +40,13 @@ public enum Skin {
 
     private final String displayName;
     private final String stylesheet;
-    private final double baseTextSize;
+    private final double textSize;
     private final DoubleFunction<Node> icon;
 
-    Skin(String displayName, String stylesheet, double baseTextSize, DoubleFunction<Node> icon) {
+    Skin(String displayName, String stylesheet, double textSize, DoubleFunction<Node> icon) {
         this.displayName = displayName;
         this.stylesheet = stylesheet;
-        this.baseTextSize = baseTextSize;
+        this.textSize = textSize;
         this.icon = icon;
     }
 
@@ -75,13 +77,15 @@ public enum Skin {
     }
 
     /**
-     * States the size of the writing again without touching the stylesheets, for when the person
-     * has moved the slider rather than changed the skin. Reloading two stylesheets for every step
-     * of a slider being dragged is a great deal of work to arrive at the same two stylesheets.
+     * Tells the scene how large its ordinary text is, in points, so that everything measured
+     * against it follows. A style written onto a node beats every stylesheet, which is what keeps
+     * this the one number the interface is laid out against.
      */
-    public void applyTextSizeTo(Scene scene) {
-        Objects.requireNonNull(scene, "scene");
-        TextSize.applyTo(scene, baseTextSize);
+    private void applyTextSizeTo(Scene scene) {
+        if (scene.getRoot() == null) {
+            return;
+        }
+        scene.getRoot().setStyle(String.format(Locale.US, "-fx-font-size: %.2fpx;", textSize));
     }
 
     @Override

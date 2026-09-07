@@ -17,7 +17,7 @@ The full documentation that accompanies the submission — including every assum
 - Shows every event with three filters over it, and every user with what they hold, what they
   have done and what they may do next.
 - Keeps every preference behind one settings sheet, opened by the cog in the top left corner:
-  the skin, the size of the writing, the animations, and saving or reopening the whole system.
+  the skin, the animations, and saving or reopening the whole system.
 
 ## Modules
 
@@ -79,7 +79,7 @@ All four bonuses of this exercise are implemented, and the bonus of exercise 1 s
 
 | Bonus | Where |
 |---|---|
-| Skins — three colour schemes, each with its own background, buttons and label font | the **Skin** row of the settings, default **Midnight**; the size the skin asks for can be scaled from 85% to 140% with the **Text size** slider beneath it |
+| Skins — three colour schemes, each with its own background, buttons and label font | the **Skin** row of the settings, default **Midnight** |
 | Animations — four, none longer than half a second, off by default | the **Animations** switch in the settings |
 | Graphs — option price per transaction, and account balance per action | inside an event's details, and inside a user's details |
 | Creating an event | the **Create an event** button on the events screen |
