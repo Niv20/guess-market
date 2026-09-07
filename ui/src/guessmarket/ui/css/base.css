@@ -788,6 +788,33 @@
     -fx-text-fill: -app-text;
 }
 
+/*
+ * What the thing is, said after its name on the same line: two or three letters in the colour of
+ * whatever they mean, and nothing else around them. A badge has an outline and a fill because it
+ * sits on a row of its own where it has to be found; a tag is already where the eye is, so an
+ * outline round it would only make the name harder to read.
+ */
+.tile-tag {
+    -fx-font-size: 0.82em;
+    -fx-font-weight: bold;
+}
+
+/* The dot before a tag, quiet enough that the name and the tag are read as two things. */
+.tile-tag-dot {
+    -fx-font-size: 0.82em;
+    -fx-text-fill: -app-text-faint;
+}
+
+/* Running an event is worn in the colour of a warning: that user is answerable for it. */
+.tile-tag-mm {
+    -fx-text-fill: -app-warn;
+}
+
+/* Being blocked is worn in the colour of a loss: nothing that user could do can be done again. */
+.tile-tag-blocked {
+    -fx-text-fill: -app-no;
+}
+
 /* What the name means. Read once the name has been found, and never before it. */
 .tile-meta {
     -fx-font-size: 0.88em;

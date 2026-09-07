@@ -4,8 +4,12 @@ import guessmarket.dto.UserDto;
 import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Tiles;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Draws one user as a tile for the list on the users screen.
@@ -18,11 +22,12 @@ import javafx.scene.layout.VBox;
  * name on a narrow tile and out along the right on a wide one, which is a list of people that can
  * be read down the money alone.
  *
- * <p>Only one thing is worn as a badge above the name: being blocked, which ends everything that
- * user could do, and which a blocked tile says again by wearing the whole of itself faded. Running
- * an event is not a badge, although it changes as much: the line under the name already says how
- * many events they run, and a badge worn by some of the people would leave the list two tile
- * heights, which is read as two kinds of user rather than as one list of people.
+ * <p>The two things that change what a user may do — running an event, which makes them
+ * answerable for it, and being blocked, which ends everything — are said after the name in two or
+ * three letters rather than worn as badges above it. A badge only some of the people wear leaves
+ * the list two tile heights, and a list of people whose rows do not line up is read as two kinds
+ * of person; said after the name they cost the tile no height at all. A blocked user's whole tile
+ * is faded as well, because nothing on it can move again.
  */
 public final class UserTile {
 
@@ -34,20 +39,29 @@ public final class UserTile {
         VBox tile = Tiles.tile();
         if (user.blocked()) {
             tile.getStyleClass().add("tile-inactive");
-            tile.getChildren().add(blockedBadge());
         }
         tile.getChildren().add(
-                Tiles.body(Tiles.title(user.name()),
+                Tiles.body(nameRow(user),
                         Tiles.meta(describeEvents(user)),
                         figures(user)));
         return tile;
     }
 
-    /** @return the one badge a user can wear, on the row every other tile keeps for badges. */
-    private static FlowPane blockedBadge() {
-        FlowPane badges = Tiles.badges();
-        badges.getChildren().add(Tiles.badge("BLOCKED", "badge-closed"));
-        return badges;
+    /**
+     * The name, and after it what this person is: {@code MM} for somebody who runs an event of
+     * their own, shortened because it is read beside a name rather than instead of one, and
+     * {@code Blocked} for somebody who can do nothing further. Both, for a market maker who ran
+     * out of money. Neither is the usual case, and the usual case is a name and nothing else.
+     */
+    private static Node nameRow(UserDto user) {
+        List<Label> tags = new ArrayList<>();
+        if (!user.marketMakerEventIds().isEmpty()) {
+            tags.add(Tiles.tag("MM", "tile-tag-mm"));
+        }
+        if (user.blocked()) {
+            tags.add(Tiles.tag("Blocked", "tile-tag-blocked"));
+        }
+        return Tiles.titleRow(Tiles.title(user.name()), tags);
     }
 
     /** @return where in the system this user is to be found, as one line of ordinary English. */
