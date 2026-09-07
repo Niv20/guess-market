@@ -185,31 +185,16 @@
 }
 
 /*
- * The band that holds the figures a panel is about.
+ * Where the figures a panel is about are put.
  *
- * It is one surface rather than one box per figure, because the figures inside it belong
- * together: a balance and what made it, an account and what it has earned. Boxing each of them
- * separately says they are separate things that happen to be side by side, which is exactly the
- * thing a row of identical tiles gets wrong.
+ * It has nothing drawn round it on purpose. A tinted panel with an accent border is what this
+ * program means by "this one is selected", and a figure that is merely important is not selected;
+ * saying it that way makes the whole panel look as though it had been clicked on. So the figures
+ * are told apart from everything else by their size and their colour alone, and are held together
+ * by sitting next to each other with a clear space either side.
  */
 .stat-band {
-    -fx-background-color: -app-accent-soft;
-    -fx-background-radius: 12;
-    -fx-border-color: -app-accent;
-    -fx-border-radius: 12;
-    -fx-border-width: 1;
-    -fx-padding: 14 18 14 18;
-}
-
-/*
- * One field among a group of them: a muted label with its value under it, and no box at all.
- *
- * The minimum width is what lets a flowing row of these line up like a table without being one.
- * Every field starts on the same grid, and a window made narrow drops the last of them onto the
- * next line rather than squeezing all of them.
- */
-.meta-item {
-    -fx-min-width: 152;
+    -fx-padding: 2 0 4 0;
 }
 
 /* The last line of a panel: what is true about it but what nobody opened it to read. */

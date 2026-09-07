@@ -6,6 +6,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
@@ -84,35 +85,55 @@
             </VBox>
         </FlowPane>
 
-        <!-- the terms it was opened on, which were settled once and never change -->
-        <VBox styleClass="card-sunken" spacing="10">
+        <!--
+            The terms it was opened on, which were settled once and never change.
+
+            Equal boxes in one row, because these are the same kind of fact as each other and
+            there is nothing to choose between them: whichever one is being looked for, it is
+            being looked for by name. The row is filled by however many the trading method calls
+            for - four for an order book, three for LMSR - and the controller sizes the columns to
+            match, so the row is always full and never ends in a gap. Each figure is centred under
+            its own name, with whatever qualifies it in small print underneath, which is what lets
+            boxes of different contents still look like one row.
+        -->
+        <VBox spacing="8">
             <Label text="TERMS" styleClass="group-title"/>
-            <FlowPane hgap="20" vgap="14">
-                <VBox styleClass="meta-item" spacing="1">
+            <GridPane fx:id="termsGrid" hgap="10" vgap="10">
+                <VBox fx:id="commissionTile" styleClass="stat-tile" alignment="CENTER" spacing="1"
+                      maxWidth="Infinity">
                     <Label text="COMMISSION" styleClass="field-label"/>
                     <Label fx:id="commissionLabel" styleClass="value"/>
+                    <Label fx:id="commissionWhenLabel" styleClass="caption"/>
                 </VBox>
-                <VBox fx:id="liquidityTile" styleClass="meta-item" spacing="1">
+                <VBox fx:id="liquidityTile" styleClass="stat-tile" alignment="CENTER" spacing="1"
+                      maxWidth="Infinity">
                     <Label text="LIQUIDITY b" styleClass="field-label"/>
                     <Label fx:id="liquidityLabel" styleClass="value"/>
                 </VBox>
-                <VBox fx:id="subsidyTile" styleClass="meta-item" spacing="1">
+                <VBox fx:id="subsidyTile" styleClass="stat-tile" alignment="CENTER" spacing="1"
+                      maxWidth="Infinity">
                     <Label text="SUBSIDY" styleClass="field-label"/>
                     <Label fx:id="subsidyLabel" styleClass="value"/>
+                    <Label fx:id="subsidyPaidLabel" styleClass="caption"/>
                 </VBox>
-                <VBox fx:id="baseValueTile" styleClass="meta-item" spacing="1">
+                <VBox fx:id="baseValueTile" styleClass="stat-tile" alignment="CENTER" spacing="1"
+                      maxWidth="Infinity">
                     <Label text="BASE VALUE d" styleClass="field-label"/>
                     <Label fx:id="baseValueLabel" styleClass="value"/>
+                    <Label text="per pair" styleClass="caption"/>
                 </VBox>
-                <VBox fx:id="investmentTile" styleClass="meta-item" spacing="1">
+                <VBox fx:id="investmentTile" styleClass="stat-tile" alignment="CENTER" spacing="1"
+                      maxWidth="Infinity">
                     <Label text="OPENING INVESTMENT" styleClass="field-label"/>
                     <Label fx:id="investmentLabel" styleClass="value"/>
+                    <Label fx:id="investmentPairsLabel" styleClass="caption"/>
                 </VBox>
-                <VBox fx:id="mintTile" styleClass="meta-item" spacing="1">
+                <VBox fx:id="mintTile" styleClass="stat-tile" alignment="CENTER" spacing="1"
+                      maxWidth="Infinity">
                     <Label text="MINTING" styleClass="field-label"/>
                     <Label fx:id="mintLabel" styleClass="value"/>
                 </VBox>
-            </FlowPane>
+            </GridPane>
         </VBox>
 
     </VBox>

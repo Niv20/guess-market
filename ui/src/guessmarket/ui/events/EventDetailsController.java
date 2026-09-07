@@ -11,6 +11,7 @@ import guessmarket.dto.PricePointDto;
 import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Tables;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -21,8 +22,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +48,12 @@ public class EventDetailsController {
     /** The event id kept while the panel is empty, which no real event can have. */
     private static final int NOTHING_SHOWN = -1;
 
+    /**
+     * The narrowest a term box may be drawn before it is better to stack the row than to squeeze
+     * it, which is about what its longest caption - {@code OPENING INVESTMENT} - needs.
+     */
+    private static final double NARROWEST_TERM = 152;
+
     @FXML private VBox rootPane;
 
     @FXML private Label eventNameLabel;
@@ -54,18 +65,37 @@ public class EventDetailsController {
     @FXML private Label marketMakerLabel;
     @FXML private Label accountBalanceLabel;
     @FXML private Label commissionLabel;
+    @FXML private Label commissionWhenLabel;
     @FXML private Label commissionCollectedLabel;
     @FXML private Label liquidityLabel;
     @FXML private Label subsidyLabel;
+    @FXML private Label subsidyPaidLabel;
     @FXML private Label baseValueLabel;
     @FXML private Label investmentLabel;
+    @FXML private Label investmentPairsLabel;
     @FXML private Label mintLabel;
 
+    @FXML private GridPane termsGrid;
+    @FXML private VBox commissionTile;
     @FXML private VBox liquidityTile;
     @FXML private VBox subsidyTile;
     @FXML private VBox baseValueTile;
     @FXML private VBox investmentTile;
     @FXML private VBox mintTile;
+
+    /** Every term box there is, in the order they are laid out when the method calls for them. */
+    private final List<VBox> termTiles = new ArrayList<>();
+
+    /**
+     * What the term boxes are currently laid out as, so that they are only moved when they would
+     * actually land somewhere else.
+     *
+     * <p>The number of columns is not enough to tell one layout from another: three terms and four
+     * terms both come to two columns once the panel is narrow, and stopping there would leave the
+     * boxes of an LMSR event sitting where an order book's had been.
+     */
+    private int termColumns;
+    private List<VBox> laidOutTerms = List.of();
 
     @FXML private VBox lmsrBox;
     @FXML private TableView<OptionStateDto> optionsTable;
@@ -99,6 +129,13 @@ public class EventDetailsController {
 
     @FXML
     private void initialize() {
+        termTiles.addAll(List.of(commissionTile, liquidityTile, subsidyTile,
+                baseValueTile, investmentTile, mintTile));
+        // The width changes during a layout pass, and moving the boxes there would leave the
+        // panels above and below them already measured for the height the row used to have. So the
+        // move waits for the pass to finish, and the whole card is measured again with it.
+        termsGrid.widthProperty()
+                .addListener((observable, was, now) -> Platform.runLater(this::layOutTerms));
         buildOptionsTable();
         buildHistoryTable();
         Tables.emptyMessage(participantsTable, "Nobody has taken part in this event yet.");
@@ -173,9 +210,12 @@ public class EventDetailsController {
     private void showStatistics(EventDto event, EventTradingStatusDto status) {
         marketMakerLabel.setText(event.marketMakerName());
         accountBalanceLabel.setText(Formats.money(event.accountBalance()));
-        commissionLabel.setText(Formats.percent(event.commissionPercent())
-                + " " + event.commissionType().getDisplayName().toLowerCase());
         commissionCollectedLabel.setText(Formats.money(event.totalCommissionCollected()));
+
+        // Every term reads the same way: the figure itself, and underneath it in small print
+        // whatever qualifies it. That is what lets boxes of quite different contents line up.
+        commissionLabel.setText(Formats.percent(event.commissionPercent()));
+        commissionWhenLabel.setText(event.commissionType().getDisplayName().toLowerCase());
 
         boolean lmsr = event.isLmsr();
         showOnly(liquidityTile, lmsr);
@@ -186,13 +226,62 @@ public class EventDetailsController {
 
         if (lmsr) {
             liquidityLabel.setText(String.valueOf(event.lmsr().liquidityParameter()));
-            subsidyLabel.setText(Formats.money(event.lmsr().subsidy())
-                    + (status.subsidy() > 0 ? " (paid)" : " (not yet paid)"));
+            subsidyLabel.setText(Formats.money(event.lmsr().subsidy()));
+            subsidyPaidLabel.setText(status.subsidy() > 0 ? "paid" : "not yet paid");
         } else {
             baseValueLabel.setText(Formats.money(event.orderBook().baseValue()));
-            investmentLabel.setText(Formats.money(event.orderBook().initialInvestment())
-                    + " = " + Formats.shares(event.orderBook().initialPairs()) + " pairs");
+            investmentLabel.setText(Formats.money(event.orderBook().initialInvestment()));
+            investmentPairsLabel.setText(
+                    Formats.shares(event.orderBook().initialPairs()) + " pairs");
             mintLabel.setText(event.orderBook().mintAllowed() ? "Allowed" : "Not allowed");
+        }
+        layOutTerms();
+    }
+
+    /**
+     * Puts the term boxes into equal columns that fill the width, however many of them the trading
+     * method calls for.
+     *
+     * <p>A fixed number of columns would leave LMSR, which has three terms to an order book's
+     * four, with a hole at the end of its row. So the row is filled by however many there are, and
+     * when the panel is dragged too narrow for that many they fall into two columns instead - with
+     * the odd one out stretched across the pair, so that the block still ends square.
+     */
+    private void layOutTerms() {
+        List<VBox> shown = new ArrayList<>();
+        for (VBox tile : termTiles) {
+            if (tile.isManaged()) {
+                shown.add(tile);
+            }
+        }
+        // Three terms need less room than four, so what counts as too narrow is worked out from
+        // how many there are rather than fixed once for both trading methods.
+        double width = termsGrid.getWidth();
+        double needed = shown.size() * NARROWEST_TERM
+                + (shown.size() - 1) * termsGrid.getHgap();
+        int columns = width > 0 && width < needed ? Math.min(2, shown.size()) : shown.size();
+        if (columns == 0 || (columns == termColumns && shown.equals(laidOutTerms))) {
+            return;
+        }
+        termColumns = columns;
+        laidOutTerms = List.copyOf(shown);
+
+        termsGrid.getColumnConstraints().clear();
+        for (int column = 0; column < columns; column++) {
+            ColumnConstraints sameAsTheRest = new ColumnConstraints();
+            sameAsTheRest.setPercentWidth(100.0 / columns);
+            sameAsTheRest.setHgrow(Priority.ALWAYS);
+            sameAsTheRest.setFillWidth(true);
+            termsGrid.getColumnConstraints().add(sameAsTheRest);
+        }
+        for (int index = 0; index < shown.size(); index++) {
+            VBox tile = shown.get(index);
+            int row = index / columns;
+            int column = index % columns;
+            int leftInThisRow = shown.size() - row * columns;
+            GridPane.setRowIndex(tile, row);
+            GridPane.setColumnIndex(tile, column);
+            GridPane.setColumnSpan(tile, leftInThisRow < columns ? columns - column : 1);
         }
     }
 
