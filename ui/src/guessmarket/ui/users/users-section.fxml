@@ -29,6 +29,11 @@
     because that list is the screen; the events are a strip read across, because everything worth
     choosing an event for is on the screen underneath them.
 
+    The list of people carries no title of its own. The tab above already says which screen this
+    is, and a word repeating it cost the panel a row and gave nothing back; the titles that are
+    left on this screen are inside the panel on the right, where each one names a card and no tab
+    has said it already.
+
     How many people are in the system is said at the foot of the list of them, under a line the
     width of that list. The count is about the users on the left and about nothing else, so the
     rule stops where the list stops rather than carrying on under the panel beside it.
@@ -44,7 +49,6 @@
             <padding>
                 <javafx.geometry.Insets top="14" right="10" bottom="14" left="14"/>
             </padding>
-            <Label text="USERS" styleClass="panel-title"/>
             <ListView fx:id="usersList" styleClass="tile-list"
                       VBox.vgrow="ALWAYS" minHeight="150"/>
 
