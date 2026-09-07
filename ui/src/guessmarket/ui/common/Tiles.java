@@ -6,11 +6,13 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 
 import java.util.List;
 import java.util.function.Function;
@@ -27,7 +29,8 @@ import java.util.function.Function;
  * instead, and every tile built here says it in the same order:
  *
  * <ol>
- *   <li>a row of badges saying what kind of thing this is, and how it is doing;</li>
+ *   <li>a dot in the colour of how the thing is doing, in a column of its own down the left,
+ *       found before anything at all is actually read;</li>
  *   <li>its name, in bold, which is the one part read first;</li>
  *   <li>a faint line of context underneath, read only once the name has been found;</li>
  *   <li>the figures last, each under a faint caption naming it.</li>
@@ -46,6 +49,22 @@ import java.util.function.Function;
  * why this class hands out the pieces and never assembles them.
  */
 public final class Tiles {
+
+    /**
+     * How wide across the middle the status dot is drawn, in pixels.
+     *
+     * <p>A fixed size rather than one measured from the text beside it, for the same reason the
+     * drawings in {@link Icons} are a fixed size: it is a mark and not a letter, and a mark that
+     * grew and shrank with the label font would be a different shape on each of the three skins.
+     */
+    private static final double DOT_RADIUS = 4;
+
+    /**
+     * How far the column a mark stands in is held off the words beside it, in pixels. Wider than
+     * the gaps inside a line, so that the mark reads as a column of its own and not as the first
+     * word of the name.
+     */
+    private static final double MARK_GAP = 11;
 
     private Tiles() {
     }
@@ -154,39 +173,40 @@ public final class Tiles {
     }
 
     /**
-     * @return the row of badges above the name, which says what the tile is before it is read
+     * @param kind one of the dot styles the stylesheet offers: {@code status-dot-idle},
+     *             {@code status-dot-live} or {@code status-dot-over}
+     * @param meaning what the colour stands for, in the words the rest of the program uses for it
+     * @return the mark that says how the thing is doing, in colour alone
      *
-     * <p>It wraps rather than sharing out what room there is. A badge is one word, and half a word
-     * followed by three dots says less than nothing; a badge pushed onto a second line still says
-     * what it came to say.
+     * <p>It is the smallest thing on the tile and the first, and it goes in a column of its own
+     * down the left hand edge — see {@link #withMark}. That is the whole of the idea: a list is
+     * scanned for the rows that are still running long before any of it is read, and a colour
+     * repeated at one distance from the edge is found in a single pass where a word has to be
+     * read one row at a time.
+     *
+     * <p>A colour on its own says nothing to somebody who cannot tell two of them apart, so the
+     * word the colour stands for is on the dot as well, for the pointer to find.
      */
-    public static FlowPane badges() {
-        FlowPane row = new FlowPane(6, 4);
-        row.setAlignment(Pos.CENTER_LEFT);
-        return row;
+    public static Node statusDot(String kind, String meaning) {
+        Circle dot = new Circle(DOT_RADIUS);
+        dot.getStyleClass().addAll("status-dot", kind);
+        Tooltip.install(dot, new Tooltip(meaning));
+        return dot;
     }
 
     /**
-     * @return the badges with one thing held apart from them at the end of the line, for the sort
-     *         of detail that has to be on the tile but is never scanned for
+     * @return the number the file gave the thing, to be said in front of its name
+     *
+     * <p>It is set in the colour of the line under the name rather than the colour of the name,
+     * so that a column of tiles is still read down the names and the numbers are found only by
+     * somebody looking for one. It never shrinks: the name beside it wraps, and a number with its
+     * end cut off is not a shorter number, it is the wrong one.
      */
-    public static HBox topRow(FlowPane badges, Node trailing) {
-        HBox.setHgrow(badges, Priority.ALWAYS);
-        HBox row = new HBox(8, badges, trailing);
-        row.setAlignment(Pos.TOP_LEFT);
-        return row;
-    }
-
-    /**
-     * @param kind one of the badge styles the stylesheet offers: {@code badge-neutral},
-     *             {@code badge-active}, {@code badge-closed} or {@code badge-mm}
-     * @return one badge: a short word in a coloured outline
-     */
-    public static Label badge(String text, String kind) {
-        Label badge = new Label(text);
-        badge.getStyleClass().addAll("badge", kind);
-        badge.setMinWidth(Region.USE_PREF_SIZE);
-        return badge;
+    public static Label number(String text) {
+        Label number = new Label(text);
+        number.getStyleClass().add("tile-number");
+        number.setMinWidth(Region.USE_PREF_SIZE);
+        return number;
     }
 
     /** @return the name of whatever the tile is about, wrapped rather than cut off. */
@@ -210,8 +230,21 @@ public final class Tiles {
      * and the tag belongs to all of it rather than to its first line.
      */
     public static Node titleRow(Node title, List<Label> tags) {
-        HBox row = new HBox(6, title);
+        return titleRow(List.of(), title, tags);
+    }
+
+    /**
+     * @param before what stands in front of the name: how the thing is doing, and which one of
+     *               them it is. Neither is separated off by a dot, because neither is a remark
+     *               about the name — they are what the eye lands on before it gets to the name at
+     *               all, and a dot after them would tie them to it.
+     * @return the name with things said in front of it as well as after it
+     */
+    public static Node titleRow(List<Node> before, Node title, List<Label> tags) {
+        HBox row = new HBox(6);
         row.setAlignment(Pos.CENTER_LEFT);
+        row.getChildren().addAll(before);
+        row.getChildren().add(title);
         for (Label tag : tags) {
             row.getChildren().addAll(tagSeparator(), tag);
         }
@@ -245,6 +278,56 @@ public final class Tiles {
         meta.getStyleClass().add("tile-meta");
         meta.setWrapText(true);
         return meta;
+    }
+
+    /**
+     * @return everything the tile says, with a mark standing in a narrow column of its own down
+     *         the left of it
+     *
+     * <p>A column and not simply the first thing on the first line. The mark belongs to the whole
+     * of the tile rather than to its name, and put in front of the name it would be read as part
+     * of the name's line and would push the line underneath out of line with it. Given a column
+     * it belongs to every line at once, it is against the middle of them, and — the reason for
+     * doing it at all — it is at the same distance from the edge on every tile in the list, so a
+     * column of tiles has one straight rail of marks down it that is read in a single pass. It
+     * is the same thought as the figures out along the right, at the other edge and one mark
+     * wide.
+     */
+    public static Node withMark(Node mark, Node content) {
+        HBox row = new HBox(MARK_GAP, mark, content);
+        row.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(content, Priority.ALWAYS);
+        // For a card that is given more height than it asked for, such as one in a strip: without
+        // this the row keeps the height of what is on it and the foot of the card is empty space
+        // underneath, which is exactly the space the figures were meant to be pushed into.
+        VBox.setVgrow(row, Priority.ALWAYS);
+        return row;
+    }
+
+    /**
+     * @return the quiet line with a tag held out at the far end of it, for a card that has not
+     *         the width to say both after the name
+     *
+     * <p>The same tag as {@link #titleRow}, put somewhere else because the card is narrower. A
+     * name is the one thing on a card that must not be cut short, and a tag after it takes its
+     * width from the name and nothing else; the line underneath is a good deal shorter than the
+     * card is wide, so the end of it is room that was going to be empty either way.
+     *
+     * <p>Held out at the end rather than following the line, so that a strip of cards has the
+     * tags down one edge where they can be found in a single pass. They are what somebody
+     * looking for their own events is looking for, and read one after another they would have to
+     * be looked for a card at a time.
+     */
+    public static Node metaRow(Label meta, List<Label> tags) {
+        HBox row = new HBox(8, meta);
+        row.setAlignment(Pos.CENTER_LEFT);
+        if (!tags.isEmpty()) {
+            Region push = new Region();
+            HBox.setHgrow(push, Priority.ALWAYS);
+            row.getChildren().add(push);
+            row.getChildren().addAll(tags);
+        }
+        return row;
     }
 
     /**
