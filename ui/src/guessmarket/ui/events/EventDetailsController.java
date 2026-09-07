@@ -38,6 +38,9 @@ import java.util.Map;
  */
 public class EventDetailsController {
 
+    /** The event id kept while the panel is empty, which no real event can have. */
+    private static final int NOTHING_SHOWN = -1;
+
     @FXML private VBox rootPane;
 
     @FXML private Label eventNameLabel;
@@ -77,6 +80,17 @@ public class EventDetailsController {
 
     /** The option names the participants table was last built for, so it is rebuilt only when needed. */
     private List<String> participantColumnsFor = List.of();
+
+    /**
+     * The last event this panel was filled with, which is what tells a move to another event apart
+     * from the same event being shown again.
+     *
+     * <p>It survives {@link #clear()} on purpose. Every refresh rebuilds the list beside the panel,
+     * which drops the selection and empties the panel before putting the same event straight back;
+     * forgetting here would make every purchase look like a move to another event and leave the
+     * panel sliding about while somebody is trying to trade in it.
+     */
+    private int shownEventId = NOTHING_SHOWN;
 
     @FXML
     private void initialize() {
@@ -119,11 +133,12 @@ public class EventDetailsController {
         historyTable.setItems(FXCollections.observableArrayList(status.tradeHistory()));
         showPriceChart(event, priceHistory);
 
-        boolean wasHidden = !rootPane.isVisible();
+        boolean anotherEvent = event.id() != shownEventId;
+        shownEventId = event.id();
         rootPane.setVisible(true);
         rootPane.setManaged(true);
-        if (wasHidden) {
-            Animations.slideIn(rootPane);
+        if (anotherEvent) {
+            Animations.switchIn(rootPane);
         }
     }
 

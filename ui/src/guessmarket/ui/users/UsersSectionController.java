@@ -82,6 +82,17 @@ public class UsersSectionController implements AppSection {
     /** Every event the engine last reported, before the "only mine" filter is applied. */
     private final List<EventDto> loadedEvents = new ArrayList<>();
 
+    /**
+     * The last user this panel was filled with, which is what tells a move to another user apart
+     * from the same user being shown again.
+     *
+     * <p>It is kept when the panel is emptied, on purpose. Every refresh rebuilds the list of
+     * users, which drops the selection and empties the panel before putting the same person
+     * straight back; forgetting here would make every purchase look like a move to another user
+     * and leave the panel sliding about while somebody is trying to trade.
+     */
+    private String shownUserName;
+
     @FXML
     private void initialize() {
         Tiles.render(usersList, UserTile::of);
@@ -132,7 +143,7 @@ public class UsersSectionController implements AppSection {
         usersList.getItems().clear();
         eventsList.getItems().clear();
         userCountLabel.setText("");
-        showDetails(false);
+        showDetails(null);
         placeholderLabel.setText("Load a system details file to see the users.");
         showNode(placeholderLabel, true);
     }
@@ -147,7 +158,7 @@ public class UsersSectionController implements AppSection {
 
     private void showUser(UserDto user) {
         if (user == null) {
-            showDetails(false);
+            showDetails(null);
             placeholderLabel.setText(usersList.getItems().isEmpty()
                     ? "Load a system details file to see the users."
                     : "Choose a user on the left to see their account and to act as them.");
@@ -155,7 +166,7 @@ public class UsersSectionController implements AppSection {
             return;
         }
         showNode(placeholderLabel, false);
-        showDetails(true);
+        showDetails(user);
 
         userNameLabel.setText(user.name());
         balanceLabel.setText(Formats.money(user.balance()));
@@ -310,11 +321,22 @@ public class UsersSectionController implements AppSection {
         showEvent(null);
     }
 
-    private void showDetails(boolean visible) {
-        boolean wasHidden = !detailsBox.isVisible();
-        showNode(detailsBox, visible);
-        if (visible && wasHidden) {
-            Animations.reveal(detailsBox);
+    /**
+     * Shows or hides the details panel, and slides it in whenever it has been filled with somebody
+     * other than the person it was holding.
+     *
+     * @param user the person the panel now shows, or null when it is being emptied.
+     */
+    private void showDetails(UserDto user) {
+        if (user == null) {
+            showNode(detailsBox, false);
+            return;
+        }
+        boolean anotherUser = !user.name().equalsIgnoreCase(shownUserName);
+        shownUserName = user.name();
+        showNode(detailsBox, true);
+        if (anotherUser) {
+            Animations.switchIn(detailsBox);
         }
     }
 
