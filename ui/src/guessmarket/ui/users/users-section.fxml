@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.chart.LineChart?>
-<?import javafx.scene.control.Button?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
@@ -56,39 +55,48 @@
 
                 <VBox fx:id="detailsBox" spacing="12" managed="false" visible="false">
 
-                    <!-- who this user is and what their account holds -->
-                    <VBox styleClass="card" spacing="10">
+                    <!--
+                        Who this user is, and the money that decides what they may do next.
+
+                        Three tiers, and no more than three. The name says whose panel this is;
+                        the band under it holds the account, which is the figure every action on
+                        this screen is measured against, and beside it what they have made or lost
+                        so far; and the counts at the foot are true but are not what anybody opened
+                        the panel for. What they started with is not a fourth figure at all, it is
+                        the line the balance is read against, so it sits under the balance as its
+                        caption rather than in a box of its own.
+                    -->
+                    <VBox styleClass="card" spacing="12">
+
                         <HBox alignment="CENTER_LEFT" spacing="10">
-                            <Label fx:id="userNameLabel" styleClass="section-title" text="User"/>
+                            <Label fx:id="userNameLabel" styleClass="screen-title" text="User"/>
                             <Label fx:id="blockedBadge" styleClass="badge, badge-closed"
                                    text="BLOCKED" managed="false" visible="false"/>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Button fx:id="createEventButton" text="Create an event"
-                                    onAction="#onCreateEvent"/>
-                            <VBox styleClass="stat-tile, stat-tile-accent" alignment="CENTER_RIGHT">
-                                <Label text="ACCOUNT BALANCE" styleClass="field-label"/>
-                                <Label fx:id="balanceLabel" styleClass="value, value-accent"
-                                       text="—"/>
-                            </VBox>
                         </HBox>
-                        <FlowPane hgap="10" vgap="10">
-                            <VBox styleClass="stat-tile">
-                                <Label text="STARTED WITH" styleClass="field-label"/>
-                                <Label fx:id="initialBalanceLabel" styleClass="value"/>
+
+                        <!-- the account, and the one figure that explains how it got there -->
+                        <FlowPane styleClass="stat-band" hgap="44" vgap="14" rowValignment="TOP">
+                            <VBox spacing="1">
+                                <Label text="ACCOUNT BALANCE" styleClass="field-label"/>
+                                <Label fx:id="balanceLabel"
+                                       styleClass="value, value-hero, value-accent" text="—"/>
+                                <Label fx:id="initialBalanceLabel" styleClass="caption"/>
                             </VBox>
-                            <VBox styleClass="stat-tile">
+                            <VBox spacing="1">
                                 <Label text="MADE OR LOST" styleClass="field-label"/>
-                                <Label fx:id="netResultLabel" styleClass="value"/>
-                            </VBox>
-                            <VBox styleClass="stat-tile">
-                                <Label text="RUNS" styleClass="field-label"/>
-                                <Label fx:id="runsLabel" styleClass="value"/>
-                            </VBox>
-                            <VBox styleClass="stat-tile">
-                                <Label text="TAKING PART IN" styleClass="field-label"/>
-                                <Label fx:id="participatesLabel" styleClass="value"/>
+                                <Label fx:id="netResultLabel" styleClass="value, value-strong"/>
                             </VBox>
                         </FlowPane>
+
+                        <!-- what they are doing in the system, which is a count and not money -->
+                        <HBox styleClass="meta-strip" alignment="CENTER_LEFT" spacing="8">
+                            <Label text="RUNS" styleClass="field-label"/>
+                            <Label fx:id="runsLabel" styleClass="inline-value"/>
+                            <Label text="·" styleClass="faint"/>
+                            <Label text="TAKING PART IN" styleClass="field-label"/>
+                            <Label fx:id="participatesLabel" styleClass="inline-value"/>
+                        </HBox>
+
                     </VBox>
 
                     <!-- how their balance has moved -->

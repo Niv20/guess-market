@@ -2,6 +2,7 @@
 
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.FlowPane?>
@@ -24,57 +25,96 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="guessmarket.ui.events.EventDetailsController">
 
-    <!-- what the event is -->
-    <VBox styleClass="card" spacing="10">
-        <HBox alignment="CENTER_LEFT" spacing="10">
-            <Label fx:id="eventNameLabel" styleClass="section-title" text="Event"/>
-            <Label fx:id="statusBadge" styleClass="badge" text="Status"/>
-            <Label fx:id="methodBadge" styleClass="badge, badge-neutral" text="Method"/>
+    <!--
+        What the event is, and everything the file settled about it, in four tiers.
+
+        The header used to be nine identical boxes, which is nine things of equal weight and so no
+        weight at all. They are told apart here by what they are, not by what they say:
+
+        the name, the state and the question are what the event IS, and are read first;
+        who runs it and how it trades frame everything below;
+        the account and the commission earned MOVE, every time somebody trades;
+        and the terms were settled when the event was made and will never change again.
+
+        The last group is the biggest and the quietest, because it is read once and then only
+        referred back to. The two figures that move are the only ones given any size at all.
+    -->
+    <VBox styleClass="card" spacing="12">
+
+        <!-- what the event is -->
+        <VBox spacing="6">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label fx:id="eventNameLabel" styleClass="screen-title" text="Event"/>
+                <Label fx:id="statusBadge" styleClass="badge" text="Status"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="winnerBadge" styleClass="badge, badge-active" managed="false"
+                       visible="false" text="Winner"/>
+            </HBox>
+            <Label fx:id="descriptionLabel" styleClass="lead" wrapText="true" text=""/>
+        </VBox>
+
+        <!--
+            Whose event it is, and how it is traded.
+
+            The trading method is not a figure like the ones below it: it says which half of
+            everything further down the screen applies to this event. So it is offered as the way
+            of getting to that half rather than as one more thing to read past, and it is the only
+            thing in this header that can be pressed.
+        -->
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label text="MARKET MAKER" styleClass="field-label"/>
+            <Label fx:id="marketMakerLabel" styleClass="inline-value"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label fx:id="winnerBadge" styleClass="badge, badge-active" managed="false"
-                   visible="false" text="Winner"/>
+            <Button fx:id="methodButton" styleClass="method-link" text="Method"
+                    onAction="#onShowMarket"/>
         </HBox>
 
-        <Label fx:id="descriptionLabel" styleClass="muted" wrapText="true" text=""/>
-
-        <FlowPane hgap="10" vgap="10">
-            <VBox fx:id="marketMakerTile" styleClass="stat-tile">
-                <Label text="MARKET MAKER" styleClass="field-label"/>
-                <Label fx:id="marketMakerLabel" styleClass="value"/>
-            </VBox>
-            <VBox fx:id="accountTile" styleClass="stat-tile, stat-tile-accent">
+        <!-- the two figures that move while people trade -->
+        <FlowPane styleClass="stat-band" hgap="44" vgap="14" rowValignment="TOP">
+            <VBox spacing="1">
                 <Label text="EVENT ACCOUNT" styleClass="field-label"/>
-                <Label fx:id="accountBalanceLabel" styleClass="value, value-accent"/>
+                <Label fx:id="accountBalanceLabel"
+                       styleClass="value, value-hero, value-accent" text="—"/>
+                <Label text="held by the event itself" styleClass="caption"/>
             </VBox>
-            <VBox fx:id="commissionTile" styleClass="stat-tile">
-                <Label text="COMMISSION" styleClass="field-label"/>
-                <Label fx:id="commissionLabel" styleClass="value"/>
-            </VBox>
-            <VBox fx:id="collectedTile" styleClass="stat-tile">
+            <VBox spacing="1">
                 <Label text="COMMISSION EARNED" styleClass="field-label"/>
-                <Label fx:id="commissionCollectedLabel" styleClass="value"/>
-            </VBox>
-            <VBox fx:id="liquidityTile" styleClass="stat-tile">
-                <Label text="LIQUIDITY b" styleClass="field-label"/>
-                <Label fx:id="liquidityLabel" styleClass="value"/>
-            </VBox>
-            <VBox fx:id="subsidyTile" styleClass="stat-tile">
-                <Label text="SUBSIDY" styleClass="field-label"/>
-                <Label fx:id="subsidyLabel" styleClass="value"/>
-            </VBox>
-            <VBox fx:id="baseValueTile" styleClass="stat-tile">
-                <Label text="BASE VALUE d" styleClass="field-label"/>
-                <Label fx:id="baseValueLabel" styleClass="value"/>
-            </VBox>
-            <VBox fx:id="investmentTile" styleClass="stat-tile">
-                <Label text="OPENING INVESTMENT" styleClass="field-label"/>
-                <Label fx:id="investmentLabel" styleClass="value"/>
-            </VBox>
-            <VBox fx:id="mintTile" styleClass="stat-tile">
-                <Label text="MINTING" styleClass="field-label"/>
-                <Label fx:id="mintLabel" styleClass="value"/>
+                <Label fx:id="commissionCollectedLabel" styleClass="value, value-strong"/>
+                <Label text="to the market maker so far" styleClass="caption"/>
             </VBox>
         </FlowPane>
+
+        <!-- the terms it was opened on, which were settled once and never change -->
+        <VBox styleClass="card-sunken" spacing="10">
+            <Label text="TERMS" styleClass="group-title"/>
+            <FlowPane hgap="20" vgap="14">
+                <VBox styleClass="meta-item" spacing="1">
+                    <Label text="COMMISSION" styleClass="field-label"/>
+                    <Label fx:id="commissionLabel" styleClass="value"/>
+                </VBox>
+                <VBox fx:id="liquidityTile" styleClass="meta-item" spacing="1">
+                    <Label text="LIQUIDITY b" styleClass="field-label"/>
+                    <Label fx:id="liquidityLabel" styleClass="value"/>
+                </VBox>
+                <VBox fx:id="subsidyTile" styleClass="meta-item" spacing="1">
+                    <Label text="SUBSIDY" styleClass="field-label"/>
+                    <Label fx:id="subsidyLabel" styleClass="value"/>
+                </VBox>
+                <VBox fx:id="baseValueTile" styleClass="meta-item" spacing="1">
+                    <Label text="BASE VALUE d" styleClass="field-label"/>
+                    <Label fx:id="baseValueLabel" styleClass="value"/>
+                </VBox>
+                <VBox fx:id="investmentTile" styleClass="meta-item" spacing="1">
+                    <Label text="OPENING INVESTMENT" styleClass="field-label"/>
+                    <Label fx:id="investmentLabel" styleClass="value"/>
+                </VBox>
+                <VBox fx:id="mintTile" styleClass="meta-item" spacing="1">
+                    <Label text="MINTING" styleClass="field-label"/>
+                    <Label fx:id="mintLabel" styleClass="value"/>
+                </VBox>
+            </FlowPane>
+        </VBox>
+
     </VBox>
 
     <!-- LMSR: what each option is worth, and how many of its shares have been bought -->
@@ -84,10 +124,13 @@
     </VBox>
 
     <!-- Order book: one book per option, side by side -->
-    <HBox fx:id="booksRow" spacing="12">
-        <fx:include fx:id="firstBook" source="option-book.fxml" HBox.hgrow="ALWAYS"/>
-        <fx:include fx:id="secondBook" source="option-book.fxml" HBox.hgrow="ALWAYS"/>
-    </HBox>
+    <VBox fx:id="booksBox" styleClass="card" spacing="8">
+        <Label text="ORDER BOOK" styleClass="panel-title"/>
+        <HBox spacing="12">
+            <fx:include fx:id="firstBook" source="option-book.fxml" HBox.hgrow="ALWAYS"/>
+            <fx:include fx:id="secondBook" source="option-book.fxml" HBox.hgrow="ALWAYS"/>
+        </HBox>
+    </VBox>
 
     <!-- who is in the event and what they hold -->
     <VBox fx:id="participantsBox" styleClass="card" spacing="8">

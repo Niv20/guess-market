@@ -4,6 +4,7 @@ import guessmarket.dto.CommissionType;
 import guessmarket.dto.CreateEventRequestDto;
 import guessmarket.dto.EventDto;
 import guessmarket.dto.TradingMethod;
+import guessmarket.dto.UserDto;
 import guessmarket.engine.exception.GuessMarketException;
 import guessmarket.ui.app.AppContext;
 import guessmarket.ui.common.Dialogs;
@@ -29,10 +30,14 @@ import java.util.List;
 /**
  * The form for creating an event from scratch, in a window of its own.
  *
- * <p>Whoever fills it in becomes the market maker of the new event and takes on everything that
- * comes with that: paying to open it, receiving its commission and deciding its outcome. The event
- * that comes out is in no way special. It starts not yet running, it appears in both screens like
- * any other, and it has to be opened before anybody can trade in it.
+ * <p>Whoever is chosen as market maker takes on everything that comes with it: paying to open the
+ * event, receiving its commission and deciding its outcome. The event that comes out is in no way
+ * special. It starts not yet running, it appears in both screens like any other, and it has to be
+ * opened before anybody can trade in it.
+ *
+ * <p>The market maker is asked for on the form. The form is opened from the events screen, which
+ * is a list of events and has nobody selected, so there is no user to assume; and asking for it
+ * here puts it in the same place as everything else that has to be decided about the event.
  *
  * <p>The form checks nothing itself beyond turning what was typed into numbers. Whether those
  * numbers describe an event that can exist is the engine's decision, and its refusal is shown to
@@ -44,6 +49,7 @@ public class CreateEventController {
 
     @FXML private VBox rootPane;
     @FXML private Label creatorLabel;
+    @FXML private ComboBox<String> creatorChooser;
     @FXML private TextField nameField;
     @FXML private TextArea descriptionField;
     @FXML private TextField firstOptionField;
@@ -63,16 +69,14 @@ public class CreateEventController {
     @FXML private Label orderBookHintLabel;
 
     private AppContext context;
-    private String creatorName;
     private Stage window;
 
     /**
      * Opens the form and waits for it to be closed.
      *
-     * @param context     how to reach the engine and the main window
-     * @param creatorName the user who will become the market maker of whatever is created
+     * @param context how to reach the engine and the main window
      */
-    public static void open(AppContext context, String creatorName) {
+    public static void open(AppContext context) {
         try {
             URL layout = CreateEventController.class.getResource(LAYOUT);
             if (layout == null) {
@@ -81,7 +85,7 @@ public class CreateEventController {
             FXMLLoader loader = new FXMLLoader(layout);
             Parent root = loader.load();
             CreateEventController controller = loader.getController();
-            controller.start(context, creatorName, root);
+            controller.start(context, root);
         } catch (IOException cannotOpen) {
             Dialogs.error(context.window(), "The form could not be opened",
                     "The window for creating an event could not be built: "
@@ -107,11 +111,16 @@ public class CreateEventController {
     }
 
     /** Builds the window around the loaded form and shows it. */
-    private void start(AppContext appContext, String userName, Parent root) {
+    private void start(AppContext appContext, Parent root) {
         this.context = appContext;
-        this.creatorName = userName;
-        creatorLabel.setText(userName + " will be the market maker of this event, and will have to "
-                + "open it, pay for it and decide its outcome.");
+        creatorLabel.setText("Whoever is chosen below becomes the market maker of this event, and "
+                + "will have to open it, pay for it and decide its outcome.");
+        for (UserDto user : appContext.engine().getAllUsers()) {
+            // A blocked user may do nothing at all, and running an event is a great deal to do.
+            if (!user.blocked()) {
+                creatorChooser.getItems().add(user.name());
+            }
+        }
 
         window = new Stage();
         window.setTitle("Guess Market - create an event");
@@ -149,6 +158,15 @@ public class CreateEventController {
 
     @FXML
     private void onCreate() {
+        String creatorName = creatorChooser.getValue();
+        if (creatorName == null) {
+            Dialogs.error(context.window(), "The market maker is missing",
+                    "Choose which user is creating this event. They will pay to open it and will "
+                            + "decide its outcome.");
+            creatorChooser.requestFocus();
+            return;
+        }
+
         Integer commission = wholeNumber(commissionField, "commission percentage");
         if (commission == null) {
             return;

@@ -9,9 +9,11 @@ import guessmarket.ui.app.AppSection;
 import guessmarket.ui.common.Filters;
 import guessmarket.ui.common.Filters.Choice;
 import guessmarket.ui.common.Tiles;
+import guessmarket.ui.trade.CreateEventController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -24,9 +26,11 @@ import java.util.List;
  * The events screen: every event in the system, filtered three ways, with the details of whichever
  * one is selected beside it.
  *
- * <p>The screen never acts on anything. Taking part in an event happens from the users screen,
- * because an action always belongs to somebody; what shows up here is the result of those actions,
- * which is why every refresh reads the engine again rather than keeping a copy of anything.
+ * <p>The one thing done from here is creating an event, which is the one action that makes an
+ * event rather than doing something to one. Everything else belongs to somebody and so belongs on
+ * the users screen, where it is plain whose money is moving; what shows up here is the result of
+ * those actions, which is why every refresh reads the engine again rather than keeping a copy of
+ * anything.
  *
  * <p>Each of the three filters is a dropdown whose first line is "All", so exactly one thing is
  * chosen in each of them at any moment, the filters cannot contradict each other, and the row of
@@ -44,6 +48,7 @@ public class EventsSectionController implements AppSection {
     @FXML private ComboBox<Choice<EventStatus>> statusChooser;
     @FXML private ComboBox<Choice<CommissionType>> commissionChooser;
 
+    @FXML private Button createEventButton;
     @FXML private ListView<EventDto> eventsList;
     @FXML private Label countLabel;
     @FXML private Label placeholderLabel;
@@ -62,6 +67,7 @@ public class EventsSectionController implements AppSection {
         eventsList.getSelectionModel().selectedItemProperty()
                 .addListener((observable, previous, selected) -> showDetailsOf(selected));
         Tiles.emptyMessage(eventsList, "No event matches the filters that are chosen.");
+        createEventButton.setDisable(true);
     }
 
     @Override
@@ -74,6 +80,9 @@ public class EventsSectionController implements AppSection {
         int previouslySelected = selectedEventId();
         loadedEvents.clear();
         loadedEvents.addAll(context.engine().getAllEvents());
+        // An event must have a market maker, so there is nothing to create until there is somebody
+        // who could be one.
+        createEventButton.setDisable(context.engine().getAllUsers().isEmpty());
         applyFilters();
         reselect(previouslySelected);
     }
@@ -82,9 +91,19 @@ public class EventsSectionController implements AppSection {
     public void clear() {
         loadedEvents.clear();
         eventsList.getItems().clear();
+        createEventButton.setDisable(true);
         countLabel.setText("");
         eventDetailsController.clear();
         showPlaceholder("Load a system details file to see the events.");
+    }
+
+    /**
+     * Opens the form for creating an event. Whatever comes out of it is an ordinary event that has
+     * not started yet, so nothing else here has to know that it was not in the file.
+     */
+    @FXML
+    private void onCreateEvent() {
+        CreateEventController.open(context);
     }
 
     // ------------------------------------------------------------------ the list and its filters

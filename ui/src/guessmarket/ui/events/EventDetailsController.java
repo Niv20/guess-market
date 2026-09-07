@@ -16,9 +16,11 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableView;
-import javafx.scene.layout.HBox;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
 
 import java.util.LinkedHashMap;
@@ -45,7 +47,7 @@ public class EventDetailsController {
 
     @FXML private Label eventNameLabel;
     @FXML private Label statusBadge;
-    @FXML private Label methodBadge;
+    @FXML private Button methodButton;
     @FXML private Label winnerBadge;
     @FXML private Label descriptionLabel;
 
@@ -67,7 +69,7 @@ public class EventDetailsController {
 
     @FXML private VBox lmsrBox;
     @FXML private TableView<OptionStateDto> optionsTable;
-    @FXML private HBox booksRow;
+    @FXML private VBox booksBox;
     @FXML private OptionBookController firstBookController;
     @FXML private OptionBookController secondBookController;
 
@@ -129,7 +131,7 @@ public class EventDetailsController {
 
         boolean lmsr = event.isLmsr();
         showOnly(lmsrBox, lmsr);
-        showOnly(booksRow, !lmsr);
+        showOnly(booksBox, !lmsr);
         if (lmsr) {
             optionsTable.setItems(FXCollections.observableArrayList(status.optionStates()));
         } else {
@@ -157,7 +159,11 @@ public class EventDetailsController {
         descriptionLabel.setText(event.description());
         statusBadge.setText(event.status().getDisplayName().toUpperCase());
         statusBadge.getStyleClass().setAll("badge", badgeStyleOf(event.status()));
-        methodBadge.setText(event.tradingMethod().getDisplayName().toUpperCase());
+
+        methodButton.setText(event.tradingMethod().getDisplayName().toUpperCase());
+        methodButton.setTooltip(new Tooltip(event.isLmsr()
+                ? "Show what each option of this event is worth"
+                : "Show the two books this event is traded through"));
 
         boolean closed = event.isClosed();
         winnerBadge.setText(closed ? "WINNER: " + event.winningOptionName() : "");
@@ -188,6 +194,45 @@ public class EventDetailsController {
                     + " = " + Formats.shares(event.orderBook().initialPairs()) + " pairs");
             mintLabel.setText(event.orderBook().mintAllowed() ? "Allowed" : "Not allowed");
         }
+    }
+
+    /**
+     * Brings the part of the panel that this event is actually traded in into view: its two books,
+     * or the values of its options.
+     *
+     * <p>How an event trades is not a figure to be read beside its commission. It says which half
+     * of everything below applies, and so it is offered as the way of getting to that half.
+     */
+    @FXML
+    private void onShowMarket() {
+        scrollTo(booksBox.isManaged() ? booksBox : lmsrBox);
+    }
+
+    /**
+     * Scrolls whatever the component was placed inside until one part of it is at the top.
+     *
+     * <p>Both screens put this panel in a scroll pane of their own, and neither of them hands it
+     * down, which is on purpose: the panel shows an event and does not care whose screen it is on.
+     * So the pane is looked for above the panel rather than asked for, and if there is none - which
+     * there would not be if the panel were ever placed somewhere that does not scroll - nothing
+     * happens at all.
+     */
+    private void scrollTo(Node target) {
+        Node above = rootPane.getParent();
+        while (above != null && !(above instanceof ScrollPane)) {
+            above = above.getParent();
+        }
+        if (!(above instanceof ScrollPane scroller) || scroller.getContent() == null) {
+            return;
+        }
+        Node content = scroller.getContent();
+        double hidden = content.getBoundsInLocal().getHeight()
+                - scroller.getViewportBounds().getHeight();
+        if (hidden <= 0) {
+            return;
+        }
+        double top = content.sceneToLocal(target.localToScene(target.getBoundsInLocal())).getMinY();
+        scroller.setVvalue(top / hidden);
     }
 
     private void showParticipants(EventDto event, List<ParticipantDto> participants) {
