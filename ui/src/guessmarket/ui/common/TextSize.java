@@ -1,6 +1,7 @@
 package guessmarket.ui.common;
 
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Scene;
 
@@ -42,13 +43,30 @@ public final class TextSize {
     private TextSize() {
     }
 
-    /** The multiplier a slider in the settings binds to. */
-    public static DoubleProperty scaleProperty() {
+    /**
+     * The multiplier, for anything that has to be worked out again when the writing changes size.
+     *
+     * <p>It is handed out to be read and not to be written: the size is changed through
+     * {@link #set} and nowhere else, and in particular is never bound to the slider that offers
+     * it. That is the point of it. The whole window is laid out against this number, so it is
+     * stated once the person has chosen a size rather than at every step of them choosing one.
+     */
+    public static ReadOnlyDoubleProperty scaleProperty() {
         return SCALE;
     }
 
     public static double get() {
         return SCALE.get();
+    }
+
+    /**
+     * Puts a new multiplier in force, which lays every window measured against it out again.
+     *
+     * @param scale the multiplier, held to the range the settings offer, so that a size arriving
+     *              from anywhere else can never make the window unreadable.
+     */
+    public static void set(double scale) {
+        SCALE.set(Math.clamp(scale, SMALLEST, LARGEST));
     }
 
     /**
