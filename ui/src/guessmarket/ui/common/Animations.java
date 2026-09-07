@@ -3,6 +3,7 @@ package guessmarket.ui.common;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
+import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.SequentialTransition;
@@ -12,6 +13,9 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
 import javafx.util.Duration;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * The short animations that accompany the actions of the program, and the one switch that turns
  * all of them off.
@@ -20,19 +24,32 @@ import javafx.util.Duration;
  * how it gets there, so with the switch off the interface shows exactly what it would show if
  * this class did not exist — it simply shows it at once. No animation is longer than
  * {@link #LONGEST}.
+ *
+ * <p>There is exactly one animation for a panel being refilled, {@link #switchIn}, and every panel
+ * in the program uses it. Choosing another user, choosing another event and moving between the two
+ * screens are the same gesture as far as the person is concerned, so they are answered the same
+ * way rather than each being given a movement of its own.
  */
 public final class Animations {
 
     /** No animation in the program may last longer than this. */
     public static final Duration LONGEST = Duration.seconds(2);
 
-    private static final Duration REVEAL = Duration.millis(260);
+    private static final Duration SWITCH = Duration.millis(300);
     private static final Duration FLASH_HALF = Duration.millis(180);
-    private static final Duration SLIDE = Duration.millis(300);
     private static final Duration FADE_OUT = Duration.millis(420);
+
+    /** How far to the right a panel begins before it slides into its place. */
+    private static final double SWITCH_OFFSET = 28;
+
+    /** How faint a panel begins before it comes up to full strength. */
+    private static final double SWITCH_FROM_OPACITY = 0.35;
 
     /** Off to begin with, so the animations only run once they are switched on deliberately. */
     private static final BooleanProperty ENABLED = new SimpleBooleanProperty(false);
+
+    /** The panels that are sliding in at this moment, so that a panel inside one of them can sit still. */
+    private static final Set<Node> SWITCHING_IN = new HashSet<>();
 
     private Animations() {
     }
@@ -46,16 +63,49 @@ public final class Animations {
         return ENABLED.get();
     }
 
-    /** Fades a panel in as it is filled with the details of whatever has just been selected. */
-    public static void reveal(Node node) {
-        if (node == null || !isEnabled()) {
+    /**
+     * Slides a panel in from the right and brings it up to full strength, for a panel that has just
+     * been filled with something other than what it held a moment ago.
+     *
+     * <p>This is the whole vocabulary of the program for showing a new subject: the details of a
+     * user, the details of an event and the screen behind a tab all arrive this way. It is meant to
+     * be called every time the subject changes and not only the first time the panel appears,
+     * because the movement is what says that what is on the screen is now about something else.
+     *
+     * <p>A panel inside a panel that is already sliding in is left alone. It is being carried along
+     * by its parent, and animating it as well would only move it twice as far.
+     */
+    public static void switchIn(Node node) {
+        if (node == null || !isEnabled() || isCarriedByParent(node)) {
             return;
         }
-        FadeTransition fade = new FadeTransition(REVEAL, node);
-        fade.setFromValue(0);
+        TranslateTransition slide = new TranslateTransition(SWITCH, node);
+        slide.setFromX(SWITCH_OFFSET);
+        slide.setToX(0);
+        slide.setInterpolator(Interpolator.EASE_OUT);
+
+        FadeTransition fade = new FadeTransition(SWITCH, node);
+        fade.setFromValue(SWITCH_FROM_OPACITY);
         fade.setToValue(1);
-        fade.setOnFinished(event -> node.setOpacity(1));
-        fade.playFromStart();
+
+        ParallelTransition whole = new ParallelTransition(node, slide, fade);
+        SWITCHING_IN.add(node);
+        whole.setOnFinished(event -> {
+            SWITCHING_IN.remove(node);
+            node.setTranslateX(0);
+            node.setOpacity(1);
+        });
+        whole.playFromStart();
+    }
+
+    /** @return whether an ancestor of this node is sliding in and taking the node with it. */
+    private static boolean isCarriedByParent(Node node) {
+        for (Node above = node.getParent(); above != null; above = above.getParent()) {
+            if (SWITCHING_IN.contains(above)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -84,26 +134,6 @@ public final class Animations {
             node.setScaleY(1);
         });
         pulse.playFromStart();
-    }
-
-    /** Slides a newly built panel in from the right, used when a tab swaps its detail area. */
-    public static void slideIn(Node node) {
-        if (node == null || !isEnabled()) {
-            return;
-        }
-        TranslateTransition slide = new TranslateTransition(SLIDE, node);
-        slide.setFromX(28);
-        slide.setToX(0);
-        slide.setInterpolator(Interpolator.EASE_OUT);
-        slide.setOnFinished(event -> node.setTranslateX(0));
-
-        FadeTransition fade = new FadeTransition(SLIDE, node);
-        fade.setFromValue(0.35);
-        fade.setToValue(1);
-        fade.setOnFinished(event -> node.setOpacity(1));
-
-        slide.playFromStart();
-        fade.playFromStart();
     }
 
     /**
