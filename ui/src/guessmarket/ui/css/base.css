@@ -760,6 +760,30 @@
     -fx-opacity: 0.5;
 }
 
+/*
+ * A list of tiles laid on its side: a strip of cards read across instead of a column read down.
+ *
+ * It is the same list in every other way — the same cards, dressed and picked out the same — so
+ * only what changes with the direction is set here. The gap between one card and the next moves
+ * from under it to beside it, and a card is held clear of the bottom of the strip, because a card
+ * is given the whole height of the strip and the bar that says the row carries on to the right is
+ * drawn across the foot of it.
+ */
+.tile-strip .list-cell {
+    -fx-padding: 0 10 16 0;
+}
+
+/*
+ * That bar is given a track of its own, unlike the ones over a scroll pane. A column that carries
+ * on downwards is obvious from the tile cut in half at the foot of it; a row that carries on to
+ * the right ends in a card that looks complete, and the bar is the only thing saying otherwise.
+ */
+.tile-strip > .virtual-flow > .scroll-bar:horizontal {
+    -fx-background-color: -app-surface-2;
+    -fx-background-radius: 6;
+    -fx-padding: 2 4 2 4;
+}
+
 /* ------------------------------------------------------------------ order book rows */
 
 .bid-cell {

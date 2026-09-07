@@ -1,5 +1,6 @@
 package guessmarket.ui.common;
 
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -30,6 +31,11 @@ import java.util.function.Function;
  *   <li>a faint line of context underneath, read only once the name has been found;</li>
  *   <li>the figures at the foot, each under a faint caption naming it.</li>
  * </ol>
+ *
+ * <p>A list can also be laid on its side, as a strip of cards read across rather than a column
+ * read down. It says the same things in the same order; what changes is that the list then costs
+ * a fixed height whatever is in it, which is what a list that shares a screen with other panels
+ * has to do.
  *
  * <p>Only the frame is here. What goes on a tile belongs to whatever the tile is about, which is
  * why this class hands out the pieces and never assembles them.
@@ -65,6 +71,43 @@ public final class Tiles {
         });
     }
 
+    /**
+     * Draws every item of a list as a card of its own, side by side, read across instead of down.
+     *
+     * <p>A column of tiles gives every item all the width there is and asks for as much height as
+     * it likes, which is right for the list a screen is about and wrong for a list that is only
+     * one panel among several on a screen somebody has to scroll. Turned on its side the list
+     * costs one card's height however many events there are, and the ones that do not fit are
+     * behind a scroll bar of the list's own rather than further down the screen.
+     *
+     * <p>Every card is given the same width, because a strip of cards of different widths is read
+     * as a row of different things; and the height of the strip, so that the row has one edge
+     * along the top and one along the bottom.
+     *
+     * @param cardWidth how wide each card is drawn, in pixels
+     */
+    public static <T> void renderStrip(ListView<T> list, Function<T, Node> draw, double cardWidth) {
+        list.setOrientation(Orientation.HORIZONTAL);
+        list.setCellFactory(ignored -> new ListCell<>() {
+            {
+                setPrefWidth(cardWidth);
+                // The other way round from a column, and for the same reason: a cell that asks
+                // for no height of its own is given the height of the strip, so every card is
+                // exactly as tall as the strip. A cell that asks for a height is given the
+                // largest height ever asked for by any of them, which a list that is measured
+                // once before it is given its own size never lets go of again.
+                setPrefHeight(0);
+            }
+
+            @Override
+            protected void updateItem(T item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(null);
+                setGraphic(empty || item == null ? null : draw.apply(item));
+            }
+        });
+    }
+
     /** Says what an empty list means, instead of leaving a blank rectangle on the screen. */
     public static void emptyMessage(ListView<?> list, String message) {
         Label placeholder = new Label(message);
@@ -79,6 +122,30 @@ public final class Tiles {
         tile.getStyleClass().addAll("card", "tile");
         tile.setMaxWidth(Double.MAX_VALUE);
         return tile;
+    }
+
+    /**
+     * @return the card one item of a {@linkplain #renderStrip strip} is drawn on, stretched to the
+     *         full height of the strip so that the cards beside it end where it ends
+     */
+    public static VBox stripTile() {
+        VBox tile = tile();
+        tile.setMaxHeight(Double.MAX_VALUE);
+        return tile;
+    }
+
+    /**
+     * @return the empty space that pushes whatever follows it down to the foot of a strip card
+     *
+     * <p>A card in a strip is given the height of the strip whether it has that much to say or
+     * not, so without this the figures of a card with a short name sit higher than the figures of
+     * the card beside it. Pushed to the foot they line up along the bottom of the row and can be
+     * read across it.
+     */
+    public static Region stripSpacer() {
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+        return spacer;
     }
 
     /**
@@ -133,10 +200,17 @@ public final class Tiles {
         return meta;
     }
 
-    /** @return the row of figures at the foot of a tile, which wraps instead of overflowing. */
+    /**
+     * @return the row of figures at the foot of a tile, which wraps instead of overflowing
+     *
+     * <p>It keeps its height when a card has less room than it wants, so that a long name is
+     * shortened rather than the money being squeezed off the card altogether. A tile without its
+     * figures is not a shorter tile, it is the wrong tile.
+     */
     public static FlowPane figures() {
         FlowPane row = new FlowPane(18, 6);
         row.getStyleClass().add("tile-figures");
+        row.setMinHeight(Region.USE_PREF_SIZE);
         return row;
     }
 

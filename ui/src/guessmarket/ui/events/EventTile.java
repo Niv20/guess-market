@@ -53,20 +53,50 @@ public final class EventTile {
     public static Node of(EventDto event, Role role) {
         VBox tile = Tiles.tile();
         tile.getChildren().addAll(
-                topRow(event, role),
+                topRow(event, role, true),
                 Tiles.title(event.name()),
                 Tiles.meta(describeRun(event)),
                 figures(event));
         return tile;
     }
 
-    /** The badges that say how the event is doing, how it trades, and whose it is. */
-    private static HBox topRow(EventDto event, Role role) {
+    /**
+     * @return the same event drawn small, for a strip read across rather than a column read down
+     *
+     * <p>A card in a strip is given its width and its height rather than taking what it needs, so
+     * this one is the full tile with everything that can be said elsewhere left off it. What stays
+     * is what somebody picking an event out of a row is picking by: how it is doing, what it is
+     * called, what they are to it, and its money. What goes is how it charges — nobody chooses an
+     * event by its commission, and the panel that opens underneath states it before anything can
+     * be done about it.
+     */
+    public static Node compact(EventDto event, Role role) {
+        VBox card = Tiles.stripTile();
+        card.getChildren().addAll(
+                topRow(event, role, false),
+                Tiles.title(event.name()),
+                Tiles.meta(describeMethodAndRunner(event)),
+                Tiles.stripSpacer(),
+                figures(event));
+        return card;
+    }
+
+    /**
+     * The badges that say how the event is doing, how it trades, and whose it is.
+     *
+     * @param withMethod whether how the event trades is worn as a badge here. A card in a strip
+     *                   says it in words underneath instead: three badges and a number do not fit
+     *                   across a card that narrow, and pushed onto a second line they take the
+     *                   room the name needs.
+     */
+    private static HBox topRow(EventDto event, Role role, boolean withMethod) {
         FlowPane badges = Tiles.badges();
         badges.getChildren().add(
                 Tiles.badge(shout(event.status().getDisplayName()), statusStyle(event.status())));
-        badges.getChildren().add(
-                Tiles.badge(shout(event.tradingMethod().getDisplayName()), "badge-neutral"));
+        if (withMethod) {
+            badges.getChildren().add(
+                    Tiles.badge(shout(event.tradingMethod().getDisplayName()), "badge-neutral"));
+        }
         if (role != Role.NONE) {
             badges.getChildren().add(roleBadge(role));
         }
@@ -101,6 +131,12 @@ public final class EventTile {
         return "Run by " + event.marketMakerName() + " · "
                 + Formats.percent(event.commissionPercent()) + " commission "
                 + event.commissionType().getDisplayName().toLowerCase(Locale.US);
+    }
+
+    /** @return how the event trades and whose it is, all a card this small has room for. */
+    private static String describeMethodAndRunner(EventDto event) {
+        return shout(event.tradingMethod().getDisplayName())
+                + " · Run by " + event.marketMakerName();
     }
 
     /**
