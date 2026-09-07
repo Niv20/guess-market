@@ -46,8 +46,8 @@ public final class Tables {
     /** Set on a table with no rows, so that the stylesheet can put the table itself away. */
     private static final PseudoClass NO_ROWS = PseudoClass.getPseudoClass("no-rows");
 
-    /** Marks a table that is already being measured, so it is only ever watched once. */
-    private static final String MEASURED = "guessmarket.measured";
+    /** Marks a table that has already been taken in hand, so it is only ever set up once. */
+    private static final String ADOPTED = "guessmarket.adopted";
 
     /** What a cell adds to the text in it: the padding either side of it, and its border. */
     private static final double CELL_PADDING = 18;
@@ -202,6 +202,33 @@ public final class Tables {
         fit(table);
     }
 
+    /**
+     * Takes away the picking of rows, leaving the table something to read rather than
+     * something to choose from.
+     *
+     * <p>Nothing in this program asks a table which of its rows is picked, and no row has
+     * anything behind it: everything a row has to say is already written across it, and
+     * clicking one showed nothing further. A row that stayed lit after it was clicked was
+     * therefore promising a next thing that never came, which is worse than saying nothing at
+     * all, so a table is given no selection to make.
+     *
+     * <p>The keyboard is taken off the rows for the same reason. A table that could still walk a
+     * frame from row to row with the arrow keys, while selecting none of them, would be drawing
+     * the same empty promise a little more faintly, so the table is left with no row to point at
+     * either. Nothing is lost with it: walking the rows was only ever a way of choosing one.
+     *
+     * <p>What the pointer can honestly say it still says: a row lights while it is under the
+     * pointer, to keep the eye on one line of figures across a wide table, and lets go of it
+     * again when the pointer moves on. The headings keep everything they could do - a column can
+     * still be dragged to another place in the table, widened, and sorted by. Choosing is left to
+     * the places where a choice decides something: the lists of users and of events, where
+     * picking one is what the rest of the screen is about.
+     */
+    private static void stopPicking(TableView<?> table) {
+        table.setSelectionModel(null);
+        table.setFocusModel(null);
+    }
+
     // ------------------------------------------------------------------ widths
 
     /**
@@ -214,15 +241,17 @@ public final class Tables {
      * changed, since the three skins are set in three different typefaces at three different
      * sizes, and a column measured in one of them is the wrong width in either of the others.
      *
-     * <p>Asking twice for the same table only measures it again, rather than leaving it watched
-     * twice over, so a table whose columns are rebuilt on every refresh does not collect a
-     * listener per refresh.
+     * <p>This is also where a table is taken in hand for the first time, and so where it is
+     * told that its rows are not to be picked. Asking twice for the same table only measures
+     * it again, rather than setting it up a second time, so a table whose columns are rebuilt
+     * on every refresh does not collect a listener per refresh.
      */
     public static void fit(TableView<?> table) {
-        if (table.getProperties().put(MEASURED, Boolean.TRUE) != null) {
+        if (table.getProperties().put(ADOPTED, Boolean.TRUE) != null) {
             measureLater(table);
             return;
         }
+        stopPicking(table);
         whenRowsChange(table, () -> measureLater(table));
         table.getColumns().addListener((ListChangeListener<TableColumn<?, ?>>)
                 change -> measureLater(table));
