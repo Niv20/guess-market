@@ -4,6 +4,7 @@ import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Icons;
 import guessmarket.ui.common.Skin;
 import guessmarket.ui.common.TextSize;
+import guessmarket.ui.common.ToggleSwitch;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -67,7 +68,7 @@ public class SettingsController {
     @FXML private HBox skinChoices;
     @FXML private Slider textSizeSlider;
     @FXML private Label textSizePercent;
-    @FXML private ToggleButton animationsToggle;
+    @FXML private ToggleSwitch animationsToggle;
 
     /** Holds the three skins together, so that exactly one of them is chosen at any moment. */
     private final ToggleGroup skins = new ToggleGroup();
@@ -201,11 +202,14 @@ public class SettingsController {
         TextSize.scaleProperty().addListener((observable, previous, chosen) -> resize());
     }
 
-    /** Points the switch at the one that turns every animation in the program on and off. */
+    /**
+     * Points the switch at the one that turns every animation in the program on and off.
+     *
+     * <p>Nothing is written on it. A switch says which way it is by which way it is, and the row
+     * it stands in has already said what it is a switch for.
+     */
     private void followTheAnimationsSwitch() {
         animationsToggle.setSelected(Animations.ENABLED_AT_START);
-        animationsToggle.textProperty().bind(Bindings
-                .when(animationsToggle.selectedProperty()).then("On").otherwise("Off"));
         Animations.enabledProperty().bind(animationsToggle.selectedProperty());
     }
 

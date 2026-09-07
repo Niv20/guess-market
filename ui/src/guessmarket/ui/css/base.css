@@ -352,6 +352,70 @@
     -fx-text-fill: -app-accent-contrast;
 }
 
+/*
+ * A switch, for a setting that is on or off and nothing else.
+ *
+ * The button underneath is made to disappear entirely - no background, no border, no padding -
+ * so that what is seen is only the track it hands to its graphic. Everything below is therefore
+ * written against the track and the knob rather than against the button, and the button is left
+ * to do what it is good at, which is being clicked and focused.
+ *
+ * Both pieces are measured in multiples of the size of the writing, like everything else in this
+ * file, so a switch beside a line of text stays the height of that line however large the writing
+ * is made. The knob is exactly as tall as the track less its padding, which is what makes it a
+ * circle in a pill rather than a shape that has to be told it is round.
+ */
+.toggle-switch {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.toggle-switch-track {
+    -fx-min-width: 2.9em;
+    -fx-pref-width: 2.9em;
+    -fx-min-height: 1.55em;
+    -fx-pref-height: 1.55em;
+    -fx-padding: 0.2em;
+    -fx-background-color: -app-surface-3;
+    -fx-background-radius: 1em;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 1em;
+    -fx-border-width: 1;
+}
+
+/* On is the accent, which is what this program colours everything that has been chosen. */
+.toggle-switch:selected .toggle-switch-track {
+    -fx-background-color: -app-accent;
+    -fx-border-color: -app-accent;
+}
+
+.toggle-switch:hover .toggle-switch-track,
+.toggle-switch:focused .toggle-switch-track {
+    -fx-border-color: -app-accent;
+}
+
+.toggle-switch-knob {
+    -fx-min-width: 1.15em;
+    -fx-pref-width: 1.15em;
+    -fx-min-height: 1.15em;
+    -fx-pref-height: 1.15em;
+    -fx-background-color: -app-text-dim;
+    -fx-background-radius: 1em;
+}
+
+/*
+ * The knob turns the contrast colour of the skin once it is standing on the accent, which is the
+ * same pairing the primary button uses, and the same reason: the accent is the one colour here
+ * that is never sure to be light or dark, so what sits on it is named by the skin rather than
+ * guessed at.
+ */
+.toggle-switch:selected .toggle-switch-knob {
+    -fx-background-color: -app-accent-contrast;
+}
+
 /* ------------------------------------------------------------------ text input and choosers */
 
 .text-field, .text-area, .combo-box, .spinner {

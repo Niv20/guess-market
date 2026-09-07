@@ -4,11 +4,11 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import guessmarket.ui.common.ToggleSwitch?>
 
 <!--
     The settings sheet, laid over the whole window and hidden until the cog in the top left corner
@@ -90,7 +90,7 @@
                         <Label styleClass="settings-note" wrapText="true"
                                text="The short movements that accompany an action. None of them lasts longer than two seconds, and with this off the window shows exactly the same thing, at once."/>
                     </VBox>
-                    <ToggleButton fx:id="animationsToggle" minWidth="-Infinity"/>
+                    <ToggleSwitch fx:id="animationsToggle" minWidth="-Infinity"/>
                 </HBox>
 
                 <Label text="THE SYSTEM" styleClass="settings-group"/>
