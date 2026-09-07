@@ -1206,18 +1206,21 @@
     -fx-border-width: 0 0 1 0;
 }
 
+/*
+ * The settings themselves, and a little room under the last of them so that the line it carries
+ * lands inside the sheet rather than along the edge of it.
+ */
 .settings-body {
-    -fx-padding: 0 18 0 18;
+    -fx-padding: 0 18 10 18;
 }
 
 /*
  * One setting: what it is, what it means, and the control that changes it.
  *
- * Every row carries a line under it, the last one included, where it lands directly above the
- * footer and reads as the line that separates the two. That is deliberate: a stylesheet here
- * cannot ask for the last row of a group and only the last, and a group of rows with one line
- * missing from the middle of it looks like a mistake, which a group with one line too many at
- * the end of it does not.
+ * Every row carries a line under it, the last one included, where it ends up as a rule drawn
+ * under the whole sheet. That is deliberate: a stylesheet here cannot ask for the last row of a
+ * group and only the last, and a group of rows with one line missing from the middle of it looks
+ * like a mistake, which a group with one line too many at the end of it does not.
  */
 .settings-row {
     -fx-padding: 13 2 13 2;
@@ -1235,10 +1238,6 @@
     -fx-font-size: 0.78em;
     -fx-font-weight: bold;
     -fx-text-fill: -app-text-faint;
-}
-
-.settings-sheet-footer {
-    -fx-padding: 12 18 14 18;
 }
 
 /* The name of a setting, read while looking for the right row. */

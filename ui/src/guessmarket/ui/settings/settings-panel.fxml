@@ -92,14 +92,6 @@
             </VBox>
         </ScrollPane>
 
-        <HBox styleClass="settings-sheet-footer" spacing="10" alignment="CENTER_LEFT">
-            <Label styleClass="caption" wrapText="true"
-                   text="Press Escape, or click outside this sheet, to close it."/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="resetButton" text="Reset appearance" styleClass="button-quiet"
-                    minWidth="-Infinity" onAction="#onReset"/>
-        </HBox>
-
     </VBox>
 
 </StackPane>

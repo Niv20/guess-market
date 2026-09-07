@@ -44,7 +44,6 @@ public class SettingsController {
     @FXML private StackPane loadStateIcon;
 
     @FXML private Button closeSettingsButton;
-    @FXML private Button resetButton;
     @FXML private Button saveStateButton;
     @FXML private Button loadStateButton;
 
@@ -67,7 +66,6 @@ public class SettingsController {
 
         closeSettingsButton.setGraphic(Icons.cross(Icons.SMALL));
         closeSettingsButton.setTooltip(new Tooltip("Close the settings"));
-        resetButton.setGraphic(Icons.arrowBack(Icons.SMALL));
 
         askForExactlyTheHeightOfTheSettings();
         offerEverySkin();
@@ -189,16 +187,6 @@ public class SettingsController {
     @FXML
     private void onClose() {
         close();
-    }
-
-    /**
-     * Puts both appearance settings back to the ones the program opens with. It says nothing about
-     * the system that is loaded: nothing on this sheet is allowed to throw that away.
-     */
-    @FXML
-    private void onReset() {
-        skinChooser.setValue(Skin.DEFAULT);
-        animationsToggle.setSelected(Animations.ENABLED_AT_START);
     }
 
     /**
