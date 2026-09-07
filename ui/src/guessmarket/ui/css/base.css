@@ -363,8 +363,8 @@
 
 .tab-pane > .tab-header-area > .headers-region > .tab:selected {
     -fx-background-color: -app-surface;
-    -fx-border-color: -app-accent transparent transparent transparent;
-    -fx-border-width: 2 0 0 0;
+    -fx-border-color: transparent transparent -app-accent transparent;
+    -fx-border-width: 0 0 2 0;
 }
 
 .tab-pane > .tab-header-area > .headers-region > .tab:selected .tab-label {
