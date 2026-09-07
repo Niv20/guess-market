@@ -138,6 +138,9 @@ public class EventDetailsController {
                 .addListener((observable, was, now) -> Platform.runLater(this::layOutTerms));
         buildOptionsTable();
         buildHistoryTable();
+        // The participants table has its columns rebuilt for every event, so it is the one table
+        // asked here rather than where its columns are made.
+        Tables.shareWidth(participantsTable);
         Tables.emptyMessage(participantsTable, "Nobody has taken part in this event yet.");
         Tables.emptyMessage(historyTable, "Nothing has been traded in this event yet.");
         Tables.emptyMessage(optionsTable, "This event has no options.");

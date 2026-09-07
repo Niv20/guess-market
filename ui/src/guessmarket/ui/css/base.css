@@ -726,17 +726,41 @@
     -fx-background-color: transparent;
 }
 
+/*
+ * A scroll bar here is a thumb and nothing else: the arrows at the two ends are taken off, so
+ * what is left says how far down something is and can be dragged, and adds no furniture.
+ *
+ * Taking the arrows off also takes away the only thing that was giving the bar a thickness,
+ * because a scroll bar is measured from the buttons at its ends. So the thickness is stated
+ * here instead. Without it the bar is laid out nought pixels thick, and a table too narrow for
+ * its columns is cut off with nothing on the screen to drag and no sign that there is more.
+ */
 .scroll-bar {
     -fx-background-color: transparent;
+    -fx-padding: 2;
+}
+
+.scroll-bar:horizontal {
+    -fx-pref-height: 11;
+}
+
+.scroll-bar:vertical {
+    -fx-pref-width: 11;
+}
+
+.scroll-bar > .track {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
 }
 
 .scroll-bar > .thumb {
-    -fx-background-color: -app-surface-3;
+    -fx-background-color: -app-border;
     -fx-background-radius: 6;
 }
 
-.scroll-bar > .thumb:hover {
-    -fx-background-color: -app-border;
+.scroll-bar > .thumb:hover,
+.scroll-bar > .thumb:pressed {
+    -fx-background-color: -app-text-faint;
 }
 
 .scroll-bar > .increment-button,
@@ -749,6 +773,22 @@
 .scroll-bar > .decrement-button > .decrement-arrow {
     -fx-shape: " ";
     -fx-padding: 0;
+}
+
+/*
+ * The bar a table grows along its bottom edge when it is narrower than its columns. It is given
+ * a track of its own, unlike the ones over a scroll pane, because it is the only thing telling
+ * anybody that the columns carry on past the right hand edge.
+ */
+.table-view > .virtual-flow > .scroll-bar:horizontal {
+    -fx-background-color: -app-surface-2;
+    -fx-background-radius: 0 0 10 10;
+}
+
+/* The small square where two bars meet, which is otherwise left in the untouched default grey. */
+.corner {
+    -fx-background-color: -app-surface-2;
+    -fx-background-radius: 0 0 10 0;
 }
 
 /* ------------------------------------------------------------------ titled panes and split panes */
