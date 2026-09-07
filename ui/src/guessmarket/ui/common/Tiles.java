@@ -12,6 +12,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -194,6 +195,48 @@ public final class Tiles {
         title.getStyleClass().add("tile-title");
         title.setWrapText(true);
         return title;
+    }
+
+    /**
+     * @return the name with what the thing is after it, rather than on a row of its own above it
+     *
+     * <p>A badge above the name is a row a tile only sometimes has, and a list whose tiles are
+     * two different heights is read as two kinds of thing rather than as one list. Said after the
+     * name instead, in two or three letters, it costs the tile no height at all and every tile in
+     * the list ends where the one above it ended.
+     *
+     * <p>Each tag is held apart from the name by a dot, and the whole of what follows the name is
+     * set against the middle of it: a name that has wrapped onto a second line is still one name,
+     * and the tag belongs to all of it rather than to its first line.
+     */
+    public static Node titleRow(Node title, List<Label> tags) {
+        HBox row = new HBox(6, title);
+        row.setAlignment(Pos.CENTER_LEFT);
+        for (Label tag : tags) {
+            row.getChildren().addAll(tagSeparator(), tag);
+        }
+        return row;
+    }
+
+    /**
+     * @param kind one of the tag styles the stylesheet offers: {@code tile-tag-mm} or
+     *             {@code tile-tag-blocked}
+     * @return one tag for a {@linkplain #titleRow title row}: a short word in the colour of what
+     *         it means, and nothing else — no outline, no fill and no room taken from the name
+     */
+    public static Label tag(String text, String kind) {
+        Label tag = new Label(text);
+        tag.getStyleClass().addAll("tile-tag", kind);
+        tag.setMinWidth(Region.USE_PREF_SIZE);
+        return tag;
+    }
+
+    /** @return the dot before a tag, quiet enough that the name and the tag stay two things. */
+    private static Label tagSeparator() {
+        Label dot = new Label("\u00b7");
+        dot.getStyleClass().add("tile-tag-dot");
+        dot.setMinWidth(Region.USE_PREF_SIZE);
+        return dot;
     }
 
     /** @return the quiet line under the name: worth reading, not worth reading first. */
