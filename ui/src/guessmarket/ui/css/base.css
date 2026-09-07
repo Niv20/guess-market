@@ -1032,6 +1032,104 @@
     -fx-stroke: -app-text;
 }
 
+/* ------------------------------------------------------------------ the settings sheet */
+
+/*
+ * Everything the person decides about the program rather than about the market lives in one
+ * sheet laid over the window, reached by the cog in the top left corner.
+ *
+ * It is laid over the window rather than opened beside it or given a window of its own because
+ * none of it is part of reading a market: while it is open there is nothing else to be doing,
+ * and when it is closed the header is a header again rather than a shelf of switches. The
+ * darkened backing says the same thing - the market is still there, and is not being asked
+ * anything at the moment.
+ */
+.settings-scrim {
+    -fx-background-color: rgba(8, 8, 10, 0.5);
+    -fx-padding: 36;
+}
+
+.settings-sheet {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 16;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 30, 0, 0, 10);
+}
+
+.settings-sheet-header {
+    -fx-padding: 18 18 15 18;
+    -fx-border-color: transparent transparent -app-border-soft transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.settings-body {
+    -fx-padding: 0 18 0 18;
+}
+
+/*
+ * One setting: what it is, what it means, and the control that changes it.
+ *
+ * Every row carries a line under it, the last one included, where it lands directly above the
+ * footer and reads as the line that separates the two. That is deliberate: a stylesheet here
+ * cannot ask for the last row of a group and only the last, and a group of rows with one line
+ * missing from the middle of it looks like a mistake, which a group with one line too many at
+ * the end of it does not.
+ */
+.settings-row {
+    -fx-padding: 13 2 13 2;
+    -fx-border-color: transparent transparent -app-border-soft transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+/*
+ * The name of a group of settings. It says the same thing as .group-title and is written out
+ * again here rather than worn alongside it, so that a row of the sheet carries one style class
+ * and not two.
+ */
+.settings-group {
+    -fx-padding: 16 2 6 2;
+    -fx-font-size: 0.78em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text-faint;
+}
+
+.settings-sheet-footer {
+    -fx-padding: 12 18 14 18;
+}
+
+/* The name of a setting, read while looking for the right row. */
+.settings-title {
+    -fx-font-size: 1.02em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
+}
+
+/* What the setting actually does, read once the row has been found. */
+.settings-note {
+    -fx-font-size: 0.85em;
+    -fx-text-fill: -app-text-faint;
+}
+
+/* ------------------------------------------------------------------ tooltips */
+
+/*
+ * The one control in the window that is a drawing with no words on it is the cog, so the one
+ * place a tooltip is needed is under the cog. Left alone it would be the toolkit's pale yellow
+ * box, which belongs to no skin here.
+ */
+.tooltip {
+    -fx-background-color: -app-surface-3;
+    -fx-background-radius: 8;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-text-fill: -app-text;
+    -fx-font-size: 0.85em;
+    -fx-padding: 6 10 6 10;
+}
+
 /* ------------------------------------------------------------------ charts (bonus) */
 
 .chart {

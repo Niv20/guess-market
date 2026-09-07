@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+    The settings sheet, laid over the whole window and hidden until the cog in the top left corner
+    is pressed.
+
+    Everything here is a decision about the program rather than about a market: what the window is
+    coloured and lettered in, how large the writing is, whether an action is accompanied by a
+    movement, and what to do with the system as a whole. None of it is needed while a market is
+    being read, which is why none of it stands in the header any more.
+
+    Every row is built the same way: a drawing to find the row by, its name, a line saying what it
+    actually does, and the control that changes it. The drawings are not in this file because they
+    are drawn in code rather than loaded from images; each row leaves an empty square with a name
+    on it and the controller fills it in.
+-->
+<StackPane fx:id="rootPane" styleClass="settings-scrim" visible="false" managed="false"
+           xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="guessmarket.ui.settings.SettingsController">
+
+    <VBox styleClass="settings-sheet" maxWidth="620" maxHeight="-Infinity">
+
+        <HBox styleClass="settings-sheet-header" spacing="13" alignment="CENTER_LEFT">
+            <StackPane fx:id="titleIcon" styleClass="icon-badge"/>
+            <VBox spacing="1" HBox.hgrow="ALWAYS">
+                <Label text="Settings" styleClass="screen-title"/>
+                <Label styleClass="settings-note" wrapText="true"
+                       text="How the window looks, and what to do with the system inside it."/>
+            </VBox>
+            <Button fx:id="closeSettingsButton" styleClass="icon-button" minWidth="-Infinity"
+                    onAction="#onClose"/>
+        </HBox>
+
+        <ScrollPane fx:id="settingsScroll" fitToWidth="true" minHeight="90"
+                    VBox.vgrow="ALWAYS">
+            <VBox fx:id="settingsBody" styleClass="settings-body">
+
+                <Label text="APPEARANCE" styleClass="settings-group"/>
+
+                <!--
+                    The skin is the one setting whose control is under its description rather than
+                    beside it. Three choices shown at once take a row of their own; folded into a
+                    dropdown they would take less room, but then two of the three skins are things
+                    the person has to go looking for rather than things the program is offering.
+                -->
+                <VBox styleClass="settings-row" spacing="11">
+                    <HBox spacing="13" alignment="CENTER_LEFT">
+                        <StackPane fx:id="skinIcon" styleClass="icon-badge"/>
+                        <VBox spacing="2" HBox.hgrow="ALWAYS">
+                            <Label text="Skin" styleClass="settings-title"/>
+                            <Label styleClass="settings-note" wrapText="true"
+                                   text="The colours of the window, the shape of its buttons and the typeface every label is set in."/>
+                        </VBox>
+                    </HBox>
+                    <HBox fx:id="skinChoices" spacing="8" alignment="CENTER_LEFT">
+                        <padding>
+                            <javafx.geometry.Insets left="49"/>
+                        </padding>
+                    </HBox>
+                </VBox>
+
+                <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
+                    <StackPane fx:id="textSizeIcon" styleClass="icon-badge"/>
+                    <VBox spacing="2" minWidth="150" HBox.hgrow="ALWAYS">
+                        <Label text="Text size" styleClass="settings-title"/>
+                        <Label styleClass="settings-note" wrapText="true"
+                               text="On top of the size the skin asks for. Every panel, table and figure is measured against the writing, so the whole window grows with it."/>
+                    </VBox>
+                    <Slider fx:id="textSizeSlider" prefWidth="140" minWidth="90"
+                            majorTickUnit="0.05" minorTickCount="0" snapToTicks="true"/>
+                    <Label fx:id="textSizePercent" styleClass="value"
+                           minWidth="-Infinity" alignment="CENTER_RIGHT"/>
+                </HBox>
+
+                <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
+                    <StackPane fx:id="animationsIcon" styleClass="icon-badge"/>
+                    <VBox spacing="2" minWidth="150" HBox.hgrow="ALWAYS">
+                        <Label text="Animations" styleClass="settings-title"/>
+                        <Label styleClass="settings-note" wrapText="true"
+                               text="The short movements that accompany an action. None of them lasts longer than two seconds, and with this off the window shows exactly the same thing, at once."/>
+                    </VBox>
+                    <ToggleButton fx:id="animationsToggle" minWidth="-Infinity"/>
+                </HBox>
+
+                <Label text="THE SYSTEM" styleClass="settings-group"/>
+
+                <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
+                    <StackPane fx:id="saveStateIcon" styleClass="icon-badge"/>
+                    <VBox spacing="2" minWidth="150" HBox.hgrow="ALWAYS">
+                        <Label text="Save state" styleClass="settings-title"/>
+                        <Label styleClass="settings-note" wrapText="true"
+                               text="Writes the system exactly as it stands - every event, every balance and every trade made so far - to a file of its own."/>
+                    </VBox>
+                    <Button fx:id="saveStateButton" text="Save" minWidth="-Infinity"
+                            onAction="#onSaveState"/>
+                </HBox>
+
+                <HBox styleClass="settings-row" spacing="13" alignment="CENTER_LEFT">
+                    <StackPane fx:id="loadStateIcon" styleClass="icon-badge"/>
+                    <VBox spacing="2" minWidth="150" HBox.hgrow="ALWAYS">
+                        <Label text="Load state" styleClass="settings-title"/>
+                        <Label styleClass="settings-note" wrapText="true"
+                               text="Opens a system that was saved earlier and carries on from where it left off. Whatever is loaded now is replaced by it."/>
+                    </VBox>
+                    <Button fx:id="loadStateButton" text="Open" minWidth="-Infinity"
+                            onAction="#onLoadState"/>
+                </HBox>
+
+            </VBox>
+        </ScrollPane>
+
+        <HBox styleClass="settings-sheet-footer" spacing="10" alignment="CENTER_LEFT">
+            <Label styleClass="caption" wrapText="true"
+                   text="Press Escape, or click outside this sheet, to close it."/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="resetButton" text="Reset appearance" styleClass="button-quiet"
+                    minWidth="-Infinity" onAction="#onReset"/>
+        </HBox>
+
+    </VBox>
+
+</StackPane>

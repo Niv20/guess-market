@@ -8,20 +8,22 @@ import guessmarket.engine.exception.InvalidFileContentException;
 import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Dialogs;
 import guessmarket.ui.common.Icons;
-import guessmarket.ui.common.Skin;
 import guessmarket.ui.events.EventsSectionController;
+import guessmarket.ui.settings.SettingsActions;
+import guessmarket.ui.settings.SettingsController;
 import guessmarket.ui.users.UsersSectionController;
 import javafx.animation.Animation;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -35,13 +37,13 @@ import java.util.Locale;
 /**
  * The controller of the window as a whole.
  *
- * <p>It owns the three things that do not belong to either screen: the button that loads a file,
- * the skin the window is wearing and the switch that turns the animations on. Beyond that it does
- * as little as possible. It hands each screen the same {@link AppContext} and, whenever anything
- * changes the system, asks both of them to read the engine again. Neither screen knows the other
- * one is there.
+ * <p>It owns the things that do not belong to either screen: the button that loads a file, the
+ * settings sheet laid over everything, and the two file actions that sheet offers but cannot carry
+ * out for itself. Beyond that it does as little as possible. It hands each screen the same
+ * {@link AppContext} and, whenever anything changes the system, asks both of them to read the
+ * engine again. Neither screen knows the other one is there.
  */
-public class AppController {
+public class AppController implements SettingsActions {
 
     private static final String FILE_CHOOSER_TITLE = "Choose a Guess Market system details file";
     private static final String XML_FILTER_NAME = "Guess Market system details file (*.xml)";
@@ -52,11 +54,8 @@ public class AppController {
     /** How long the outcome of a load stays on the screen before the row takes itself away. */
     private static final Duration PROGRESS_ROW_LINGER = Duration.seconds(4);
 
-    @FXML private ComboBox<Skin> skinChooser;
-    @FXML private CheckBox animationsToggle;
+    @FXML private Button settingsButton;
     @FXML private Button loadFileButton;
-    @FXML private Button saveStateButton;
-    @FXML private Button loadStateButton;
     @FXML private TextField loadedFilePath;
     @FXML private HBox progressRow;
     @FXML private ProgressBar loadProgressBar;
@@ -67,9 +66,17 @@ public class AppController {
     /** Injected by the fx:include elements: the controller of each included layout file. */
     @FXML private EventsSectionController eventsSectionController;
     @FXML private UsersSectionController usersSectionController;
+    @FXML private SettingsController settingsPanelController;
 
     private GuessMarketEngine engine;
     private Stage stage;
+
+    /**
+     * Whether there is a system loaded. The settings sheet watches it rather than asking, because
+     * a system is loaded while the sheet is closed and what it offers has to be right when it is
+     * opened again.
+     */
+    private final BooleanProperty systemLoaded = new SimpleBooleanProperty(false);
 
     /** The folder the file chooser opens in, which is the one the last file came from. */
     private File lastChosenFolder;
@@ -79,10 +86,8 @@ public class AppController {
 
     @FXML
     private void initialize() {
-        skinChooser.getItems().setAll(Skin.values());
-        skinChooser.setValue(Skin.DEFAULT);
-        animationsToggle.setSelected(Animations.isEnabled());
-        Animations.enabledProperty().bind(animationsToggle.selectedProperty());
+        settingsButton.setGraphic(Icons.gear(Icons.ROW));
+        settingsButton.setTooltip(new Tooltip("Settings"));
         animateTabSwitches();
     }
 
@@ -110,19 +115,19 @@ public class AppController {
         this.engine = engineToUse;
         this.stage = hostStage;
 
-        Scene scene = hostStage.getScene();
-        skinChooser.valueProperty().addListener((observable, oldSkin, newSkin) -> {
-            if (newSkin != null) {
-                newSkin.applyTo(scene);
-            }
-        });
+        settingsPanelController.connect(hostStage.getScene(), this);
 
         AppContext context = new AppContext(engineToUse, hostStage, this::refreshEverything);
         for (AppSection section : sections()) {
             section.connect(context);
             section.clear();
         }
-        saveStateButton.setDisable(true);
+    }
+
+    /** The cog in the top left corner, which is the whole of the way into the settings. */
+    @FXML
+    private void onOpenSettings() {
+        settingsPanelController.open();
     }
 
     /** The button in the header. Everything about loading a file starts here. */
@@ -225,8 +230,8 @@ public class AppController {
      * picked up again later. This is not the system details file: it is the whole running system,
      * every trade and every balance included.
      */
-    @FXML
-    private void onSaveState() {
+    @Override
+    public void saveState() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Save the system as it stands");
         chooser.getExtensionFilters().add(
@@ -247,8 +252,8 @@ public class AppController {
     }
 
     /** Reads back a system that was saved earlier, replacing whatever is loaded now. */
-    @FXML
-    private void onLoadState() {
+    @Override
+    public void loadState() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Open a saved system");
         chooser.getExtensionFilters().add(
@@ -272,10 +277,15 @@ public class AppController {
         }
     }
 
+    @Override
+    public ObservableBooleanValue systemLoaded() {
+        return systemLoaded;
+    }
+
     /** Asks both screens to read the engine again. */
     private void refreshEverything() {
         boolean loaded = engine.isSystemLoaded();
-        saveStateButton.setDisable(!loaded);
+        systemLoaded.set(loaded);
         for (AppSection section : sections()) {
             if (loaded) {
                 section.refresh();

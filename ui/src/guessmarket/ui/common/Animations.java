@@ -42,8 +42,16 @@ public final class Animations {
     /** How faint a panel begins before it comes up to full strength. */
     private static final double SWITCH_FROM_OPACITY = 0;
 
-    /** Off to begin with, so the animations only run once they are switched on deliberately. */
-    private static final BooleanProperty ENABLED = new SimpleBooleanProperty(false);
+    /**
+     * Whether the animations are on when the program starts. They are not: an interface that has
+     * only just appeared should show what it has to show, and a movement is something the person
+     * asks for once they have seen it standing still. It is named here rather than written into
+     * the property below because the settings sheet offers to put everything back the way it
+     * started, and has to know what that was.
+     */
+    public static final boolean ENABLED_AT_START = false;
+
+    private static final BooleanProperty ENABLED = new SimpleBooleanProperty(ENABLED_AT_START);
 
     /** The panels that are fading in at this moment, so that a panel inside one of them can be left alone. */
     private static final Set<Node> SWITCHING_IN = new HashSet<>();
@@ -51,7 +59,7 @@ public final class Animations {
     private Animations() {
     }
 
-    /** The switch a check box in the header binds to. */
+    /** The switch the settings sheet binds to. */
     public static BooleanProperty enabledProperty() {
         return ENABLED;
     }
