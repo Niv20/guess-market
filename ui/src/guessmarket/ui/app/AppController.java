@@ -234,7 +234,6 @@ public class AppController implements SettingsActions {
         showLoadMessage("Loaded " + result.eventCount() + " events and "
                 + result.userCount() + " users", false);
         loadedFilePath.setText(result.filePath());
-        Animations.flash(loadProgressPercent);
         refreshEverything();
         hideProgressRowSoon();
     }
