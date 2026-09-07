@@ -29,8 +29,12 @@ import java.util.function.Function;
  *   <li>a row of badges saying what kind of thing this is, and how it is doing;</li>
  *   <li>its name, in bold, which is the one part read first;</li>
  *   <li>a faint line of context underneath, read only once the name has been found;</li>
- *   <li>the figures at the foot, each under a faint caption naming it.</li>
+ *   <li>the figures last, each under a faint caption naming it.</li>
  * </ol>
+ *
+ * <p>Last means underneath on a tile too narrow to say two things at once, and along the right
+ * on a tile wide enough for a column of its own — the same order either way, since a column read
+ * down is read after the name beside it. {@link #body} is what decides between them.
  *
  * <p>A list can also be laid on its side, as a strip of cards read across rather than a column
  * read down. It says the same things in the same order; what changes is that the list then costs
@@ -201,11 +205,29 @@ public final class Tiles {
     }
 
     /**
-     * @return the row of figures at the foot of a tile, which wraps instead of overflowing
+     * @return the name, the line under it and the figures, laid out in two columns when the tile
+     *         is wide enough to hold them side by side and stacked when it is not
+     *
+     * <p>A tile in a panel whose divider can be dragged is sometimes half a screen wide and
+     * sometimes a ribbon, and one arrangement cannot be right at both sizes: stacked, a wide tile
+     * is a narrow tile with an empty half beside it; side by side, a narrow tile is a name cut
+     * into single words. So the tile is given both and chooses between them from the width it is
+     * actually handed — see {@link TileBody} for which and why.
+     */
+    public static Node body(Node title, Node meta, FlowPane figures) {
+        return new TileBody(new VBox(4, title, meta), figures);
+    }
+
+    /**
+     * @return the row of figures a tile ends with, which wraps instead of overflowing
      *
      * <p>It keeps its height when a card has less room than it wants, so that a long name is
      * shortened rather than the money being squeezed off the card altogether. A tile without its
      * figures is not a shorter tile, it is the wrong tile.
+     *
+     * <p>It is a row wherever it is put, under the words or beside them; which way round it is
+     * set, and therefore whether it is read from the left or from the right, is decided by
+     * {@link #body} once the tile knows how wide it is.
      */
     public static FlowPane figures() {
         FlowPane row = new FlowPane(18, 6);

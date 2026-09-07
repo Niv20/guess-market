@@ -11,10 +11,12 @@ import javafx.scene.layout.VBox;
  * Draws one user as a tile for the list on the users screen.
  *
  * <p>A user is read as a name and an amount of money, and the tile is built around exactly that:
- * the name is the largest thing on it, and the balance sits at the foot in the accent colour,
+ * the name is the largest thing on it, and the balance is set apart from it in the accent colour,
  * because it is the figure every other screen in the program eventually comes back to. What the
  * user has made or lost stands beside it in green or in red — the same figure the balance came
- * from, so it is set in the same size and told apart by colour alone.
+ * from, so it is set in the same size and told apart by colour alone. Set apart means under the
+ * name on a narrow tile and out along the right on a wide one, which is a list of people that can
+ * be read down the money alone.
  *
  * <p>The two things that change what a user may do are worn as badges above the name: running an
  * event, which makes them answerable for it, and being blocked, which ends everything. A blocked
@@ -36,10 +38,10 @@ public final class UserTile {
         if (!badges.getChildren().isEmpty()) {
             tile.getChildren().add(badges);
         }
-        tile.getChildren().addAll(
-                Tiles.title(user.name()),
-                Tiles.meta(describeEvents(user)),
-                figures(user));
+        tile.getChildren().add(
+                Tiles.body(Tiles.title(user.name()),
+                        Tiles.meta(describeEvents(user)),
+                        figures(user)));
         return tile;
     }
 
