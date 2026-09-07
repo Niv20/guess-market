@@ -875,6 +875,32 @@
     -fx-progress-color: -app-accent;
 }
 
+/*
+ * The bar that fills along the top of the path field while a file is being read.
+ *
+ * It is the same control as any other progress bar and behaves like one; what it loses here is
+ * the frame around it. There is no track behind it, because the field it lies on is already the
+ * surface the line is drawn on and a second one would read as a border the field had grown, and
+ * there is no padding inside it, because the whole control is three pixels tall and padding at
+ * that size leaves nothing to fill. What is left is a rule in the accent colour, rounded at both
+ * ends so that it looks laid on the field rather than cut into it.
+ */
+.load-progress {
+    -fx-padding: 0;
+}
+
+.load-progress > .track {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+
+.load-progress > .bar {
+    -fx-background-color: -app-accent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 2;
+    -fx-padding: 0;
+}
+
 .scroll-pane {
     -fx-background-color: transparent;
     -fx-background: transparent;

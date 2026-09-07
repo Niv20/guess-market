@@ -90,7 +90,22 @@ public class AppController implements SettingsActions {
     private void initialize() {
         settingsButton.setGraphic(Icons.gear(Icons.ROW));
         settingsButton.setTooltip(new Tooltip("Settings"));
+        tieProgressBarToRow();
         animateTabSwitches();
+    }
+
+    /**
+     * Ties the bar on the path field to the two labels beside the title.
+     *
+     * <p>A load is one thing and is reported in two places, one on the file it is about and one at
+     * the end of the title line, so the two have to appear, disappear and fade as one. Rather than
+     * every one of those moments naming both, the bar is made to follow the row: whatever shows,
+     * hides or fades the row does exactly the same to the bar, and the rest of this class goes on
+     * speaking about the row alone.
+     */
+    private void tieProgressBarToRow() {
+        loadProgressBar.visibleProperty().bind(progressRow.visibleProperty());
+        loadProgressBar.opacityProperty().bind(progressRow.opacityProperty());
     }
 
     /**
@@ -337,8 +352,9 @@ public class AppController implements SettingsActions {
     }
 
     /**
-     * Shows or hides the progress row. Showing it also calls off a farewell that an earlier load
-     * left running, so a row brought back by a second load is not taken away by the first one.
+     * Shows or hides the progress row, and with it the bar on the path field. Showing it also
+     * calls off a farewell that an earlier load left running, so a row brought back by a second
+     * load is not taken away by the first one.
      */
     private void showProgressRow(boolean visible) {
         if (visible && progressRowFarewell != null) {
