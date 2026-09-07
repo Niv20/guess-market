@@ -13,9 +13,12 @@
 <!--
     The form for creating an event from scratch.
 
-    Whoever fills it in becomes the market maker of the event, which means they will be the one who
-    pays to open it, who receives its commission and who eventually decides its outcome. The event
-    is created not yet started, exactly like one that came out of a file.
+    Whoever is chosen as its market maker will be the one who pays to open the event, who receives
+    its commission and who eventually decides its outcome. The event is created not yet started,
+    exactly like one that came out of a file.
+
+    The market maker is asked for here rather than assumed, because the form is opened from the
+    events screen, where nobody in particular is selected. Users who are blocked are not offered.
 
     Only the settings of the chosen trading method are shown, because a liquidity parameter means
     nothing to an order book and a base value means nothing to LMSR.
@@ -31,6 +34,12 @@
 
     <Label text="Create an event" styleClass="section-title"/>
     <Label fx:id="creatorLabel" styleClass="muted" wrapText="true"/>
+
+    <VBox spacing="2">
+        <Label text="MARKET MAKER" styleClass="field-label"/>
+        <ComboBox fx:id="creatorChooser" prefWidth="240"
+                  promptText="Who is creating this event"/>
+    </VBox>
 
     <VBox spacing="2">
         <Label text="NAME" styleClass="field-label"/>

@@ -87,6 +87,57 @@
     -fx-text-fill: -app-text-dim;
 }
 
+/*
+ * The three sizes a figure is allowed to be.
+ *
+ * A panel is about one number. That number is the hero of it, the figure read straight after it
+ * is strong, and everything else stays the size of ordinary text however interesting it is.
+ * Three sizes are enough to say which is which; a fourth only makes the reading harder, which is
+ * why nothing here is sized on its own.
+ */
+
+/* The one figure a panel exists to show. */
+.value-hero {
+    -fx-font-size: 2em;
+}
+
+/* The figure read immediately after the hero, and the last one allowed to be larger than text. */
+.value-strong {
+    -fx-font-size: 1.3em;
+}
+
+/* The name of whatever a details panel is showing: a user, an event. Read before anything else. */
+.screen-title {
+    -fx-font-size: 1.5em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
+}
+
+/* The sentence under a title that says what it means. Read once, and never scanned. */
+.lead {
+    -fx-font-size: 1.02em;
+    -fx-text-fill: -app-text-dim;
+}
+
+/* A line of context under a figure: where it started, what it is measured against. */
+.caption {
+    -fx-font-size: 0.82em;
+    -fx-text-fill: -app-text-faint;
+}
+
+/* The name of a group of fields, above the fields themselves. */
+.group-title {
+    -fx-font-size: 0.78em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text-faint;
+}
+
+/* A value said on the same line as the label that names it, rather than under it. */
+.inline-value {
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
+}
+
 .placeholder-text {
     -fx-text-fill: -app-text-faint;
     -fx-font-size: 1.05em;
@@ -131,6 +182,41 @@
 .stat-tile-accent {
     -fx-background-color: -app-accent-soft;
     -fx-border-color: -app-accent;
+}
+
+/*
+ * The band that holds the figures a panel is about.
+ *
+ * It is one surface rather than one box per figure, because the figures inside it belong
+ * together: a balance and what made it, an account and what it has earned. Boxing each of them
+ * separately says they are separate things that happen to be side by side, which is exactly the
+ * thing a row of identical tiles gets wrong.
+ */
+.stat-band {
+    -fx-background-color: -app-accent-soft;
+    -fx-background-radius: 12;
+    -fx-border-color: -app-accent;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-padding: 14 18 14 18;
+}
+
+/*
+ * One field among a group of them: a muted label with its value under it, and no box at all.
+ *
+ * The minimum width is what lets a flowing row of these line up like a table without being one.
+ * Every field starts on the same grid, and a window made narrow drops the last of them onto the
+ * next line rather than squeezing all of them.
+ */
+.meta-item {
+    -fx-min-width: 152;
+}
+
+/* The last line of a panel: what is true about it but what nobody opened it to read. */
+.meta-strip {
+    -fx-border-color: -app-border-soft transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 10 0 0 0;
 }
 
 .separator *.line {
@@ -199,6 +285,31 @@
     -fx-background-color: -app-surface-2;
     -fx-border-color: -app-border-soft;
     -fx-text-fill: -app-text;
+}
+
+/*
+ * How an event is traded, offered as the way into the part of the screen that trades it.
+ *
+ * It has the shape of a badge because it says what kind of event this is, and the colour and the
+ * cursor of something that can be pressed because it also takes you to the books or the options
+ * it is naming. It is deliberately the only thing in that header that can be clicked.
+ */
+.method-link {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-border-color: -app-accent;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-text-fill: -app-accent;
+    -fx-font-size: 0.78em;
+    -fx-font-weight: bold;
+    -fx-padding: 3 10 3 10;
+    -fx-cursor: hand;
+}
+
+.method-link:hover {
+    -fx-background-color: -app-accent-soft;
+    -fx-border-color: -app-accent;
 }
 
 /* ------------------------------------------------------------------ the filter bar and toggles */

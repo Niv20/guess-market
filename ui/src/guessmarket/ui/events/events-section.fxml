@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
@@ -7,6 +8,7 @@
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -32,6 +34,19 @@
             <padding>
                 <javafx.geometry.Insets top="14" right="10" bottom="14" left="14"/>
             </padding>
+
+            <!--
+                Creating an event belongs on this screen rather than on the users screen. It is the
+                one action here, and it makes an event, which is what this screen is a list of; who
+                is making it is asked for in the form itself, where the rest of the event is asked
+                for too.
+            -->
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="EVENTS" styleClass="panel-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="createEventButton" text="Create an event"
+                        onAction="#onCreateEvent"/>
+            </HBox>
 
             <FlowPane styleClass="filter-bar" hgap="14" vgap="8">
                 <HBox alignment="CENTER_LEFT" spacing="6">
