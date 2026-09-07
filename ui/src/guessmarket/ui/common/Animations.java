@@ -3,11 +3,9 @@ package guessmarket.ui.common;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
-import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.SequentialTransition;
-import javafx.animation.TranslateTransition;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
@@ -28,27 +26,26 @@ import java.util.Set;
  * <p>There is exactly one animation for a panel being refilled, {@link #switchIn}, and every panel
  * in the program uses it. Choosing another user, choosing another event and moving between the two
  * screens are the same gesture as far as the person is concerned, so they are answered the same
- * way rather than each being given a movement of its own.
+ * way rather than each being given a movement of its own. That answer is a fade and nothing else:
+ * the panel is already where it belongs, so it has no reason to travel there, and a switch that
+ * only changes the strength of what is on the screen stays out of the way of somebody reading it.
  */
 public final class Animations {
 
     /** No animation in the program may last longer than this. */
     public static final Duration LONGEST = Duration.seconds(2);
 
-    private static final Duration SWITCH = Duration.millis(300);
+    private static final Duration SWITCH = Duration.millis(320);
     private static final Duration FLASH_HALF = Duration.millis(180);
     private static final Duration FADE_OUT = Duration.millis(420);
 
-    /** How far to the right a panel begins before it slides into its place. */
-    private static final double SWITCH_OFFSET = 28;
-
     /** How faint a panel begins before it comes up to full strength. */
-    private static final double SWITCH_FROM_OPACITY = 0.35;
+    private static final double SWITCH_FROM_OPACITY = 0;
 
     /** Off to begin with, so the animations only run once they are switched on deliberately. */
     private static final BooleanProperty ENABLED = new SimpleBooleanProperty(false);
 
-    /** The panels that are sliding in at this moment, so that a panel inside one of them can sit still. */
+    /** The panels that are fading in at this moment, so that a panel inside one of them can be left alone. */
     private static final Set<Node> SWITCHING_IN = new HashSet<>();
 
     private Animations() {
@@ -64,41 +61,36 @@ public final class Animations {
     }
 
     /**
-     * Slides a panel in from the right and brings it up to full strength, for a panel that has just
+     * Brings a panel up from nothing to full strength, without moving it, for a panel that has just
      * been filled with something other than what it held a moment ago.
      *
      * <p>This is the whole vocabulary of the program for showing a new subject: the details of a
      * user, the details of an event and the screen behind a tab all arrive this way. It is meant to
      * be called every time the subject changes and not only the first time the panel appears,
-     * because the movement is what says that what is on the screen is now about something else.
+     * because the fade is what says that what is on the screen is now about something else.
      *
-     * <p>A panel inside a panel that is already sliding in is left alone. It is being carried along
-     * by its parent, and animating it as well would only move it twice as far.
+     * <p>A panel inside a panel that is already fading in is left alone. It is being carried along
+     * by its parent, whose strength its own is measured against, so fading it as well would only
+     * make it arrive twice as slowly as everything around it.
      */
     public static void switchIn(Node node) {
         if (node == null || !isEnabled() || isCarriedByParent(node)) {
             return;
         }
-        TranslateTransition slide = new TranslateTransition(SWITCH, node);
-        slide.setFromX(SWITCH_OFFSET);
-        slide.setToX(0);
-        slide.setInterpolator(Interpolator.EASE_OUT);
-
         FadeTransition fade = new FadeTransition(SWITCH, node);
         fade.setFromValue(SWITCH_FROM_OPACITY);
         fade.setToValue(1);
+        fade.setInterpolator(Interpolator.EASE_OUT);
 
-        ParallelTransition whole = new ParallelTransition(node, slide, fade);
         SWITCHING_IN.add(node);
-        whole.setOnFinished(event -> {
+        fade.setOnFinished(event -> {
             SWITCHING_IN.remove(node);
-            node.setTranslateX(0);
             node.setOpacity(1);
         });
-        whole.playFromStart();
+        fade.playFromStart();
     }
 
-    /** @return whether an ancestor of this node is sliding in and taking the node with it. */
+    /** @return whether an ancestor of this node is fading in and taking the node with it. */
     private static boolean isCarriedByParent(Node node) {
         for (Node above = node.getParent(); above != null; above = above.getParent()) {
             if (SWITCHING_IN.contains(above)) {

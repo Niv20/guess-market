@@ -87,9 +87,9 @@ public class AppController {
     }
 
     /**
-     * Slides a screen in when its tab is chosen, with the same movement a details panel makes when
-     * it is filled with something else. Moving between the two screens is the same thing happening
-     * on a larger scale, so it is answered the same way rather than with a movement of its own.
+     * Fades a screen in when its tab is chosen, with the same fade a details panel makes when it is
+     * filled with something else. Moving between the two screens is the same thing happening on a
+     * larger scale, so it is answered the same way rather than with an animation of its own.
      */
     private void animateTabSwitches() {
         tabPane.getSelectionModel().selectedItemProperty()
