@@ -876,7 +876,7 @@
 }
 
 /*
- * The bar that fills along the top of the path field while a file is being read.
+ * The bar that fills along the bottom of the path field while a file is being read.
  *
  * It is the same control as any other progress bar and behaves like one; what it loses here is
  * the frame around it. There is no track behind it, because the field it lies on is already the
