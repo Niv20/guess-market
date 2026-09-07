@@ -127,6 +127,19 @@ public class EventDetailsController {
     /** The event account balance the panel last showed, so a balance that has moved can be marked. */
     private double shownAccountBalance;
 
+    /**
+     * Whether this panel has ever been filled, which is what makes its first event arrive
+     * differently from every event after it.
+     *
+     * <p>Only the first one is faded in. Until an event is chosen this side of the screen is a
+     * sentence asking for one, so the first choice really does put a panel where there was none
+     * and the fade is what says so; from then on the panel stays and only its contents change,
+     * and fading it again before every event somebody looks at would be a wait rather than an
+     * answer. Like {@link #shownEventId} this survives {@link #clear()}, which happens on its own
+     * during a refresh and would otherwise make the panel arrive for the first time over and over.
+     */
+    private boolean everFilled;
+
     @FXML
     private void initialize() {
         termTiles.addAll(List.of(commissionTile, liquidityTile, subsidyTile,
@@ -185,7 +198,8 @@ public class EventDetailsController {
 
         rootPane.setVisible(true);
         rootPane.setManaged(true);
-        if (anotherEvent) {
+        if (!everFilled) {
+            everFilled = true;
             Animations.switchIn(rootPane);
         } else if (accountMoved) {
             Animations.flash(accountBalanceLabel);

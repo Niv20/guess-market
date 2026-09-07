@@ -80,7 +80,7 @@ All four bonuses of this exercise are implemented, and the bonus of exercise 1 s
 | Bonus | Where |
 |---|---|
 | Skins — three colour schemes, each with its own background, buttons and label font | the **Skin** row of the settings, default **Midnight**; the size the skin asks for can be scaled from 85% to 140% with the **Text size** slider beneath it |
-| Animations — three, none longer than half a second, off by default | the **Animations** switch in the settings |
+| Animations — four, none longer than half a second, off by default | the **Animations** switch in the settings |
 | Graphs — option price per transaction, and account balance per action | inside an event's details, and inside a user's details |
 | Creating an event | the **Create an event** button on the events screen |
 | Exercise 1: saving and loading the system | the **Save state** and **Load state** rows of the settings |

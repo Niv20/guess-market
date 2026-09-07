@@ -93,6 +93,19 @@ public class UsersSectionController implements AppSection {
     /** The balance the panel last showed for that user, so a balance that has moved can be marked. */
     private double shownBalance;
 
+    /**
+     * Whether this panel has ever been filled, which is what makes the first user arrive
+     * differently from every user after them.
+     *
+     * <p>Only the first one is faded in. Until somebody is chosen this side of the screen is a
+     * sentence asking for one, so the first choice really does put a panel where there was none
+     * and the fade is what says so; from then on the panel stays and only its contents change,
+     * and fading it again before every person somebody looks at would be a wait rather than an
+     * answer. Like {@link #shownUserName} this is kept when the panel is emptied, which happens on
+     * its own during a refresh.
+     */
+    private boolean everFilled;
+
     @FXML
     private void initialize() {
         Tiles.render(usersList, UserTile::of);
@@ -172,7 +185,8 @@ public class UsersSectionController implements AppSection {
 
         showNode(placeholderLabel, false);
         showNode(detailsBox, true);
-        if (anotherUser) {
+        if (!everFilled) {
+            everFilled = true;
             // Started before the panels inside it are filled, so that they are carried in by this
             // one rather than each fading in on its own.
             Animations.switchIn(detailsBox);

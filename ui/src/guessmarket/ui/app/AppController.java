@@ -18,9 +18,11 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.fxml.FXML;
+import javafx.geometry.HorizontalDirection;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
@@ -92,17 +94,35 @@ public class AppController implements SettingsActions {
     }
 
     /**
-     * Fades a screen in when its tab is chosen, with the same fade a details panel makes when it is
-     * filled with something else. Moving between the two screens is the same thing happening on a
-     * larger scale, so it is answered the same way rather than with an animation of its own.
+     * Slides a screen in from the side when its tab is chosen, in whichever direction the person
+     * moved along the tabs: going from Events to Users the screen travels rightwards, and coming
+     * back from Users to Events it travels leftwards.
+     *
+     * <p>The tabs are the one place in the window where two things sit beside each other in a
+     * fixed order, so they are the one place where a movement can say something a fade cannot —
+     * not only that the screen has changed, but which of the two the person is now on and which
+     * way they went to get there. The screens themselves are told nothing about this; they are
+     * moved from here as whole panels, exactly as the tab pane hands them over.
      */
     private void animateTabSwitches() {
         tabPane.getSelectionModel().selectedItemProperty()
                 .addListener((observable, previous, chosen) -> {
-                    if (chosen != null) {
-                        Animations.switchIn(chosen.getContent());
+                    if (previous != null && chosen != null) {
+                        Animations.slideIn(chosen.getContent(), travelBetween(previous, chosen));
                     }
                 });
+    }
+
+    /**
+     * @return the direction the arriving screen moves in, which is the direction the chosen tab
+     *         lies in from the one that was open. The first screen of all is not animated: nothing
+     *         was on the screen before it, so it came from nowhere rather than from a side.
+     */
+    private HorizontalDirection travelBetween(Tab previous, Tab chosen) {
+        List<Tab> tabs = tabPane.getTabs();
+        return tabs.indexOf(chosen) > tabs.indexOf(previous)
+                ? HorizontalDirection.RIGHT
+                : HorizontalDirection.LEFT;
     }
 
     /**
