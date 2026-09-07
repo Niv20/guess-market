@@ -82,6 +82,11 @@
     -fx-text-fill: -app-accent;
 }
 
+/* A figure that could have been a profit or a loss and turned out to be neither. */
+.value-neutral {
+    -fx-text-fill: -app-text-dim;
+}
+
 .placeholder-text {
     -fx-text-fill: -app-text-faint;
     -fx-font-size: 1.05em;
@@ -450,9 +455,86 @@
     -fx-font-family: "Menlo", "Consolas", "Courier New", monospace;
 }
 
-/* Rows of a table that no longer take part in anything, such as a blocked user. */
-.table-row-cell.row-inactive .table-cell {
+/* ------------------------------------------------------------------ tiles */
+
+/*
+ * The lists that are drawn as a column of cards rather than as a table.
+ *
+ * A table cannot be made narrower than the sum of its columns, so a narrow window either loses
+ * the right hand columns or grows a scroll bar under them. A tile is one column that reflows,
+ * and what a table said by the position of a column it says by weight and colour instead: a bold
+ * name to find the row by, badges above it for what kind of thing it is, a dimmer line of
+ * context under it, and the money at the foot under a caption of its own.
+ *
+ * A tile is a .card as well, so each skin dresses it exactly as it dresses every other panel.
+ */
+
+.tile-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+/* The cell is only the gap between one tile and the next. The tile is the thing that is seen. */
+.tile-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 0 0 8 0;
+}
+
+.tile-list .list-cell:filled:hover,
+.tile-list .list-cell:filled:selected {
+    -fx-background-color: transparent;
+}
+
+.tile {
+    -fx-padding: 11 14 12 14;
+    -fx-cursor: hand;
+}
+
+.tile-list .list-cell:filled:hover .tile {
+    -fx-border-color: -app-border;
+}
+
+/*
+ * The selected tile is tinted rather than outlined alone, and the tint is laid over the colour
+ * of the card so that it reads the same on a skin whose cards are white and on one whose cards
+ * are a gradient. The border stays one point wide, so nothing on the tile moves when it is
+ * chosen.
+ */
+.tile-list .list-cell:filled:selected .tile {
+    -fx-background-color: -app-surface, -app-accent-soft;
+    -fx-background-radius: 12, 12;
+    -fx-border-color: -app-accent;
+}
+
+/* The name of the thing. The one part of a tile that is read before anything else on it. */
+.tile-title {
+    -fx-font-size: 1.08em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
+}
+
+/* What the name means. Read once the name has been found, and never before it. */
+.tile-meta {
+    -fx-font-size: 0.88em;
+    -fx-text-fill: -app-text-dim;
+}
+
+/* The number the file gave an event: needed to refer to it, never scanned for. */
+.tile-id {
+    -fx-font-family: "Menlo", "Consolas", "Courier New", monospace;
+    -fx-font-size: 0.82em;
     -fx-text-fill: -app-text-faint;
+}
+
+/* The figures stand a little away from the words above them, so they read as a row of their own. */
+.tile-figures {
+    -fx-padding: 5 0 0 0;
+}
+
+/* A tile for somebody who can do nothing further, such as a blocked user. */
+.tile-inactive {
+    -fx-opacity: 0.5;
 }
 
 /* ------------------------------------------------------------------ order book rows */

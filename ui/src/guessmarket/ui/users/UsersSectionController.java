@@ -9,8 +9,9 @@ import guessmarket.ui.app.AppContext;
 import guessmarket.ui.app.AppSection;
 import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Formats;
-import guessmarket.ui.common.Tables;
+import guessmarket.ui.common.Tiles;
 import guessmarket.ui.events.EventDetailsController;
+import guessmarket.ui.events.EventTile;
 import guessmarket.ui.trade.CreateEventController;
 import guessmarket.ui.trade.TradePanelController;
 import javafx.collections.FXCollections;
@@ -21,7 +22,7 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableView;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ScrollPane;
@@ -41,10 +42,14 @@ import java.util.List;
  * <p>Nothing here is kept between refreshes. Every action reports that the system has moved, the
  * application controller asks both screens to rebuild, and this screen reads the engine again and
  * puts the selection back where it was.
+ *
+ * <p>Both lists are columns of tiles rather than tables. A user is read as a name and a balance
+ * and an event as a name and a state, and a tile can put those first and let everything else fall
+ * in behind them, which is what keeps both lists readable when the window is made narrow.
  */
 public class UsersSectionController implements AppSection {
 
-    @FXML private TableView<UserDto> usersTable;
+    @FXML private ListView<UserDto> usersList;
     @FXML private Label userCountLabel;
     @FXML private Label placeholderLabel;
     @FXML private ScrollPane detailsScroll;
@@ -64,7 +69,7 @@ public class UsersSectionController implements AppSection {
 
     @FXML private ToggleButton allEventsButton;
     @FXML private ToggleButton myEventsButton;
-    @FXML private TableView<EventDto> eventsTable;
+    @FXML private ListView<EventDto> eventsList;
 
     @FXML private UserInvolvementController userInvolvementController;
     @FXML private TradePanelController tradePanelController;
@@ -79,8 +84,8 @@ public class UsersSectionController implements AppSection {
 
     @FXML
     private void initialize() {
-        buildUsersTable();
-        buildEventsTable();
+        Tiles.render(usersList, UserTile::of);
+        Tiles.render(eventsList, event -> EventTile.of(event, roleOf(event)));
 
         allEventsButton.setToggleGroup(eventScope);
         myEventsButton.setToggleGroup(eventScope);
@@ -92,13 +97,13 @@ public class UsersSectionController implements AppSection {
             }
         });
 
-        usersTable.getSelectionModel().selectedItemProperty()
+        usersList.getSelectionModel().selectedItemProperty()
                 .addListener((observable, previous, selected) -> showUser(selected));
-        eventsTable.getSelectionModel().selectedItemProperty()
+        eventsList.getSelectionModel().selectedItemProperty()
                 .addListener((observable, previous, selected) -> showEvent(selected));
 
-        Tables.emptyMessage(usersTable, "No users have been loaded.");
-        Tables.emptyMessage(eventsTable, "This user does not run or take part in any event yet.");
+        Tiles.emptyMessage(usersList, "No users have been loaded.");
+        Tiles.emptyMessage(eventsList, "This user does not run or take part in any event yet.");
     }
 
     @Override
@@ -112,8 +117,8 @@ public class UsersSectionController implements AppSection {
         String previousUser = selectedUserName();
         int previousEvent = selectedEventId();
 
-        usersTable.setItems(FXCollections.observableArrayList(context.engine().getAllUsers()));
-        userCountLabel.setText(describeCount(usersTable.getItems().size()));
+        usersList.setItems(FXCollections.observableArrayList(context.engine().getAllUsers()));
+        userCountLabel.setText(describeCount(usersList.getItems().size()));
         loadedEvents.clear();
         loadedEvents.addAll(context.engine().getAllEvents());
 
@@ -124,8 +129,8 @@ public class UsersSectionController implements AppSection {
     @Override
     public void clear() {
         loadedEvents.clear();
-        usersTable.getItems().clear();
-        eventsTable.getItems().clear();
+        usersList.getItems().clear();
+        eventsList.getItems().clear();
         userCountLabel.setText("");
         showDetails(false);
         placeholderLabel.setText("Load a system details file to see the users.");
@@ -133,25 +138,6 @@ public class UsersSectionController implements AppSection {
     }
 
     // ------------------------------------------------------------------ the list of users
-
-    private void buildUsersTable() {
-        Tables.columns(usersTable,
-                Tables.text("NAME", 120, UserDto::name),
-                Tables.number("BALANCE", 100, user -> Formats.money(user.balance())),
-                Tables.number("RESULT", 95, user -> Formats.signedMoney(user.netResult())),
-                Tables.text("STATUS", 80, user -> user.blocked() ? "Blocked" : "Active"));
-        // A blocked user is greyed out, because nothing about them can change any more.
-        usersTable.setRowFactory(table -> new javafx.scene.control.TableRow<>() {
-            @Override
-            protected void updateItem(UserDto user, boolean empty) {
-                super.updateItem(user, empty);
-                getStyleClass().remove("row-inactive");
-                if (!empty && user != null && user.blocked()) {
-                    getStyleClass().add("row-inactive");
-                }
-            }
-        });
-    }
 
     private static String describeCount(int users) {
         return users == 0 ? "" : users + (users == 1 ? " user" : " users");
@@ -162,7 +148,7 @@ public class UsersSectionController implements AppSection {
     private void showUser(UserDto user) {
         if (user == null) {
             showDetails(false);
-            placeholderLabel.setText(usersTable.getItems().isEmpty()
+            placeholderLabel.setText(usersList.getItems().isEmpty()
                     ? "Load a system details file to see the users."
                     : "Choose a user on the left to see their account and to act as them.");
             showNode(placeholderLabel, true);
@@ -175,10 +161,9 @@ public class UsersSectionController implements AppSection {
         balanceLabel.setText(Formats.money(user.balance()));
         initialBalanceLabel.setText(Formats.money(user.initialBalance()));
         netResultLabel.setText(Formats.signedMoney(user.netResult()));
-        netResultLabel.getStyleClass().setAll("value",
-                user.netResult() < 0 ? "value-negative" : "value-positive");
-        runsLabel.setText(countOf(user.marketMakerEventIds().size(), "event"));
-        participatesLabel.setText(countOf(user.participatingEventIds().size(), "event"));
+        netResultLabel.getStyleClass().setAll("value", Formats.resultStyle(user.netResult()));
+        runsLabel.setText(Formats.count(user.marketMakerEventIds().size(), "event"));
+        participatesLabel.setText(Formats.count(user.participatingEventIds().size(), "event"));
 
         showNode(blockedBadge, user.blocked());
         createEventButton.setDisable(user.blocked());
@@ -193,14 +178,10 @@ public class UsersSectionController implements AppSection {
      */
     @FXML
     private void onCreateEvent() {
-        UserDto user = usersTable.getSelectionModel().getSelectedItem();
+        UserDto user = usersList.getSelectionModel().getSelectedItem();
         if (user != null) {
             CreateEventController.open(context, user.name());
         }
-    }
-
-    private static String countOf(int count, String noun) {
-        return count + " " + noun + (count == 1 ? "" : "s");
     }
 
     private void showBalanceChart(UserDto user) {
@@ -216,25 +197,26 @@ public class UsersSectionController implements AppSection {
 
     // ------------------------------------------------------------------ the events of that user
 
-    private void buildEventsTable() {
-        Tables.columns(eventsTable,
-                Tables.number("ID", 44, event -> String.valueOf(event.id())),
-                Tables.text("NAME", 180, EventDto::name),
-                Tables.text("STATUS", 95, event -> event.status().getDisplayName()),
-                Tables.text("TYPE", 100, event -> event.tradingMethod().getDisplayName()),
-                Tables.text("ROLE", 115, this::describeRole));
-    }
-
-    /** @return what the selected user is to an event: its market maker, a participant, or nothing. */
-    private String describeRole(EventDto event) {
-        UserDto user = usersTable.getSelectionModel().getSelectedItem();
+    /**
+     * Works out what the selected user is to an event.
+     *
+     * <p>This is read as a tile is drawn rather than kept anywhere, so the badge on an event
+     * belongs to whoever is selected at the moment the tile appears, and choosing another user
+     * rebuilds the list and with it every badge on it.
+     *
+     * @return its market maker, one of its participants, or nothing at all
+     */
+    private EventTile.Role roleOf(EventDto event) {
+        UserDto user = usersList.getSelectionModel().getSelectedItem();
         if (user == null) {
-            return Formats.NOTHING;
+            return EventTile.Role.NONE;
         }
         if (event.marketMakerName().equalsIgnoreCase(user.name())) {
-            return "Market maker";
+            return EventTile.Role.MARKET_MAKER;
         }
-        return user.participatingEventIds().contains(event.id()) ? "Taking part" : Formats.NOTHING;
+        return user.participatingEventIds().contains(event.id())
+                ? EventTile.Role.PARTICIPANT
+                : EventTile.Role.NONE;
     }
 
     /**
@@ -245,9 +227,9 @@ public class UsersSectionController implements AppSection {
      * asks to be shown: the events they run and the events they are already taking part in.
      */
     private void showEventsOfSelectedUser() {
-        UserDto user = usersTable.getSelectionModel().getSelectedItem();
+        UserDto user = usersList.getSelectionModel().getSelectedItem();
         if (user == null) {
-            eventsTable.getItems().clear();
+            eventsList.getItems().clear();
             return;
         }
         int previousEvent = selectedEventId();
@@ -258,7 +240,7 @@ public class UsersSectionController implements AppSection {
                 shown.add(event);
             }
         }
-        eventsTable.setItems(shown);
+        eventsList.setItems(shown);
         reselectEvent(previousEvent);
     }
 
@@ -268,7 +250,7 @@ public class UsersSectionController implements AppSection {
     }
 
     private void showEvent(EventDto event) {
-        UserDto user = usersTable.getSelectionModel().getSelectedItem();
+        UserDto user = usersList.getSelectionModel().getSelectedItem();
         if (user == null || event == null) {
             userInvolvementController.clear();
             tradePanelController.clear();
@@ -287,29 +269,29 @@ public class UsersSectionController implements AppSection {
     // ------------------------------------------------------------------ keeping the selection
 
     private String selectedUserName() {
-        UserDto selected = usersTable.getSelectionModel().getSelectedItem();
+        UserDto selected = usersList.getSelectionModel().getSelectedItem();
         return selected == null ? null : selected.name();
     }
 
     private int selectedEventId() {
-        EventDto selected = eventsTable.getSelectionModel().getSelectedItem();
+        EventDto selected = eventsList.getSelectionModel().getSelectedItem();
         return selected == null ? -1 : selected.id();
     }
 
-    /** Puts the selection back on the same user, now that every row is a new object. */
+    /** Puts the selection back on the same user, now that every tile is a new object. */
     private void reselectUser(String userName) {
         if (userName == null) {
             showUser(null);
             return;
         }
-        for (UserDto user : usersTable.getItems()) {
+        for (UserDto user : usersList.getItems()) {
             if (user.name().equalsIgnoreCase(userName)) {
-                usersTable.getSelectionModel().select(user);
+                usersList.getSelectionModel().select(user);
                 showUser(user);
                 return;
             }
         }
-        usersTable.getSelectionModel().clearSelection();
+        usersList.getSelectionModel().clearSelection();
         showUser(null);
     }
 
@@ -317,14 +299,14 @@ public class UsersSectionController implements AppSection {
         if (eventId < 0) {
             return;
         }
-        for (EventDto event : eventsTable.getItems()) {
+        for (EventDto event : eventsList.getItems()) {
             if (event.id() == eventId) {
-                eventsTable.getSelectionModel().select(event);
+                eventsList.getSelectionModel().select(event);
                 showEvent(event);
                 return;
             }
         }
-        eventsTable.getSelectionModel().clearSelection();
+        eventsList.getSelectionModel().clearSelection();
         showEvent(null);
     }
 

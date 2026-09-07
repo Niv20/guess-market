@@ -4,9 +4,9 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.FlowPane?>
@@ -23,6 +23,10 @@
 
     An action always belongs to somebody, which is why it happens here: the person acting is the one
     selected on the left, and there is never any doubt about whose money is moving.
+
+    Both lists of this screen are columns of tiles rather than tables, so that they keep everything
+    they have to say however narrow the window is made: a name and a balance for a user, and for an
+    event how it is doing, whose it is and what this user is to it.
 -->
 <SplitPane fx:id="rootPane" dividerPositions="0.30"
            xmlns="http://javafx.com/javafx"
@@ -31,12 +35,13 @@
 
     <items>
 
-        <VBox spacing="10" minWidth="240">
+        <VBox spacing="10" minWidth="210">
             <padding>
                 <javafx.geometry.Insets top="14" right="10" bottom="14" left="14"/>
             </padding>
             <Label text="USERS" styleClass="panel-title"/>
-            <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" minHeight="150"/>
+            <ListView fx:id="usersList" styleClass="tile-list"
+                      VBox.vgrow="ALWAYS" minHeight="150"/>
             <Label fx:id="userCountLabel" styleClass="faint"/>
         </VBox>
 
@@ -109,7 +114,8 @@
                             <ToggleButton fx:id="allEventsButton" text="All events" selected="true"/>
                             <ToggleButton fx:id="myEventsButton" text="Only mine"/>
                         </HBox>
-                        <TableView fx:id="eventsTable" prefHeight="190" minHeight="120"/>
+                        <ListView fx:id="eventsList" styleClass="tile-list"
+                                  prefHeight="300" minHeight="150"/>
                     </VBox>
 
                     <fx:include fx:id="userInvolvement" source="user-involvement.fxml"/>
