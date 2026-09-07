@@ -547,6 +547,22 @@
     -fx-border-color: transparent;
 }
 
+/*
+ * The foot of a screen: how much of the system it is showing, under a line drawn the whole way
+ * across the tab.
+ *
+ * The line is what makes this the foot of the screen rather than one more row of the panel above
+ * it, and it is deliberately drawn past the divider: the count is about the tab, not about either
+ * half of it, and it does not change when the divider is dragged. Its left edge lines up with the
+ * title of the panel above it, so the screen reads as one column of text and not as a bar bolted
+ * underneath.
+ */
+.tab-footer {
+    -fx-border-color: -app-border-soft transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 8 14 10 14;
+}
+
 /* ------------------------------------------------------------------ tables */
 
 .table-view, .tree-table-view {
@@ -591,19 +607,16 @@
 }
 
 /*
- * Pointing at a row and picking one are both said in grey rather than in the colour of the
- * program. Nothing follows from picking a row in a table here - every one of them is a list to
- * read, and none of them is a list to choose from - so a row that has been clicked should say
- * no more than "this is the one you are looking at", and the accent is spoken for elsewhere by
- * things that can actually be acted on.
+ * Pointing at a row, which is the only thing the pointer says over a table.
+ *
+ * A row cannot be picked - the tables are handed no selection at all - because nothing sits
+ * behind a row to be opened: every one of them is a list to read, whole on the screen. So the
+ * highlight lasts exactly as long as the pointer is over the row, which is worth having on its
+ * own for keeping the eye on one line of figures across a wide table, and it is said in grey:
+ * the colour of the program is kept for the things that can actually be acted on.
  */
 .table-view .table-row-cell:hover {
     -fx-background-color: -app-surface-3;
-}
-
-.table-view .table-row-cell:selected {
-    -fx-background-color: -app-border;
-    -fx-border-color: transparent transparent -app-border-soft transparent;
 }
 
 .table-view .table-row-cell:empty {
@@ -615,10 +628,6 @@
     -fx-text-fill: -app-text;
     -fx-padding: 0 8 0 8;
     -fx-alignment: center-left;
-}
-
-.table-view .table-row-cell:selected .table-cell {
-    -fx-text-fill: -app-text;
 }
 
 .table-view .placeholder .label {

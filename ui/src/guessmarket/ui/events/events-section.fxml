@@ -22,62 +22,73 @@
     The list on the left is a column of tiles rather than a table, so that it keeps its whole
     contents however narrow it is dragged: a table of seven columns has a width below which it can
     only start hiding things, and this list has none.
+
+    How much of the system is on the screen is said at the foot of the screen, under a line that
+    runs the whole way across it. It is not the last line of the list on the left: it is what the
+    tab as a whole is showing, and how far the divider has been dragged has nothing to do with it,
+    so it sits below both halves rather than inside one of them.
 -->
-<SplitPane fx:id="rootPane" dividerPositions="0.44"
-           xmlns="http://javafx.com/javafx"
-           xmlns:fx="http://javafx.com/fxml"
-           fx:controller="guessmarket.ui.events.EventsSectionController">
+<VBox fx:id="rootPane"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="guessmarket.ui.events.EventsSectionController">
 
-    <items>
+    <SplitPane dividerPositions="0.44" VBox.vgrow="ALWAYS">
+        <items>
 
-        <VBox spacing="10" minWidth="220">
-            <padding>
-                <javafx.geometry.Insets top="14" right="10" bottom="14" left="14"/>
-            </padding>
-
-            <!--
-                Creating an event belongs on this screen rather than on the users screen. It is the
-                one action here, and it makes an event, which is what this screen is a list of; who
-                is making it is asked for in the form itself, where the rest of the event is asked
-                for too.
-            -->
-            <HBox alignment="CENTER_LEFT" spacing="10">
-                <Label text="EVENTS" styleClass="panel-title"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Button fx:id="createEventButton" text="Create an event"
-                        onAction="#onCreateEvent"/>
-            </HBox>
-
-            <FlowPane styleClass="filter-bar" hgap="14" vgap="8">
-                <HBox alignment="CENTER_LEFT" spacing="6">
-                    <Label text="TYPE" styleClass="field-label"/>
-                    <ComboBox fx:id="typeChooser" prefWidth="108"/>
-                </HBox>
-                <HBox alignment="CENTER_LEFT" spacing="6">
-                    <Label text="STATUS" styleClass="field-label"/>
-                    <ComboBox fx:id="statusChooser" prefWidth="108"/>
-                </HBox>
-                <HBox alignment="CENTER_LEFT" spacing="6">
-                    <Label text="COMMISSION" styleClass="field-label"/>
-                    <ComboBox fx:id="commissionChooser" prefWidth="112"/>
-                </HBox>
-            </FlowPane>
-
-            <ListView fx:id="eventsList" styleClass="tile-list"
-                      VBox.vgrow="ALWAYS" minHeight="150"/>
-            <Label fx:id="countLabel" styleClass="faint"/>
-        </VBox>
-
-        <ScrollPane fx:id="detailsScroll" fitToWidth="true" minWidth="320">
-            <StackPane>
+            <VBox spacing="10" minWidth="220">
                 <padding>
-                    <javafx.geometry.Insets top="14" right="14" bottom="14" left="10"/>
+                    <javafx.geometry.Insets top="14" right="10" bottom="12" left="14"/>
                 </padding>
-                <Label fx:id="placeholderLabel" styleClass="placeholder-text" wrapText="true"
-                       text="Load a system details file to see the events."/>
-                <fx:include fx:id="eventDetails" source="event-details.fxml"/>
-            </StackPane>
-        </ScrollPane>
 
-    </items>
-</SplitPane>
+                <!--
+                    Creating an event belongs on this screen rather than on the users screen. It is
+                    the one action here, and it makes an event, which is what this screen is a list
+                    of; who is making it is asked for in the form itself, where the rest of the
+                    event is asked for too.
+                -->
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="EVENTS" styleClass="panel-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="createEventButton" text="Create an event"
+                            onAction="#onCreateEvent"/>
+                </HBox>
+
+                <FlowPane styleClass="filter-bar" hgap="14" vgap="8">
+                    <HBox alignment="CENTER_LEFT" spacing="6">
+                        <Label text="TYPE" styleClass="field-label"/>
+                        <ComboBox fx:id="typeChooser" prefWidth="108"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT" spacing="6">
+                        <Label text="STATUS" styleClass="field-label"/>
+                        <ComboBox fx:id="statusChooser" prefWidth="108"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT" spacing="6">
+                        <Label text="COMMISSION" styleClass="field-label"/>
+                        <ComboBox fx:id="commissionChooser" prefWidth="112"/>
+                    </HBox>
+                </FlowPane>
+
+                <ListView fx:id="eventsList" styleClass="tile-list"
+                          VBox.vgrow="ALWAYS" minHeight="150"/>
+            </VBox>
+
+            <ScrollPane fx:id="detailsScroll" fitToWidth="true" minWidth="320">
+                <StackPane>
+                    <padding>
+                        <javafx.geometry.Insets top="14" right="14" bottom="12" left="10"/>
+                    </padding>
+                    <Label fx:id="placeholderLabel" styleClass="placeholder-text" wrapText="true"
+                           text="Load a system details file to see the events."/>
+                    <fx:include fx:id="eventDetails" source="event-details.fxml"/>
+                </StackPane>
+            </ScrollPane>
+
+        </items>
+    </SplitPane>
+
+    <HBox styleClass="tab-footer" alignment="CENTER_LEFT">
+        <Label fx:id="countLabel" styleClass="faint"/>
+    </HBox>
+
+</VBox>
