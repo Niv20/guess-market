@@ -1,7 +1,9 @@
 package guessmarket.ui.common;
 
+import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
+import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.SequentialTransition;
 import javafx.animation.TranslateTransition;
@@ -11,12 +13,12 @@ import javafx.scene.Node;
 import javafx.util.Duration;
 
 /**
- * The three short animations that accompany the actions of the program, and the one switch that
- * turns all of them off.
+ * The short animations that accompany the actions of the program, and the one switch that turns
+ * all of them off.
  *
- * <p>They are off when the program starts. Nothing here ever changes what is on the screen, only
- * how it arrives there, so with the switch off every method returns immediately and the interface
- * behaves exactly as it would if this class did not exist. No animation is longer than
+ * <p>They are off when the program starts. Nothing here decides what ends up on the screen, only
+ * how it gets there, so with the switch off the interface shows exactly what it would show if
+ * this class did not exist — it simply shows it at once. No animation is longer than
  * {@link #LONGEST}.
  */
 public final class Animations {
@@ -27,6 +29,7 @@ public final class Animations {
     private static final Duration REVEAL = Duration.millis(260);
     private static final Duration FLASH_HALF = Duration.millis(180);
     private static final Duration SLIDE = Duration.millis(300);
+    private static final Duration FADE_OUT = Duration.millis(420);
 
     /** Off to begin with, so the animations only run once they are switched on deliberately. */
     private static final BooleanProperty ENABLED = new SimpleBooleanProperty(false);
@@ -101,5 +104,36 @@ public final class Animations {
 
         slide.playFromStart();
         fade.playFromStart();
+    }
+
+    /**
+     * Leaves a node where it is for a while and then takes it off the screen, fading it out on the
+     * way. The waiting is not animation, so only the fade itself counts against {@link #LONGEST}.
+     *
+     * <p>This is the one method here that still does something once the animations are switched
+     * off: the node is due to go either way, and the switch only decides whether it dissolves
+     * first or simply disappears.
+     *
+     * @param linger how long the node stays as it is before it begins to go.
+     * @param hide   what actually takes the node off the screen once it can no longer be seen.
+     * @return the transition, which has not been started yet, so that a caller who needs the node
+     *         back before it has gone can stop it.
+     */
+    public static Animation hideAfter(Node node, Duration linger, Runnable hide) {
+        PauseTransition wait = new PauseTransition(linger);
+        Animation whole = isEnabled() ? new SequentialTransition(wait, fadeOut(node)) : wait;
+        whole.setOnFinished(event -> {
+            hide.run();
+            node.setOpacity(1);
+        });
+        return whole;
+    }
+
+    private static FadeTransition fadeOut(Node node) {
+        FadeTransition fade = new FadeTransition(FADE_OUT, node);
+        fade.setFromValue(1);
+        fade.setToValue(0);
+        fade.setInterpolator(Interpolator.EASE_IN);
+        return fade;
     }
 }
