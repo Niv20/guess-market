@@ -22,9 +22,16 @@
 
 /* ------------------------------------------------------------------ window and typography */
 
+/*
+ * -fx-accent is the colour the toolkit reaches for whenever it marks something itself rather
+ * than being told to: a dragged column heading, selected text, the bar of a progress bar. Left
+ * alone it is the toolkit's own blue, which belongs to nothing in this program, so it is pointed
+ * at the accent of the skin here once instead of being chased down control by control.
+ */
 .root {
     -fx-background-color: -app-bg;
     -fx-text-fill: -app-text;
+    -fx-accent: -app-accent;
     -fx-focus-color: -app-accent;
     -fx-faint-focus-color: transparent;
 }
@@ -518,13 +525,20 @@
     -fx-background-color: -app-surface-2;
 }
 
+/*
+ * Pointing at a row and picking one are both said in grey rather than in the colour of the
+ * program. Nothing follows from picking a row in a table here - every one of them is a list to
+ * read, and none of them is a list to choose from - so a row that has been clicked should say
+ * no more than "this is the one you are looking at", and the accent is spoken for elsewhere by
+ * things that can actually be acted on.
+ */
 .table-view .table-row-cell:hover {
     -fx-background-color: -app-surface-3;
 }
 
 .table-view .table-row-cell:selected {
-    -fx-background-color: -app-accent-soft;
-    -fx-border-color: transparent transparent -app-accent transparent;
+    -fx-background-color: -app-border;
+    -fx-border-color: transparent transparent -app-border-soft transparent;
 }
 
 .table-view .table-row-cell:empty {
@@ -565,6 +579,32 @@
     -fx-pref-height: 0;
     -fx-min-height: 0;
     -fx-max-height: 0;
+}
+
+/*
+ * Dragging a column to another place in the table, and dragging its edge to another width.
+ *
+ * Both are drawn by the toolkit in its own blue, which is the one colour in the window that
+ * belongs to nothing in this program. They are given the accent instead, which is what the rest
+ * of the window uses to mark the thing being acted on.
+ */
+.table-view .column-drag-header {
+    -fx-background-color: -app-accent-soft;
+    -fx-border-color: -app-accent;
+    -fx-border-width: 0 0 2 0;
+}
+
+.table-view .column-drag-header .label {
+    -fx-text-fill: -app-text;
+}
+
+.table-view .column-resize-line {
+    -fx-background-color: -app-accent;
+    -fx-padding: 0 1 0 1;
+}
+
+.table-view .column-overlay {
+    -fx-background-color: -app-accent-soft;
 }
 
 .numeric-column {
