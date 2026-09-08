@@ -72,7 +72,15 @@
         </VBox>
 
         <ScrollPane fx:id="detailsScroll" fitToWidth="true" fitToHeight="true" minWidth="320">
-            <StackPane>
+            <!--
+                The panel keeps the height its contents ask for, never the height of the window.
+                Fitting to height is here so that a nearly empty panel still fills the viewport
+                and the placeholder can sit in the middle of it; left to itself it also squeezes
+                a panel taller than the window down to its minimum, and the minimum of a wrapped
+                sentence is one line ending in dots. Asking for the preferred height as a minimum
+                keeps the stretching and drops the squeezing.
+            -->
+            <StackPane minHeight="-Infinity">
                 <padding>
                     <javafx.geometry.Insets top="14" right="14" bottom="14" left="10"/>
                 </padding>
