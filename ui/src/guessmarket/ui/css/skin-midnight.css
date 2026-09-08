@@ -31,6 +31,21 @@
     -app-warn: #d9b441;
 
     /*
+     * The three states an event can be in, said as a set of traffic lights: red while it is
+     * waiting to be opened and nothing can be done in it, amber while it is running and
+     * everything can, green once it is over and settled.
+     *
+     * They are named for the state rather than for the colour, and they are their own three
+     * names rather than the market's green and red, because the two sets mean different things
+     * on the same screen: a green figure is money made and a green mark is an event that has
+     * finished. Kept apart here, a skin that wanted to tell them apart by hue could, and every
+     * mark and badge in the program would follow from these three lines.
+     */
+    -app-status-waiting: #e5565b;
+    -app-status-open: #d9b441;
+    -app-status-done: #4fbf87;
+
+    /*
      * The family only. The size that goes with it is named in Skin instead, because the
      * settings let the person put a multiplier on top of it and the two have to be
      * multiplied together somewhere; saying it twice is how the two come to disagree.

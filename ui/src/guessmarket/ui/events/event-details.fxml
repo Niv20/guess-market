@@ -48,7 +48,7 @@
                 <Label fx:id="eventNameLabel" styleClass="screen-title" text="Event"/>
                 <Label fx:id="statusBadge" styleClass="badge" text="Status"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Label fx:id="winnerBadge" styleClass="badge, badge-active" managed="false"
+                <Label fx:id="winnerBadge" styleClass="badge, badge-winner" managed="false"
                        visible="false" text="Winner"/>
             </HBox>
             <Label fx:id="descriptionLabel" styleClass="lead" wrapText="true" text=""/>

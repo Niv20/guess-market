@@ -20,7 +20,8 @@ import java.util.Locale;
  * <p>How the event is doing comes first and is a coloured dot rather than a word, and it stands
  * in a narrow column of its own down the left of everything else: it is what a list is scanned
  * for, and one colour at one distance from the edge is found in a single pass where a word has to
- * be read row by row. Everything else is on one line with the name or underneath it. The number
+ * be read row by row. The colours are a set of traffic lights - red waiting, amber running, green
+ * finished - which is the one arrangement of three colours that needs no key beside it. Everything else is on one line with the name or underneath it. The number
  * the file gave the event leads that line, quiet, in front of the name rather than off in a
  * corner of its own — it is how the event is referred to everywhere else in the program, so it
  * belongs where the name is looked at. Then the name, which is the largest thing on the tile
@@ -105,14 +106,19 @@ public final class EventTile {
     }
 
     /**
-     * The dot that says how the event is doing: grey for one that has not begun, because nothing
-     * has happened to it yet; green for one that is open, because that is the only kind anything
-     * can still be done about; and red for one that is over.
+     * The dot that says how the event is doing, as a set of traffic lights: red for one that has
+     * not been opened, in which nothing at all can happen yet; amber for one that is running;
+     * green for one that is over and has paid everybody out.
      *
-     * <p>The green one beats, when the animations are on. The other two colours are states the
-     * event is resting in and the green one is not — an open event is taking trades while it is
-     * being looked at — and a mark that is moving is the difference between saying so and saying
-     * it was open at the moment the list was drawn.
+     * <p>Three colours nobody has to be taught, which is the whole reason for choosing them - a
+     * list is scanned for its marks before a word of it is read, and a reader who has to remember
+     * what the colours mean is reading it after all. What they mean here is what they mean at a
+     * junction: stop, in motion, go.
+     *
+     * <p>The amber one beats, when the animations are on. The other two are states the event is
+     * resting in and this one is not — an open event is taking trades while it is being looked
+     * at — and a mark that is moving is the difference between saying so and saying it was open
+     * at the moment the list was drawn.
      */
     private static Node statusDot(EventDto event) {
         Node dot = Tiles.statusDot(dotStyle(event.status()), event.status().getDisplayName());
@@ -185,16 +191,27 @@ public final class EventTile {
     }
 
     /**
-     * The figures at the foot: what the event's own account holds, and, once it is over, which
-     * option turned out to be right — the one thing about a closed event anybody asks first.
+     * The one figure at the foot, which is a different figure once the event is over.
+     *
+     * <p>While the event is running, what its own account holds: the money behind every share
+     * anybody could still buy in it, and the only figure on the tile that moves. Once it is over
+     * that account is a residue - the winners have been paid and the rest has gone back to the
+     * market maker - and the question anybody asks about a closed event is not how much is left
+     * in it but which option turned out to be right.
+     *
+     * <p>One or the other, and never both. They were both shown, and a closed tile therefore
+     * ended in two figures of which the first was the one nobody had asked for: the eye reads a
+     * row of figures from the left, so the account was answering a question about a finished
+     * event ahead of the answer to the question the event was for.
      */
     private static FlowPane figures(EventDto event) {
         FlowPane figures = Tiles.figures();
-        figures.getChildren().add(
-                Tiles.figure("ACCOUNT", Formats.money(event.accountBalance()), "value-accent"));
         if (event.isClosed() && event.winningOptionName() != null) {
             figures.getChildren().add(
                     Tiles.figure("WINNER", event.winningOptionName(), "value-positive"));
+        } else {
+            figures.getChildren().add(
+                    Tiles.figure("ACCOUNT", Formats.money(event.accountBalance()), "value-accent"));
         }
         return figures;
     }

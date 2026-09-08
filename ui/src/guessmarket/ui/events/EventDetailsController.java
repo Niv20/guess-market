@@ -510,11 +510,15 @@ public class EventDetailsController {
         node.setManaged(visible);
     }
 
+    /**
+     * @return the badge a stage of an event is worn in: the same three traffic lights the mark on
+     *         a tile uses, so that the two say one thing rather than two
+     */
     private static String badgeStyleOf(EventStatus status) {
         return switch (status) {
-            case NOT_STARTED -> "badge-neutral";
-            case ACTIVE -> "badge-active";
-            case CLOSED -> "badge-closed";
+            case NOT_STARTED -> "badge-waiting";
+            case ACTIVE -> "badge-open";
+            case CLOSED -> "badge-done";
         };
     }
 }
