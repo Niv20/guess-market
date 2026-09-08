@@ -6,7 +6,6 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <!--
@@ -23,6 +22,11 @@
     because it is the part that depends on who is reading it, and its frame is what tells a button
     that ends the event apart from the button beside which people buy shares every day.
 
+    The panel does not say who is acting. It is only ever on the screen underneath the person it
+    acts as - their name is the largest thing on the panel above it, and every figure between the
+    two belongs to them - so a line repeating it was a row spent saying what the screen had said
+    already, and it was the row that got in the way of the title beside it.
+
     Nothing on this panel is squeezed. Every control keeps the width its own text needs and rows of
     them wrap onto a second line when the panel is dragged narrower, rather than each control
     giving up a little until the words inside them end in dots; and every sentence explaining an
@@ -34,11 +38,7 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="guessmarket.ui.trade.TradePanelController">
 
-    <HBox alignment="CENTER_LEFT" spacing="10">
-        <Label text="ACTIONS" styleClass="panel-title" minWidth="-Infinity"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Label fx:id="actingAsLabel" styleClass="faint" wrapText="true" textAlignment="RIGHT"/>
-    </HBox>
+    <Label text="ACTIONS" styleClass="panel-title"/>
 
     <Label fx:id="messageLabel" styleClass="muted" wrapText="true" managed="false" visible="false"/>
 

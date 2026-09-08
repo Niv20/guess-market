@@ -297,7 +297,8 @@ public class UsersSectionController implements AppSection {
 
         userInvolvementController.show(involvement);
         tradePanelController.show(user, status);
-        eventDetailsController.show(status, context.engine().getEventPriceHistory(event.id()));
+        eventDetailsController.show(status, context.engine().getEventPriceHistory(event.id()),
+                user.name());
     }
 
     // ------------------------------------------------------------------ keeping the selection

@@ -47,7 +47,6 @@ import javafx.scene.layout.VBox;
 public class TradePanelController {
 
     @FXML private VBox rootPane;
-    @FXML private Label actingAsLabel;
     @FXML private Label messageLabel;
 
     /** The box holding whichever of the two things only a market maker may do applies now. */
@@ -107,8 +106,6 @@ public class TradePanelController {
         this.user = selectedUser;
         this.event = status.event();
         show(rootPane, true);
-        actingAsLabel.setText("Acting as " + selectedUser.name());
-
         boolean marketMaker = event.marketMakerName().equalsIgnoreCase(selectedUser.name());
         show(marketMakerBox, false);
         show(openBox, false);
