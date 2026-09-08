@@ -1,5 +1,6 @@
 package guessmarket.ui.users;
 
+import guessmarket.dto.EventStatus;
 import guessmarket.dto.HoldingDto;
 import guessmarket.dto.OptionStateDto;
 import guessmarket.dto.OrderDto;
@@ -87,8 +88,20 @@ public class UserInvolvementController {
         show(rootPane, false);
     }
 
-    /** Shows what this user has going on in this event. */
+    /**
+     * Shows what this user has going on in this event, or nothing at all when there cannot be
+     * anything yet.
+     *
+     * <p>Nobody can have bought, sold or ordered anything in an event that has not been opened, so
+     * before that every table here is empty and every figure is nought. Shown, that is four empty
+     * tables and a row of zeroes saying at some length what one line further down the screen
+     * already says: that the event is waiting to be opened. So it is not shown.
+     */
     public void show(UserEventInvolvementDto involvement) {
+        if (involvement.event().status() == EventStatus.NOT_STARTED) {
+            clear();
+            return;
+        }
         show(rootPane, true);
         titleLabel.setText("IN \"" + involvement.event().name().toUpperCase() + "\"");
         roleBadge.setText(describeRole(involvement));

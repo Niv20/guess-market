@@ -3,6 +3,7 @@ package guessmarket.ui.trade;
 import guessmarket.dto.CloseEventRequestDto;
 import guessmarket.dto.CloseEventResultDto;
 import guessmarket.dto.EventDto;
+import guessmarket.dto.EventStatus;
 import guessmarket.dto.EventTradingStatusDto;
 import guessmarket.dto.OpenEventRequestDto;
 import guessmarket.dto.OpenEventResultDto;
@@ -33,9 +34,11 @@ import javafx.scene.layout.VBox;
  * controls at all.
  *
  * <p>The panel decides what to offer from three things: whether the user runs the event, what stage
- * the event has reached, and how it is traded. Whatever it cannot offer, it explains: a user who is
- * looking at an event that has not started is told who has to start it, rather than being shown a
- * button that would only fail.
+ * the event has reached, and how it is traded. Where there is something to explain it explains it -
+ * a blocked user is told why nothing here will work for them, and a closed event says what it
+ * settled on. Where there is nothing at all to offer and nothing to explain, the panel is not
+ * shown: an event nobody has opened yet is not this user's to open, and the event underneath
+ * already says so.
  *
  * <p>Nothing is worked out here. Every figure shown comes from the engine, including the price of a
  * purchase before it is made, and every action is a single call whose refusal is shown to the
@@ -114,6 +117,16 @@ public class TradePanelController {
         show(closeBox, false);
         show(messageLabel, false);
 
+        // An event that has not been opened has nothing on this panel for anybody but the one
+        // person who can open it, so for everybody else the panel is taken away rather than
+        // filled with a sentence saying so. The sentence was the whole of what was shown - a
+        // heading, a name and a rule round nothing anybody could do - and it said what the event
+        // itself says underneath in the same words, where somebody who never opens this screen
+        // reads it too.
+        if (event.status() == EventStatus.NOT_STARTED && !marketMaker) {
+            show(rootPane, false);
+            return;
+        }
         if (selectedUser.blocked()) {
             explain(selectedUser.name() + " is blocked, because their balance went below zero. "
                     + "A blocked user cannot take any further action, and accounts cannot be "
@@ -121,7 +134,7 @@ public class TradePanelController {
             return;
         }
         switch (event.status()) {
-            case NOT_STARTED -> offerToOpen(marketMaker);
+            case NOT_STARTED -> offerToOpen();
             case ACTIVE -> offerToTrade(marketMaker);
             case CLOSED -> explain("This event is closed. \"" + event.winningOptionName()
                     + "\" won, the winners have been paid, and nothing more can happen in it.");
@@ -130,12 +143,8 @@ public class TradePanelController {
 
     // ------------------------------------------------------------------ what is on offer
 
-    private void offerToOpen(boolean marketMaker) {
-        if (!marketMaker) {
-            explain("This event has not started yet. Only its market maker, "
-                    + event.marketMakerName() + ", can open it.");
-            return;
-        }
+    /** Only ever reached by the market maker: everybody else was shown no panel at all. */
+    private void offerToOpen() {
         offerAsMarketMaker(openBox);
         openCostLabel.setText(describeOpeningCost());
         openButton.setDisable(false);

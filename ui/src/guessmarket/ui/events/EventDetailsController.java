@@ -42,6 +42,10 @@ import java.util.Map;
  *
  * <p>Which half of the layout is shown depends on how the event is traded. An LMSR event has one
  * value per option; an order book has no single value at all and shows its two books instead.
+ *
+ * <p>An event that has not been opened yet is shown as neither. It has no market and nobody in it,
+ * so what it is and what it will open on are shown and everything below them is replaced by the
+ * one line there is to say - see {@link #showMarket}.
  */
 public class EventDetailsController {
 
@@ -96,6 +100,9 @@ public class EventDetailsController {
      */
     private int termColumns;
     private List<VBox> laidOutTerms = List.of();
+
+    @FXML private VBox waitingBox;
+    @FXML private Label waitingLabel;
 
     @FXML private VBox lmsrBox;
     @FXML private TableView<OptionStateDto> optionsTable;
@@ -182,18 +189,11 @@ public class EventDetailsController {
         showIdentity(event);
         showStatistics(event, status);
 
-        boolean lmsr = event.isLmsr();
-        showOnly(lmsrBox, lmsr);
-        showOnly(booksBox, !lmsr);
-        if (lmsr) {
-            optionsTable.setItems(FXCollections.observableArrayList(status.optionStates()));
-        } else {
-            firstBookController.show(status.books().get(0));
-            secondBookController.show(status.books().get(1));
-        }
-
+        showMarket(event, status);
         showParticipants(event, status.participants());
         historyTable.setItems(FXCollections.observableArrayList(status.tradeHistory()));
+        showOnly(participantsBox, started(event));
+        showOnly(historyBox, started(event));
         showPriceChart(event, priceHistory);
 
         rootPane.setVisible(true);
@@ -207,6 +207,37 @@ public class EventDetailsController {
     }
 
     // ------------------------------------------------------------------ the parts of the picture
+
+    /**
+     * Shows the market this event is traded in, or says that there is not one yet.
+     *
+     * <p>An event that has not been opened has no market at all: nobody has been able to buy
+     * anything, no order can have been placed, and the value of an option is what the formula says
+     * about nothing having happened. Every panel below the terms would therefore be an empty
+     * table, and half a dozen empty tables one after another read as a screen that failed to load.
+     * So they are taken away together and one line stands where they were, naming the person
+     * everybody is waiting for - which is the only thing about an unopened event anybody can act
+     * on, and, for the person named, the reminder that it is theirs to act on.
+     */
+    private void showMarket(EventDto event, EventTradingStatusDto status) {
+        boolean started = started(event);
+        boolean lmsr = event.isLmsr();
+        waitingLabel.setText("Waiting for " + event.marketMakerName() + " to open it.");
+        showOnly(waitingBox, !started);
+        showOnly(lmsrBox, started && lmsr);
+        showOnly(booksBox, started && !lmsr);
+        if (lmsr) {
+            optionsTable.setItems(FXCollections.observableArrayList(status.optionStates()));
+        } else {
+            firstBookController.show(status.books().get(0));
+            secondBookController.show(status.books().get(1));
+        }
+    }
+
+    /** @return whether the event has been opened, which is when anything in it can have happened. */
+    private static boolean started(EventDto event) {
+        return event.status() != EventStatus.NOT_STARTED;
+    }
 
     private void showIdentity(EventDto event) {
         eventNameLabel.setText(event.name());
@@ -311,7 +342,19 @@ public class EventDetailsController {
      */
     @FXML
     private void onShowMarket() {
-        scrollTo(booksBox.isManaged() ? booksBox : lmsrBox);
+        scrollTo(marketPanel());
+    }
+
+    /**
+     * @return whichever panel stands for this event's market at the moment: its two books, the
+     *         values of its options, or - before it has been opened and has either - the line
+     *         saying what it is waiting for
+     */
+    private Node marketPanel() {
+        if (waitingBox.isManaged()) {
+            return waitingBox;
+        }
+        return booksBox.isManaged() ? booksBox : lmsrBox;
     }
 
     /**
@@ -399,7 +442,7 @@ public class EventDetailsController {
             }
         }
         priceChart.getData().setAll(seriesByOption.values());
-        showOnly(chartBox, !priceHistory.isEmpty());
+        showOnly(chartBox, started(event) && !priceHistory.isEmpty());
     }
 
     // ------------------------------------------------------------------ table layouts
