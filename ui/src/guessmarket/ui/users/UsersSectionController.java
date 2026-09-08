@@ -21,6 +21,7 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Separator;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ScrollPane;
@@ -69,6 +70,9 @@ public class UsersSectionController implements AppSection {
     @FXML private ToggleButton allEventsButton;
     @FXML private ToggleButton myEventsButton;
     @FXML private ListView<EventDto> eventsList;
+
+    /** The line that opens the last group of the panel, which is about one event and not the user. */
+    @FXML private Separator chosenEventRule;
 
     @FXML private UserInvolvementController userInvolvementController;
     @FXML private TradePanelController tradePanelController;
@@ -280,11 +284,13 @@ public class UsersSectionController implements AppSection {
     private void showEvent(EventDto event) {
         UserDto user = usersList.getSelectionModel().getSelectedItem();
         if (user == null || event == null) {
+            showNode(chosenEventRule, false);
             userInvolvementController.clear();
             tradePanelController.clear();
             eventDetailsController.clear();
             return;
         }
+        showNode(chosenEventRule, true);
         UserEventInvolvementDto involvement =
                 context.engine().getUserInvolvement(user.name(), event.id());
         EventTradingStatusDto status = context.engine().getEventTradingStatus(event.id());
