@@ -104,6 +104,11 @@ public final class Icons {
             "M6 6l12 12"
     };
 
+    /** A tick, for an action that went through. Two strokes, like the cross it answers. */
+    private static final String[] CHECK = {
+            "M20 6 9 17l-5-5"
+    };
+
     /** A crescent moon, for the dark skin. */
     private static final String[] MOON = {
             "M12 3a6.36 6.36 0 0 0 9 9 9 9 0 1 1-9-9z"
@@ -168,6 +173,22 @@ public final class Icons {
     /** Closing something that was opened over the window. */
     public static Node cross(double size) {
         return drawing(size, CROSS);
+    }
+
+    /**
+     * The mark that goes in front of a message saying something went through, as the warning sign
+     * goes in front of one saying something did not.
+     *
+     * <p>It is inked green rather than in the grey the rest of the drawings share, and it is the
+     * one drawing here that is: the two dialogs that mark themselves at all are the two that
+     * report an outcome, and an outcome is the one thing in this program worth saying in colour
+     * before it is read. The colour is asked for by name in the stylesheet under
+     * {@code .success-icon}, so it is the skin that decides which green.
+     */
+    public static Node checkMark(double size) {
+        Node tick = drawing(size, CHECK);
+        tick.getStyleClass().add("success-icon");
+        return tick;
     }
 
     /** The Midnight skin. */

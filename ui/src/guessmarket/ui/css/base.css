@@ -1172,6 +1172,18 @@
     -fx-fill: -app-warn;
 }
 
+/*
+ * The tick at the head of a dialog reporting something that went through.
+ *
+ * It is the one drawing in the program inked in anything but the shared grey, and it answers the
+ * warning sign opposite it: the two dialogs that report an outcome say which outcome it was in
+ * colour, before either message has been read. Written at the drawing inside the box rather than
+ * at the box, because a drawing is a pane of strokes and it is the strokes that take the ink.
+ */
+.success-icon .app-icon {
+    -fx-stroke: -app-yes;
+}
+
 /* The header an error dialog builds for itself, in place of the ready made one. */
 .dialog-header {
     -fx-background-color: -app-surface-2;
