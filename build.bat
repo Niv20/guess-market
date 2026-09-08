@@ -33,17 +33,17 @@ for %%J in (lib\*.jar) do set "LIB_ENTRIES=!LIB_ENTRIES! lib/%%~nxJ"
 
 echo Compiling the modules
 echo   compiling dto
-dir /s /b dto\src\*.java > "%WORK%\dto-sources.txt"
+call :collect_sources dto
 javac --release 25 -Xlint:all,-serial -d "%CLASSES%\dto" "@%WORK%\dto-sources.txt"
 if errorlevel 1 goto :failed
 
 echo   compiling engine
-dir /s /b engine\src\*.java > "%WORK%\engine-sources.txt"
+call :collect_sources engine
 javac --release 25 -Xlint:all,-serial -classpath "%CLASSES%\dto;lib\*" -d "%CLASSES%\engine" "@%WORK%\engine-sources.txt"
 if errorlevel 1 goto :failed
 
 echo   compiling ui
-dir /s /b ui\src\*.java > "%WORK%\ui-sources.txt"
+call :collect_sources ui
 javac --release 25 -Xlint:all,-serial -classpath "%CLASSES%\dto;%CLASSES%\engine" ^
       --module-path "%JAVAFX%" --add-modules %JAVAFX_MODULES% ^
       -d "%CLASSES%\ui" "@%WORK%\ui-sources.txt"
@@ -92,3 +92,22 @@ goto :eof
 echo.
 echo The build failed. Read the errors above, fix them, and run this file again.
 exit /b 1
+
+REM ---------------------------------------------------------------------------
+REM  Writes the source file names of one module to the file javac reads with @.
+REM
+REM  Every name is quoted and every backslash inside the quotes is doubled, and both are needed:
+REM  without the quotes javac splits a name at its spaces, and inside quotes javac reads a single
+REM  backslash as an escape character and swallows it. Quoting the whole name and doubling its
+REM  separators is what lets the project be built from a folder such as
+REM  "C:\Users\Some Name\guess-market".
+REM ---------------------------------------------------------------------------
+:collect_sources
+set "MODULE=%~1"
+if exist "%WORK%\%MODULE%-sources.txt" del /q "%WORK%\%MODULE%-sources.txt"
+for /r "%MODULE%\src" %%F in (*.java) do (
+  set "SOURCE=%%F"
+  set "SOURCE=!SOURCE:\=\\!"
+  >> "%WORK%\%MODULE%-sources.txt" echo "!SOURCE!"
+)
+goto :eof
