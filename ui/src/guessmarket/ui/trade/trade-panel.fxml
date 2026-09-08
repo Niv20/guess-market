@@ -4,6 +4,7 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
@@ -11,10 +12,22 @@
 <!--
     What the selected user may do in the selected event.
 
-    Only one of the rows below is ever shown at a time, chosen by who the user is and what stage
+    Only some of the rows below are ever shown at a time, chosen by who the user is and what stage
     the event is at: the market maker opens an event and later closes it, and everybody else trades
     in it while it is running. An LMSR event is traded by buying shares from the event itself; an
     order book event is traded by placing an order in one of its books.
+
+    Opening an event and closing it are the two ends of its life and are the same person's to
+    decide, so they are one box rather than two loose rows that never appear together and so never
+    looked like the pair they are. The box says whose they are, it is the first thing in the panel
+    because it is the part that depends on who is reading it, and its frame is what tells a button
+    that ends the event apart from the button beside which people buy shares every day.
+
+    Nothing on this panel is squeezed. Every control keeps the width its own text needs and rows of
+    them wrap onto a second line when the panel is dragged narrower, rather than each control
+    giving up a little until the words inside them end in dots; and every sentence explaining an
+    action is a paragraph above that row, the full width of the box, rather than a column beside a
+    button with too little room to be read in.
 -->
 <VBox fx:id="rootPane" styleClass="card" spacing="10"
       xmlns="http://javafx.com/javafx"
@@ -22,71 +35,84 @@
       fx:controller="guessmarket.ui.trade.TradePanelController">
 
     <HBox alignment="CENTER_LEFT" spacing="10">
-        <Label text="ACTIONS" styleClass="panel-title"/>
+        <Label text="ACTIONS" styleClass="panel-title" minWidth="-Infinity"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Label fx:id="actingAsLabel" styleClass="faint"/>
+        <Label fx:id="actingAsLabel" styleClass="faint" wrapText="true" textAlignment="RIGHT"/>
     </HBox>
 
     <Label fx:id="messageLabel" styleClass="muted" wrapText="true" managed="false" visible="false"/>
 
-    <!-- the market maker starts the event -->
-    <HBox fx:id="openBox" spacing="12" alignment="CENTER_LEFT" managed="false" visible="false">
-        <Button fx:id="openButton" text="Open the event" styleClass="button-primary"
-                onAction="#onOpenEvent"/>
-        <Label fx:id="openCostLabel" styleClass="muted" wrapText="true" HBox.hgrow="ALWAYS"/>
-    </HBox>
+    <!-- the two things only the market maker of this event may do -->
+    <VBox fx:id="marketMakerBox" styleClass="card-sunken" spacing="8"
+          managed="false" visible="false">
+        <Label text="AS THE MARKET MAKER" styleClass="group-title"/>
+
+        <!-- the market maker starts the event -->
+        <VBox fx:id="openBox" spacing="8" managed="false" visible="false">
+            <Label fx:id="openCostLabel" styleClass="muted" wrapText="true"/>
+            <HBox spacing="12" alignment="CENTER_LEFT">
+                <Button fx:id="openButton" text="Open the event" styleClass="button-primary"
+                        minWidth="-Infinity" onAction="#onOpenEvent"/>
+            </HBox>
+        </VBox>
+
+        <!-- the market maker decides the outcome -->
+        <VBox fx:id="closeBox" spacing="8" managed="false" visible="false">
+            <Label fx:id="closeHintLabel" styleClass="muted" wrapText="true"/>
+            <FlowPane hgap="12" vgap="8" rowValignment="BOTTOM">
+                <VBox spacing="2">
+                    <Label text="WINNING OPTION" styleClass="field-label"/>
+                    <ComboBox fx:id="winnerChooser" prefWidth="190" minWidth="-Infinity"/>
+                </VBox>
+                <Button fx:id="closeButton" text="Close the event" styleClass="button-danger"
+                        minWidth="-Infinity" onAction="#onCloseEvent"/>
+            </FlowPane>
+        </VBox>
+    </VBox>
 
     <!-- LMSR: buy shares from the event itself -->
     <VBox fx:id="buyBox" spacing="8" managed="false" visible="false">
-        <HBox spacing="12" alignment="BOTTOM_LEFT">
+        <FlowPane hgap="12" vgap="8" rowValignment="BOTTOM">
             <VBox spacing="2">
                 <Label text="OPTION" styleClass="field-label"/>
-                <ComboBox fx:id="buyOptionChooser" prefWidth="190"/>
+                <ComboBox fx:id="buyOptionChooser" prefWidth="190" minWidth="-Infinity"/>
             </VBox>
             <VBox spacing="2">
                 <Label text="SHARES" styleClass="field-label"/>
-                <TextField fx:id="sharesField" prefWidth="110" promptText="whole number"/>
+                <TextField fx:id="sharesField" prefWidth="110" minWidth="-Infinity"
+                           promptText="whole number"/>
             </VBox>
             <Button fx:id="buyButton" text="Buy shares" styleClass="button-primary"
-                    onAction="#onBuyShares"/>
-        </HBox>
+                    minWidth="-Infinity" onAction="#onBuyShares"/>
+        </FlowPane>
         <Label fx:id="quoteLabel" styleClass="muted" wrapText="true"/>
     </VBox>
 
     <!-- order book: place an order and let the market do what it can with it -->
     <VBox fx:id="orderBox" spacing="8" managed="false" visible="false">
-        <HBox spacing="12" alignment="BOTTOM_LEFT">
+        <FlowPane hgap="12" vgap="8" rowValignment="BOTTOM">
             <VBox spacing="2">
                 <Label text="OPTION" styleClass="field-label"/>
-                <ComboBox fx:id="orderOptionChooser" prefWidth="170"/>
+                <ComboBox fx:id="orderOptionChooser" prefWidth="170" minWidth="-Infinity"/>
             </VBox>
             <VBox spacing="2">
                 <Label text="ACTION" styleClass="field-label"/>
-                <ComboBox fx:id="sideChooser" prefWidth="110"/>
+                <ComboBox fx:id="sideChooser" prefWidth="110" minWidth="-Infinity"/>
             </VBox>
             <VBox spacing="2">
                 <Label text="SHARES" styleClass="field-label"/>
-                <TextField fx:id="quantityField" prefWidth="100" promptText="whole number"/>
+                <TextField fx:id="quantityField" prefWidth="100" minWidth="-Infinity"
+                           promptText="whole number"/>
             </VBox>
             <VBox spacing="2">
                 <Label text="PRICE PER SHARE" styleClass="field-label"/>
-                <TextField fx:id="priceField" prefWidth="120" promptText="0.01 - 0.99"/>
+                <TextField fx:id="priceField" prefWidth="120" minWidth="-Infinity"
+                           promptText="0.01 - 0.99"/>
             </VBox>
             <Button fx:id="submitOrderButton" text="Place the order" styleClass="button-primary"
-                    onAction="#onSubmitOrder"/>
-        </HBox>
+                    minWidth="-Infinity" onAction="#onSubmitOrder"/>
+        </FlowPane>
         <Label fx:id="orderHintLabel" styleClass="muted" wrapText="true"/>
     </VBox>
-
-    <!-- the market maker decides the outcome -->
-    <HBox fx:id="closeBox" spacing="12" alignment="BOTTOM_LEFT" managed="false" visible="false">
-        <VBox spacing="2">
-            <Label text="WINNING OPTION" styleClass="field-label"/>
-            <ComboBox fx:id="winnerChooser" prefWidth="190"/>
-        </VBox>
-        <Button fx:id="closeButton" text="Close the event" styleClass="button-danger"
-                onAction="#onCloseEvent"/>
-        <Label fx:id="closeHintLabel" styleClass="muted" wrapText="true" HBox.hgrow="ALWAYS"/>
-    </HBox>
 
 </VBox>
