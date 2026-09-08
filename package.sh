@@ -9,6 +9,9 @@
 # Only the Windows build of JavaFX goes into the zip, and run.sh is left out, because the
 # submission targets the Windows grader. The repository carries all three platforms so that the
 # project can be built and run on any of them.
+#
+# The data folder is deliberately left out of the zip as well: the grader loads their own files.
+# It stays in the repository, where it is what the project is developed and tested against.
 
 set -euo pipefail
 
@@ -30,12 +33,6 @@ cp out/artifacts/dto.jar out/artifacts/engine.jar out/artifacts/ui.jar "$STAGING
 cp lib/*.jar "$STAGING_DIR/lib/"
 cp -R "lib/javafx/$SUBMITTED_JAVAFX_PLATFORM" "$STAGING_DIR/lib/javafx/"
 cp run.bat "$STAGING_DIR/"
-
-# The sample files the exercise ships with, so the grader has something to load immediately.
-if [ -d data ]; then
-    # Copied whole, so the folder whose name contains spaces travels with it.
-    cp -R data "$STAGING_DIR/data"
-fi
 
 if [ -f readme.docx ]; then
     cp readme.docx "$STAGING_DIR/"
