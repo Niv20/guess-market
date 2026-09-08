@@ -27,9 +27,11 @@ target/
 *.class
 
 # ---------------------------------------------------------------------------
-# Saved system states produced at runtime (bonus 1)
+# Saved system states produced at runtime (bonus 1), except the one sample state
+# that is handed in with the project.
 # ---------------------------------------------------------------------------
 *.gmstate
+!data/full-market-in-play.gmstate
 
 # ---------------------------------------------------------------------------
 # OS / editor noise

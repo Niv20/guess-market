@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    A whole market, ready to be played with.
+
+    Twelve events and ten users, chosen so that every corner of the system is reachable from a
+    single load: both trading methods, both commission collection methods, a commission of 0 and a
+    commission of 90, base values of 1, 2, 5 and 10, minting switched on and off, liquidity
+    parameters from 50 to 1000, market makers who run two events each, four users who run nothing,
+    and one user whose account is small enough to be spent down to nothing.
+-->
+<Guess-Market>
+
+	<GM-events>
+
+		<GM-event name="Rain in Tel Aviv tomorrow">
+			<id>1</id>
+			<description>Will more than 5 mm of rain fall in Tel Aviv before midnight tomorrow, as measured by the Israel Meteorological Service?</description>
+			<commission type="on-purchase">5</commission>
+			<GM-options>
+				<GM-option>Yes</GM-option>
+				<GM-option>No</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-LMSR>
+					<b>100</b>
+				</GM-LMSR>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="World Cup winner">
+			<id>2</id>
+			<description>Which of the two finalists will lift the World Cup? Resolved on the final whistle of the final.</description>
+			<commission type="on-close">10</commission>
+			<GM-options>
+				<GM-option>Argentina</GM-option>
+				<GM-option>Spain</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-order-book allow-mint="true" initial="1000" d="1"/>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="Earthquake at the Dead Sea">
+			<id>3</id>
+			<description>Will an earthquake above magnitude 4 be recorded at the Dead Sea during 2026?</description>
+			<commission type="on-purchase">3</commission>
+			<GM-options>
+				<GM-option>Yes</GM-option>
+				<GM-option>No</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-order-book allow-mint="false" initial="2000" d="1"/>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="Interest rate cut">
+			<id>4</id>
+			<description>Will the central bank cut the interest rate at its next monetary policy meeting?</description>
+			<commission type="on-close">15</commission>
+			<GM-options>
+				<GM-option>Cut</GM-option>
+				<GM-option>No cut</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-LMSR>
+					<b>200</b>
+				</GM-LMSR>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="Snow in Jerusalem this winter">
+			<id>5</id>
+			<description>Will snow settle on the ground in Jerusalem at any point during this winter?</description>
+			<commission type="on-purchase">8</commission>
+			<GM-options>
+				<GM-option>Snow</GM-option>
+				<GM-option>No snow</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-LMSR>
+					<b>500</b>
+				</GM-LMSR>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="Election turnout above 70 percent">
+			<id>6</id>
+			<description>Will turnout in the next general election be above 70 percent of eligible voters?</description>
+			<commission type="on-close">12</commission>
+			<GM-options>
+				<GM-option>Above 70</GM-option>
+				<GM-option>70 or below</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-order-book allow-mint="true" initial="5000" d="10"/>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="Light rail red line on schedule">
+			<id>7</id>
+			<description>Will the red line of the Tel Aviv light rail keep to its published timetable for a full week? This event charges no commission at all.</description>
+			<commission type="on-close">0</commission>
+			<GM-options>
+				<GM-option>On schedule</GM-option>
+				<GM-option>Late</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-LMSR>
+					<b>50</b>
+				</GM-LMSR>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="A new unicorn by year end">
+			<id>8</id>
+			<description>Will an Israeli startup reach a valuation of one billion dollars before the end of the year? This event charges the highest commission the rules allow.</description>
+			<commission type="on-purchase">90</commission>
+			<GM-options>
+				<GM-option>Yes</GM-option>
+				<GM-option>No</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-order-book allow-mint="true" initial="500" d="1"/>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="Global temperature record broken">
+			<id>9</id>
+			<description>Will this year be recorded as the warmest year since measurements began?</description>
+			<commission type="on-purchase">25</commission>
+			<GM-options>
+				<GM-option>Record broken</GM-option>
+				<GM-option>Record stands</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-LMSR>
+					<b>1000</b>
+				</GM-LMSR>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="Mars sample return launches">
+			<id>10</id>
+			<description>Will the Mars sample return mission leave the launch pad before the end of the decade?</description>
+			<commission type="on-close">7</commission>
+			<GM-options>
+				<GM-option>Launches</GM-option>
+				<GM-option>Slips again</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-order-book allow-mint="false" initial="3000" d="5"/>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="Bitcoin above 200,000 dollars">
+			<id>11</id>
+			<description>Will one bitcoin trade above two hundred thousand dollars at any point this year?</description>
+			<commission type="on-close">20</commission>
+			<GM-options>
+				<GM-option>Above</GM-option>
+				<GM-option>Below</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-LMSR>
+					<b>300</b>
+				</GM-LMSR>
+			</GM-method>
+		</GM-event>
+
+		<GM-event name="Nobel prize to an Israeli">
+			<id>12</id>
+			<description>Will an Israeli be among this year's Nobel laureates in any of the six categories?</description>
+			<commission type="on-purchase">5</commission>
+			<GM-options>
+				<GM-option>Yes</GM-option>
+				<GM-option>No</GM-option>
+			</GM-options>
+			<GM-method>
+				<GM-order-book allow-mint="true" initial="1200" d="2"/>
+			</GM-method>
+		</GM-event>
+
+	</GM-events>
+
+	<GM-users>
+
+		<GM-user name="Tikva">
+			<initial-cash>250000</initial-cash>
+			<GM-market-maker>
+				<event id="1"/>
+				<event id="7"/>
+			</GM-market-maker>
+		</GM-user>
+
+		<GM-user name="Avrum">
+			<initial-cash>180000</initial-cash>
+			<GM-market-maker>
+				<event id="2"/>
+				<event id="8"/>
+			</GM-market-maker>
+		</GM-user>
+
+		<GM-user name="Menash">
+			<initial-cash>120000</initial-cash>
+			<GM-market-maker>
+				<event id="3"/>
+				<event id="9"/>
+			</GM-market-maker>
+		</GM-user>
+
+		<GM-user name="Bruria">
+			<initial-cash>90000</initial-cash>
+			<GM-market-maker>
+				<event id="4"/>
+				<event id="10"/>
+			</GM-market-maker>
+		</GM-user>
+
+		<GM-user name="Shoshana">
+			<initial-cash>60000</initial-cash>
+			<GM-market-maker>
+				<event id="5"/>
+				<event id="11"/>
+			</GM-market-maker>
+		</GM-user>
+
+		<GM-user name="Yigal">
+			<initial-cash>45000</initial-cash>
+			<GM-market-maker>
+				<event id="6"/>
+				<event id="12"/>
+			</GM-market-maker>
+		</GM-user>
+
+		<GM-user name="Dvora">
+			<initial-cash>30000</initial-cash>
+		</GM-user>
+
+		<GM-user name="Ronen">
+			<initial-cash>25000</initial-cash>
+		</GM-user>
+
+		<GM-user name="Liat">
+			<initial-cash>15000</initial-cash>
+		</GM-user>
+
+		<GM-user name="Ofir">
+			<initial-cash>800</initial-cash>
+		</GM-user>
+
+	</GM-users>
+
+</Guess-Market>
