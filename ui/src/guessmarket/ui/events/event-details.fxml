@@ -138,6 +138,23 @@
 
     </VBox>
 
+    <!--
+        An event that has not been opened yet.
+
+        Everything below this is a market: what the options are worth, who is in it, what has been
+        traded and at what price. None of that exists before the market maker has paid to open the
+        event - the tables would be empty, the values would be the values nobody has yet been able
+        to trade at, and a screen of empty panels reads as a system that has lost the data rather
+        than as an event that has not begun. So they are all taken away and this stands in their
+        place, saying the one thing there is to say and naming the one person who can change it.
+
+        What stays above is the event itself and the terms it will open on, which are settled and
+        are exactly what somebody looking at an unopened event has come to read.
+    -->
+    <VBox fx:id="waitingBox" styleClass="card" managed="false" visible="false">
+        <Label fx:id="waitingLabel" styleClass="lead" wrapText="true" text=""/>
+    </VBox>
+
     <!-- LMSR: what each option is worth, and how many of its shares have been bought -->
     <VBox fx:id="lmsrBox" styleClass="card" spacing="8">
         <Label text="OPTIONS" styleClass="panel-title"/>
