@@ -58,6 +58,9 @@ public class EventDetailsController {
      */
     private static final double NARROWEST_TERM = 152;
 
+    /** What stands between the names of the two options where they are listed on the card. */
+    private static final String OPTION_SEPARATOR = "  ·  ";
+
     @FXML private VBox rootPane;
 
     @FXML private Label eventNameLabel;
@@ -65,6 +68,7 @@ public class EventDetailsController {
     @FXML private Button methodButton;
     @FXML private Label winnerBadge;
     @FXML private Label descriptionLabel;
+    @FXML private Label optionNamesLabel;
 
     @FXML private Label accountBalanceLabel;
     @FXML private Label commissionLabel;
@@ -276,6 +280,8 @@ public class EventDetailsController {
         methodButton.setTooltip(new Tooltip(event.isLmsr()
                 ? "Show what each option of this event is worth"
                 : "Show the two books this event is traded through"));
+
+        optionNamesLabel.setText(String.join(OPTION_SEPARATOR, event.optionNames()));
 
         boolean closed = event.isClosed();
         winnerBadge.setText(closed ? "WINNER: " + event.winningOptionName() : "");

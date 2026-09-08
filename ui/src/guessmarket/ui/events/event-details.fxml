@@ -72,6 +72,21 @@
                 <Button fx:id="methodButton" styleClass="method-link" text="Method"
                         minWidth="-Infinity" onAction="#onShowMarket"/>
             </HBox>
+
+            <!--
+                The two ways the event can end, named on the card itself.
+
+                They are also in the options table and along the tops of the two books, but both of
+                those belong to a market, and a market only exists once the event has been opened.
+                An event waiting to be opened would otherwise never say anywhere what it is a
+                question between, which is half of what the question is. Said here they are part of
+                what the event IS, beside how it is traded and whose it is, and they are on the card
+                in every state the event can be in.
+            -->
+            <FlowPane hgap="8" vgap="4" rowValignment="CENTER">
+                <Label text="OPTIONS" styleClass="field-label"/>
+                <Label fx:id="optionNamesLabel" styleClass="value" text="—"/>
+            </FlowPane>
         </VBox>
 
         <!-- the two figures that move while people trade -->
