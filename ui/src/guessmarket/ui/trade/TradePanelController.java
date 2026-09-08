@@ -22,7 +22,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 /**
@@ -48,7 +47,10 @@ public class TradePanelController {
     @FXML private Label actingAsLabel;
     @FXML private Label messageLabel;
 
-    @FXML private HBox openBox;
+    /** The box holding whichever of the two things only a market maker may do applies now. */
+    @FXML private VBox marketMakerBox;
+
+    @FXML private VBox openBox;
     @FXML private Button openButton;
     @FXML private Label openCostLabel;
 
@@ -66,7 +68,7 @@ public class TradePanelController {
     @FXML private Button submitOrderButton;
     @FXML private Label orderHintLabel;
 
-    @FXML private HBox closeBox;
+    @FXML private VBox closeBox;
     @FXML private ComboBox<String> winnerChooser;
     @FXML private Button closeButton;
     @FXML private Label closeHintLabel;
@@ -105,6 +107,7 @@ public class TradePanelController {
         actingAsLabel.setText("Acting as " + selectedUser.name());
 
         boolean marketMaker = event.marketMakerName().equalsIgnoreCase(selectedUser.name());
+        show(marketMakerBox, false);
         show(openBox, false);
         show(buyBox, false);
         show(orderBox, false);
@@ -133,7 +136,7 @@ public class TradePanelController {
                     + event.marketMakerName() + ", can open it.");
             return;
         }
-        show(openBox, true);
+        offerAsMarketMaker(openBox);
         openCostLabel.setText(describeOpeningCost());
         openButton.setDisable(false);
     }
@@ -170,12 +173,25 @@ public class TradePanelController {
                             + "an order on the other side of the same book."));
         }
         if (marketMaker) {
-            show(closeBox, true);
+            offerAsMarketMaker(closeBox);
             fillOptions(winnerChooser);
             closeHintLabel.setText("Closing pays every share of the winning option "
                     + Formats.money(event.baseValue()) + " out of the event account. "
                     + "It cannot be undone.");
         }
+    }
+
+    /**
+     * Shows one of the two things only a market maker may do, and with it the box that says so.
+     *
+     * <p>They are never both on the screen at once - an event is either waiting to be opened or
+     * waiting to be closed - so the box round them is what makes them one pair rather than two
+     * rows that happen to look alike. Which is worth saying: everything else on this panel is
+     * offered to whoever is selected, and these two are offered to one person in the system.
+     */
+    private void offerAsMarketMaker(VBox action) {
+        show(marketMakerBox, true);
+        show(action, true);
     }
 
     private void explain(String message) {
