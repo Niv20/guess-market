@@ -41,6 +41,10 @@ import java.util.function.Function;
  * so a wide window is filled rather than ending in an empty strip, and a window too narrow even
  * for the measured widths keeps every column readable and scrolls sideways instead.
  *
+ * <p>Sideways only when it really is too narrow. Everything above is worked out in whole points
+ * and adds up to no more than the table has, so a bar along the bottom edge means the columns do
+ * not fit and never means they missed by one.
+ *
  * <p>No table is given a height by hand either, and no table has a height that hides anything: it
  * is as tall as its headings and its rows together, always, so that every row it has is on the
  * screen and none of these tables ever grows a scroll bar down its side. See {@link #fitHeight}
@@ -54,11 +58,24 @@ public final class Tables {
     /** Marks a table that has already been taken in hand, so it is only ever set up once. */
     private static final String ADOPTED = "guessmarket.adopted";
 
-    /** What a cell adds to the text in it: the padding either side of it, and its border. */
-    private static final double CELL_PADDING = 18;
+    /**
+     * What a cell adds to the text in it: the eight points of padding the stylesheet gives it on
+     * each side, and the one point of border underneath.
+     */
+    private static final double CELL_PADDING = 17;
 
-    /** What a heading adds to the text in it, which is its padding, its border and room to sort. */
-    private static final double HEADING_PADDING = 24;
+    /**
+     * What a heading adds to the text in it: four points of padding on each side, one of border,
+     * and seven for the arrow that appears in a column somebody has sorted by.
+     *
+     * <p>Seven and not the full width of an arrow, which is what this used to keep clear. Only one
+     * column at a time can be sorted by, so keeping the room in all of them cost every table
+     * fifteen points a column - a hundred and fifty across the widest of them - to hold open a
+     * space that at most one of them would ever use, and it was those hundred and fifty points
+     * that put a scroll bar under a table with room to spare. What is kept now is enough that a
+     * sorted heading is crowded rather than cut, in the one column that is ever sorted.
+     */
+    private static final double HEADING_PADDING = 16;
 
     /** The size a heading is set in, as a fraction of the size of the rows underneath it. */
     private static final double HEADING_FONT_SCALE = 0.82;
@@ -68,14 +85,15 @@ public final class Tables {
             List.of("Menlo", "Consolas", "Courier New", "Monospaced");
 
     /**
-     * The room kept clear down the right hand side of a table, used until the table has been
-     * given a skin and can say how thick a scroll bar of its own actually is. It matches the
-     * thickness the stylesheet gives one.
+     * How thick a scroll bar is, used to work out how much taller a table is when it has one
+     * along its bottom edge. It matches the thickness the stylesheet gives one.
      *
-     * <p>A table here never grows a bar down its side - see {@link #fitHeight} - so the strip is
-     * no longer room for one. It is kept clear as the margin the columns are shared out inside:
-     * columns widened to exactly the width of the table are a rounding error away from being one
-     * point wider than it, which is a bar along the bottom edge for the sake of that point.
+     * <p>Nothing is kept clear down the right hand side any more. A table here never grows a bar
+     * there - see {@link #fitHeight} - so eleven points were being held open for a bar that could
+     * not appear, out of the width the columns had to fit inside, and a table with four points to
+     * spare was given a bar along the bottom for the sake of the eleven it was not allowed to use.
+     * What stops the columns from spilling over the edge instead is that they are shared out in
+     * whole points and never add up to more than there are: see {@link #shareWidth}.
      */
     private static final double SCROLL_BAR_BREADTH = 11;
 
@@ -328,7 +346,10 @@ public final class Tables {
         }
         widenGroups(table, columns, widths);
         for (int i = 0; i < columns.size(); i++) {
-            columns.get(i).setMinWidth(widths.get(i));
+            // Rounded up to a whole point, because a column is drawn on whole points whatever it
+            // is told: ten columns each rounded up a fraction of a point are a table three points
+            // wider than the sum it was shared out from, and three points is a scroll bar.
+            columns.get(i).setMinWidth(Math.ceil(widths.get(i)));
         }
     }
 
@@ -394,20 +415,49 @@ public final class Tables {
      * cannot change the width of the table that holds them, and the two cannot chase each other.
      */
     private static void shareWidth(TableView<?> table) {
+        List<? extends TableColumn<?, ?>> columns = table.getVisibleLeafColumns();
+        double wanted = wantedWidth(table);
+        double room = roomForColumns(table);
+        if (wanted <= 0 || room <= 0) {
+            return;
+        }
+        double scale = Math.max(1, room / wanted);
+        double given = 0;
+        for (int i = 0; i < columns.size(); i++) {
+            TableColumn<?, ?> column = columns.get(i);
+            // Downwards, so that what is handed out is never more than there was to hand out.
+            // Every measured width is already a whole point, so a column can only lose the part
+            // of the sharing that was fractional, and never fall under what it needs.
+            double share = Math.floor(column.getMinWidth() * scale);
+            if (scale > 1 && i == columns.size() - 1) {
+                // Whatever all that rounding down left over goes to the last column, so the row
+                // ends exactly where the table does rather than a few points short of it.
+                share = Math.max(share, room - given);
+            }
+            column.setPrefWidth(share);
+            given += share;
+        }
+    }
+
+    /** @return what the columns need altogether, which is what they were measured at. */
+    private static double wantedWidth(TableView<?> table) {
         double wanted = 0;
         for (TableColumn<?, ?> column : table.getVisibleLeafColumns()) {
             wanted += column.getMinWidth();
         }
-        if (wanted <= 0) {
-            return;
-        }
-        double room = table.getWidth()
-                - table.getInsets().getLeft() - table.getInsets().getRight()
-                - scrollBarBreadth(table);
-        double scale = Math.max(1, room / wanted);
-        for (TableColumn<?, ?> column : table.getVisibleLeafColumns()) {
-            column.setPrefWidth(column.getMinWidth() * scale);
-        }
+        return wanted;
+    }
+
+    /**
+     * @return how much width there is for the columns to be shared out inside, in whole points
+     *
+     * <p>Whole points because that is what they are drawn on. A table asked to fit its columns
+     * into a width and a half will fit them into the width and then find itself half a point too
+     * narrow for them.
+     */
+    private static double roomForColumns(TableView<?> table) {
+        return Math.floor(table.getWidth()
+                - table.getInsets().getLeft() - table.getInsets().getRight());
     }
 
     /**
@@ -508,14 +558,8 @@ public final class Tables {
      * left out of a table that is about to have one.
      */
     private static double horizontalBarHeight(TableView<?> table) {
-        double wanted = 0;
-        for (TableColumn<?, ?> column : table.getVisibleLeafColumns()) {
-            wanted += column.getMinWidth();
-        }
-        double room = table.getWidth()
-                - table.getInsets().getLeft() - table.getInsets().getRight()
-                - scrollBarBreadth(table);
-        if (room <= 0 || wanted <= room) {
+        double room = roomForColumns(table);
+        if (room <= 0 || wantedWidth(table) <= room) {
             return 0;
         }
         for (Node node : table.lookupAll(".scroll-bar")) {
