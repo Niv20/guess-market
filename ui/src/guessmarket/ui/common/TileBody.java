@@ -2,11 +2,13 @@ package guessmarket.ui.common;
 
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -145,6 +147,23 @@ final class TileBody extends Pane {
     }
 
     /**
+     * Says that how tall this tile is depends on how wide it is, which is the whole of what this
+     * class does and the one thing a layout has no way of guessing.
+     *
+     * <p>Without it nothing above ever asks the question that way. A pane is asked for its height
+     * at a width, and it passes that width down only to the children that have said their height
+     * turns on it; every other child is asked at no width at all, and a tile asked at no width can
+     * only answer for the width it happens to be at that moment — which, while a divider is being
+     * dragged, is the width it had before the drag. So the list would hand every tile the height
+     * it needed one drag step ago, and a tile that had just changed from two columns to one would
+     * be given the two column height and lay the figures over the words underneath.
+     */
+    @Override
+    public Orientation getContentBias() {
+        return Orientation.HORIZONTAL;
+    }
+
+    /**
      * How narrow the tile may be dragged. It is the words alone, because by the time it is that
      * narrow the figures are underneath them rather than beside them.
      */
@@ -231,16 +250,51 @@ final class TileBody extends Pane {
      */
     private double plannedWidth() {
         double taken = snappedLeftInset() + snappedRightInset();
+        Node inside = this;
         Parent above = getParent();
         while (above != null) {
             if (above instanceof Region region) {
-                taken += region.snappedLeftInset() + region.snappedRightInset();
+                taken += region.snappedLeftInset() + region.snappedRightInset()
+                        + widthTakenBeside(region, inside);
                 if (region.getWidth() > 0) {
                     return region.getWidth() - taken;
                 }
             }
+            inside = above;
             above = above.getParent();
         }
         return -1;
+    }
+
+    /**
+     * @return how much of one row above the tile is spoken for by whatever else stands on it
+     *
+     * <p>The padding of everything between the tile and a width that is known is not all that is
+     * between them: an event tile has its status dot in a column of its own down the left, and a
+     * guess that forgot the dot would be a good deal wider than the width the tile is then handed.
+     * Which matters exactly where it is least affordable — a tile guessed to be over
+     * {@link #TWO_COLUMN_WIDTH} and then handed something under it is measured for two columns and
+     * laid out in one, and the height it was measured at is the one thing it cannot get back.
+     *
+     * <p>A user tile has nothing beside it and nothing is taken off, which is why that list never
+     * showed any of this.
+     */
+    private static double widthTakenBeside(Region above, Node inside) {
+        if (!(above instanceof HBox row)) {
+            return 0;
+        }
+        double taken = 0;
+        boolean first = true;
+        for (Node beside : row.getChildren()) {
+            if (!beside.isManaged()) {
+                continue;
+            }
+            taken += first ? 0 : row.getSpacing();
+            first = false;
+            if (beside != inside) {
+                taken += beside.prefWidth(-1);
+            }
+        }
+        return taken;
     }
 }
