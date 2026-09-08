@@ -9,8 +9,8 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -54,19 +54,19 @@ public final class EventTile {
     private EventTile() {
     }
 
-    /** @return the tile for an event listed on its own, without anybody's part in it. */
+    /**
+     * @return the tile for an event listed on its own, without anybody's part in it
+     *
+     * <p>The events screen lists the whole system and nobody in particular is chosen there, so
+     * there is no such thing as this reader's part in an event: every tile says what the event
+     * is and none of them says whose it is to anybody. {@link #compact} is the tile for the list
+     * that does know.
+     */
     public static Node of(EventDto event) {
-        return of(event, Role.NONE);
-    }
-
-    /** @return the tile for an event, marked with what the selected user is to it. */
-    public static Node of(EventDto event, Role role) {
         VBox tile = Tiles.tile();
+        VBox words = Tiles.words(nameRow(event), Tiles.meta(describeRun(event)));
         tile.getChildren().add(
-                Tiles.withMark(statusDot(event),
-                        Tiles.body(nameRow(event, roleTags(role)),
-                                Tiles.meta(describeRun(event)),
-                                figures(event))));
+                Tiles.withMark(statusDot(event), words, Tiles.body(words, figures(event))));
         return tile;
     }
 
@@ -80,30 +80,25 @@ public final class EventTile {
      * is how it charges — nobody chooses an event by its commission, and the panel that opens
      * underneath states it before anything can be done about it.
      *
-     * <p>The one thing that moves is what the person is to the event. On a tile with a list's
-     * width to itself it is said after the name, where what a thing is belongs; on a card this
-     * narrow the same tag takes that width out of the name, and a name cut off in the middle is
-     * the one thing a card somebody is choosing from cannot afford. So here it is held out at the
-     * end of the line underneath, which is shorter than the card either way.
+     * <p>The one thing this card says that the event itself does not is what the reader is to it,
+     * and it is not said after the name: on a card this narrow a tag there takes that width out of
+     * the name, and a name cut off in the middle is the one thing a card somebody is choosing from
+     * cannot afford. It goes on the line underneath instead, which is shorter than the card either
+     * way — running the event inside the sentence that names the runner, and having money in it
+     * held out at the far end. See {@link #runnerRow}.
      */
     public static Node compact(EventDto event, Role role) {
         VBox card = Tiles.stripTile();
-        VBox words = new VBox(4,
-                nameRow(event, List.of()),
-                Tiles.metaRow(Tiles.meta(describeMethodAndRunner(event)), roleTags(role)),
-                Tiles.stripSpacer(),
-                figures(event));
-        card.getChildren().add(Tiles.withMark(statusDot(event), words));
+        VBox words = Tiles.words(nameRow(event), runnerRow(event, role));
+        VBox body = new VBox(4, words, Tiles.stripSpacer(), figures(event));
+        card.getChildren().add(Tiles.withMark(statusDot(event), words, body));
         return card;
     }
 
-    /**
-     * The line the tile is found by: which event it is and what it is called, with whatever else
-     * the tile has room to say about it after the name.
-     */
-    private static Node nameRow(EventDto event, List<Label> tags) {
+    /** The line the tile is found by: which event it is, and what it is called. */
+    private static Node nameRow(EventDto event) {
         List<Node> before = List.of(Tiles.number("#" + event.id()));
-        return Tiles.titleRow(before, Tiles.title(event.name()), tags);
+        return Tiles.titleRow(before, Tiles.title(event.name()), List.of());
     }
 
     /**
@@ -133,24 +128,49 @@ public final class EventTile {
     }
 
     /**
-     * What the selected user is to the event, in a word or two rather than worn as a badge above
-     * the name. Where the words go is the tile's business and not this method's; both tiles use
-     * the same two words for the same two things.
+     * The line under the name of a card in the strip: how the event trades and who runs it, with
+     * whatever the reader is to it said where it belongs.
      *
-     * <p>Running an event is in the colour of a warning, because that user is answerable for it;
-     * having money in one is in the accent, because that is the colour every figure they stand to
-     * win or lose is already set in. A user who is neither is not marked at all: the users screen
-     * offers every event there is, so most of the cards in that strip are events this person has
-     * nothing to do with, and a list where the usual case wears a label is a list of labels.
+     * <p>Whose the event is is the one thing on this line the reader is looking for, and until now
+     * it was answered twice over and in two different places: the runner was named on the left and
+     * a tag at the far right of the same line said MM, meaning not that the runner was the market
+     * maker — they could hardly be anything else — but that the runner was the reader. Two claims
+     * that far apart on one line are read as being about the two names nearest them, which is
+     * precisely the wrong way round.
+     *
+     * <p>So it is said once, where the runner is named: the reader's own events say
+     * <em>Run by you</em>, with {@code (MM)} after it in the colour a market maker is worn in
+     * everywhere else in the program, because being answerable for an event is worth marking and
+     * the word "you" alone is not. Every other event names whoever runs it and stops there.
      */
-    private static List<Label> roleTags(Role role) {
-        List<Label> tags = new ArrayList<>();
-        switch (role) {
-            case MARKET_MAKER -> tags.add(Tiles.tag("MM", "tile-tag-mm"));
-            case PARTICIPANT -> tags.add(Tiles.tag("Taking part", "tile-tag-part"));
-            case NONE -> { }
-        }
-        return tags;
+    private static Node runnerRow(EventDto event, Role role) {
+        boolean mine = role == Role.MARKET_MAKER;
+        Text lead = Tiles.metaPiece(event.tradingMethod().getDisplayName() + " · Run by "
+                + (mine ? "you" : event.marketMakerName()));
+        Node line = mine
+                ? Tiles.metaLine(lead, Tiles.metaPiece(" (MM)", "mark-mm"))
+                : Tiles.metaLine(lead);
+        return Tiles.metaRow(line, participationTag(role));
+    }
+
+    /**
+     * Having money in an event, held out at the far end of the line under the name.
+     *
+     * <p>It stays a tag of its own where running the event has become part of the sentence,
+     * because it is a different kind of claim: what the reader is answerable for belongs beside
+     * the runner's name, and what the reader stands to win or lose belongs where the other cards'
+     * tags are, down one edge of the strip, so that somebody looking for their own money finds it
+     * in one pass instead of a card at a time. It is in the accent, which is the colour every
+     * figure they stand to win or lose is already set in.
+     *
+     * <p>Neither claim is made about the usual card. The users screen offers every event there is,
+     * so most of the strip is events this person has nothing to do with, and a list where the
+     * usual case wears a label is a list of labels.
+     */
+    private static List<Label> participationTag(Role role) {
+        return role == Role.PARTICIPANT
+                ? List.of(Tiles.tag("Taking part", "tile-tag-part"))
+                : List.of();
     }
 
     /** @return how the event trades, who runs it and what it charges, as one line of English. */
@@ -159,11 +179,6 @@ public final class EventTile {
                 + " · Run by " + event.marketMakerName() + " · "
                 + Formats.percent(event.commissionPercent()) + " commission "
                 + event.commissionType().getDisplayName().toLowerCase(Locale.US);
-    }
-
-    /** @return how the event trades and whose it is, all a card this small has room for. */
-    private static String describeMethodAndRunner(EventDto event) {
-        return event.tradingMethod().getDisplayName() + " · Run by " + event.marketMakerName();
     }
 
     /**
