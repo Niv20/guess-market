@@ -57,6 +57,13 @@ compile_module() {
     shift 2
     echo "  compiling $module"
     mkdir -p "$CLASSES_DIR/$module"
+    # Gathered one name at a time and kept in an array rather than left to word splitting, so that
+    # a project sitting in a folder whose name contains a space still compiles.
+    local sources=()
+    local source
+    while IFS= read -r -d '' source; do
+        sources+=("$source")
+    done < <(find "$module/src" -name '*.java' -print0)
     # -Xlint:serial is left out on purpose: the domain classes are serializable and hold their
     # collections behind the List and Map interfaces, which is good design but which that
     # particular check always complains about.
@@ -64,7 +71,7 @@ compile_module() {
         -classpath "$classpath" \
         "$@" \
         -d "$CLASSES_DIR/$module" \
-        $(find "$module/src" -name '*.java')
+        "${sources[@]}"
 }
 
 # The layout files and the stylesheets live next to the classes that use them, so they are copied
