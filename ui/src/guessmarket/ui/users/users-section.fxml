@@ -156,6 +156,14 @@
                         stay the same size, not the strip: see EventTile.compact for what a card
                         this size can carry. The orientation is set by Tiles.renderStrip, which
                         is also what gives every card its width.
+
+                        The height is what a card of two lines needs when one of them wraps: a
+                        name over three lines, or a name over two with the line under it wrapping
+                        as well. That is the tallest a card actually gets now that the money has
+                        come off the foot of it, and it is a third less than the strip used to
+                        take. Fixing it any tighter would cut the last line off an event with a
+                        long name, and any looser would be a row of cards with a band of nothing
+                        along the bottom of every one of them.
                     -->
                     <VBox styleClass="card" spacing="8">
                         <HBox alignment="CENTER_LEFT" spacing="10">
@@ -166,7 +174,7 @@
                             <ToggleButton fx:id="myEventsButton" text="Only mine"/>
                         </HBox>
                         <ListView fx:id="eventsList" styleClass="tile-list, tile-strip"
-                                  prefHeight="158" minHeight="158" maxHeight="158"/>
+                                  prefHeight="104" minHeight="104" maxHeight="104"/>
                     </VBox>
 
                     <!--

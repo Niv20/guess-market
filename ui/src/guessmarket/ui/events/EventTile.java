@@ -73,25 +73,28 @@ public final class EventTile {
     /**
      * @return the same event drawn small, for a strip read across rather than a column read down
      *
-     * <p>A card in a strip is given its width and its height rather than taking what it needs, so
-     * this one is the full tile with the one thing that can be left off it left off. What stays is
-     * what somebody picking an event out of a row is picking by: how it is doing, which one it is,
-     * what it is called, what they are to it, how it trades, whose it is and its money. What goes
-     * is how it charges — nobody chooses an event by its commission, and the panel that opens
-     * underneath states it before anything can be done about it.
+     * <p>This is the head of the tile and nothing else: how the event is doing, which one it is,
+     * what it is called, how it trades, whose it is and what the reader is to it. Everything a
+     * card in this strip is for is in those two lines, because the strip is not a list to be read
+     * - it is a row of things to pick one of, and what is picked opens underneath it.
+     *
+     * <p>Which is why the money is not here. It was the foot of the card and it was the event's
+     * own account, a figure nobody chooses an event by; and the panel that opens the moment a card
+     * is picked states it in full, under a caption, a few inches below the card that had just
+     * whispered it. A card in a row of cards should carry what tells one of them from the next,
+     * and nothing that the thing it opens will say again anyway.
      *
      * <p>The one thing this card says that the event itself does not is what the reader is to it,
      * and it is not said after the name: on a card this narrow a tag there takes that width out of
      * the name, and a name cut off in the middle is the one thing a card somebody is choosing from
      * cannot afford. It goes on the line underneath instead, which is shorter than the card either
-     * way — running the event inside the sentence that names the runner, and having money in it
+     * way - running the event inside the sentence that names the runner, and having money in it
      * held out at the far end. See {@link #runnerRow}.
      */
     public static Node compact(EventDto event, Role role) {
         VBox card = Tiles.stripTile();
         VBox words = Tiles.words(nameRow(event), runnerRow(event, role));
-        VBox body = new VBox(4, words, Tiles.stripSpacer(), figures(event));
-        card.getChildren().add(Tiles.withMark(statusDot(event), words, body));
+        card.getChildren().add(Tiles.withMark(statusDot(event), words, words));
         return card;
     }
 
