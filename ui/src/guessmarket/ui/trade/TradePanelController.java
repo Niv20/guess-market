@@ -34,11 +34,12 @@ import javafx.scene.layout.VBox;
  * controls at all.
  *
  * <p>The panel decides what to offer from three things: whether the user runs the event, what stage
- * the event has reached, and how it is traded. Where there is something to explain it explains it -
- * a blocked user is told why nothing here will work for them, and a closed event says what it
- * settled on. Where there is nothing at all to offer and nothing to explain, the panel is not
- * shown: an event nobody has opened yet is not this user's to open, and the event underneath
- * already says so.
+ * the event has reached, and how it is traded. What it offers goes on one of two cards - what is
+ * done to the event on Management, what is done inside it on Actions - and a card with nothing on
+ * it is not shown at all. Where there is something to explain it explains it: a blocked user is
+ * told why nothing here will work for them, and a closed event says what it settled on. Where
+ * there is nothing to offer and nothing to explain, neither card appears - an event nobody has
+ * opened yet is not this user's to open, and the event underneath already says so.
  *
  * <p>Nothing is worked out here. Every figure shown comes from the engine, including the price of a
  * purchase before it is made, and every action is a single call whose refusal is shown to the
@@ -46,11 +47,16 @@ import javafx.scene.layout.VBox;
  */
 public class TradePanelController {
 
+    /** The two cards together, which is what comes and goes when there is nothing to offer. */
     @FXML private VBox rootPane;
-    @FXML private Label messageLabel;
 
-    /** The box holding whichever of the two things only a market maker may do applies now. */
-    @FXML private VBox marketMakerBox;
+    /** What is done to the event, by the one person answerable for it. */
+    @FXML private VBox managementBox;
+
+    /** What is done inside the event while it runs, by anybody. */
+    @FXML private VBox actionsBox;
+
+    @FXML private Label messageLabel;
 
     @FXML private VBox openBox;
     @FXML private Button openButton;
@@ -101,27 +107,39 @@ public class TradePanelController {
         show(rootPane, false);
     }
 
-    /** Offers whatever this user may do in this event, and explains whatever they may not. */
+    /**
+     * Offers whatever this user may do in this event, and explains whatever they may not.
+     *
+     * <p>Everything is put away first and then whatever applies is put back, and the two cards
+     * follow what was put on them rather than being decided separately: a card nobody put anything
+     * on is not an empty card, it is not a card. That is what lets the cases below say only what
+     * they offer and never also where it goes.
+     */
     public void show(UserDto selectedUser, EventTradingStatusDto status) {
         this.user = selectedUser;
         this.event = status.event();
-        show(rootPane, true);
         boolean marketMaker = event.marketMakerName().equalsIgnoreCase(selectedUser.name());
-        show(marketMakerBox, false);
+        show(managementBox, false);
         show(openBox, false);
+        show(closeBox, false);
+        show(actionsBox, false);
         show(buyBox, false);
         show(orderBox, false);
-        show(closeBox, false);
         show(messageLabel, false);
 
-        // An event that has not been opened has nothing on this panel for anybody but the one
-        // person who can open it, so for everybody else the panel is taken away rather than
-        // filled with a sentence saying so. The sentence was the whole of what was shown - a
-        // heading, a name and a rule round nothing anybody could do - and it said what the event
-        // itself says underneath in the same words, where somebody who never opens this screen
-        // reads it too.
+        offerWhatIsAllowed(selectedUser, marketMaker);
+
+        show(actionsBox, messageLabel.isManaged() || buyBox.isManaged() || orderBox.isManaged());
+        show(rootPane, managementBox.isManaged() || actionsBox.isManaged());
+    }
+
+    /** Puts back whichever of the things this panel can offer applies to this person now. */
+    private void offerWhatIsAllowed(UserDto selectedUser, boolean marketMaker) {
+        // An event that has not been opened has nothing here for anybody but the one person who
+        // can open it, so for everybody else nothing is put back at all and both cards go with
+        // it. A sentence saying so would say what the event itself says underneath in the same
+        // words, where somebody who never opens this screen reads it too.
         if (event.status() == EventStatus.NOT_STARTED && !marketMaker) {
-            show(rootPane, false);
             return;
         }
         if (selectedUser.blocked()) {
@@ -142,7 +160,7 @@ public class TradePanelController {
 
     /** Only ever reached by the market maker: everybody else was shown no panel at all. */
     private void offerToOpen() {
-        offerAsMarketMaker(openBox);
+        manage(openBox);
         openCostLabel.setText(describeOpeningCost());
         openButton.setDisable(false);
     }
@@ -179,7 +197,7 @@ public class TradePanelController {
                             + "an order on the other side of the same book."));
         }
         if (marketMaker) {
-            offerAsMarketMaker(closeBox);
+            manage(closeBox);
             fillOptions(winnerChooser);
             closeHintLabel.setText("Closing pays every share of the winning option "
                     + Formats.money(event.baseValue()) + " out of the event account. "
@@ -188,15 +206,15 @@ public class TradePanelController {
     }
 
     /**
-     * Shows one of the two things only a market maker may do, and with it the box that says so.
+     * Shows one of the two things done to the event, and with it the card they live on.
      *
      * <p>They are never both on the screen at once - an event is either waiting to be opened or
-     * waiting to be closed - so the box round them is what makes them one pair rather than two
-     * rows that happen to look alike. Which is worth saying: everything else on this panel is
+     * waiting to be closed - so the card round them is what makes them one pair rather than two
+     * rows that happen to look alike. Which is worth saying: everything on the other card is
      * offered to whoever is selected, and these two are offered to one person in the system.
      */
-    private void offerAsMarketMaker(VBox action) {
-        show(marketMakerBox, true);
+    private void manage(VBox action) {
+        show(managementBox, true);
         show(action, true);
     }
 
