@@ -47,12 +47,12 @@
         <Label text="BIDS — WAITING TO BUY" styleClass="book-title-bid"/>
         <Label fx:id="bidTotalLabel" styleClass="faint"/>
     </HBox>
-    <TableView fx:id="bidsTable" prefHeight="140" minHeight="90" VBox.vgrow="ALWAYS"/>
+    <TableView fx:id="bidsTable"/>
 
     <HBox alignment="CENTER_LEFT" spacing="8">
         <Label text="ASKS — WAITING TO SELL" styleClass="book-title-ask"/>
         <Label fx:id="askTotalLabel" styleClass="faint"/>
     </HBox>
-    <TableView fx:id="asksTable" prefHeight="140" minHeight="90" VBox.vgrow="ALWAYS"/>
+    <TableView fx:id="asksTable"/>
 
 </VBox>
