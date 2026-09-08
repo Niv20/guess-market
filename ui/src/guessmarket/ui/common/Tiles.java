@@ -161,20 +161,6 @@ public final class Tiles {
     }
 
     /**
-     * @return the empty space that pushes whatever follows it down to the foot of a strip card
-     *
-     * <p>A card in a strip is given the height of the strip whether it has that much to say or
-     * not, so without this the figures of a card with a short name sit higher than the figures of
-     * the card beside it. Pushed to the foot they line up along the bottom of the row and can be
-     * read across it.
-     */
-    public static Region stripSpacer() {
-        Region spacer = new Region();
-        VBox.setVgrow(spacer, Priority.ALWAYS);
-        return spacer;
-    }
-
-    /**
      * @param kind one of the dot styles the stylesheet offers: {@code status-dot-idle},
      *             {@code status-dot-live} or {@code status-dot-over}
      * @param meaning what the colour stands for, in the words the rest of the program uses for it
