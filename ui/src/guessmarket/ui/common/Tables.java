@@ -40,6 +40,11 @@ import java.util.function.Function;
  * there. Whatever the table has left over is then shared out between the columns in proportion,
  * so a wide window is filled rather than ending in an empty strip, and a window too narrow even
  * for the measured widths keeps every column readable and scrolls sideways instead.
+ *
+ * <p>No table is given a height by hand either, and no table has a height that hides anything: it
+ * is as tall as its headings and its rows together, always, so that every row it has is on the
+ * screen and none of these tables ever grows a scroll bar down its side. See {@link #fitHeight}
+ * for why that is worth insisting on.
  */
 public final class Tables {
 
@@ -67,12 +72,29 @@ public final class Tables {
      * given a skin and can say how thick a scroll bar of its own actually is. It matches the
      * thickness the stylesheet gives one.
      *
-     * <p>The room is kept clear whether or not there is a bar there at the moment, because a
-     * table that filled the last of its width would grow one the moment it had a row too many,
-     * and then be too wide for what was left, and grow a second bar underneath its columns for
-     * the sake of eleven pixels.
+     * <p>A table here never grows a bar down its side - see {@link #fitHeight} - so the strip is
+     * no longer room for one. It is kept clear as the margin the columns are shared out inside:
+     * columns widened to exactly the width of the table are a rounding error away from being one
+     * point wider than it, which is a bar along the bottom edge for the sake of that point.
      */
     private static final double SCROLL_BAR_BREADTH = 11;
+
+    /**
+     * How tall one row is, used until the table has drawn a row and can be asked. It matches the
+     * cell size the stylesheet gives one.
+     */
+    private static final double ROW_HEIGHT = 32;
+
+    /**
+     * How tall one row of headings is, used until the table has drawn them. It matches the size
+     * the stylesheet gives a column header. A table whose columns sit under headings of their own
+     * has two such rows, which is why the drawn headings are asked first rather than this being
+     * multiplied by anything.
+     */
+    private static final double HEADINGS_HEIGHT = 34;
+
+    /** The room left round the sentence a table shows in place of the rows it has not got. */
+    private static final double EMPTY_TABLE_PADDING = 26;
 
     /** One node to measure text with, since all of this happens on the one interface thread. */
     private static final Text RULER = new Text();
@@ -255,7 +277,12 @@ public final class Tables {
         whenRowsChange(table, () -> measureLater(table));
         table.getColumns().addListener((ListChangeListener<TableColumn<?, ?>>)
                 change -> measureLater(table));
-        table.widthProperty().addListener((width, was, now) -> shareWidth(table));
+        table.widthProperty().addListener((width, was, now) -> {
+            shareWidth(table);
+            // A narrower table is a taller one, both because the sentence a table shows while it
+            // is empty wraps and because columns that no longer fit put a bar along the bottom.
+            fitHeight(table);
+        });
         table.sceneProperty().addListener((scene, was, now) -> watchSkin(table, now));
         watchSkin(table, table.getScene());
         measureLater(table);
@@ -278,6 +305,7 @@ public final class Tables {
         Platform.runLater(() -> {
             measure(table);
             shareWidth(table);
+            fitHeight(table);
         });
     }
 
@@ -390,6 +418,109 @@ public final class Tables {
         for (Node node : table.lookupAll(".scroll-bar")) {
             if (node instanceof ScrollBar bar && bar.getOrientation() == Orientation.VERTICAL) {
                 return bar.prefWidth(-1);
+            }
+        }
+        return SCROLL_BAR_BREADTH;
+    }
+
+    // ------------------------------------------------------------------ height
+
+    /**
+     * Gives a table the height of everything in it, so that it never has a row of its own to
+     * scroll.
+     *
+     * <p>A table asked to be shorter than its rows keeps the rows and hides them behind a bar down
+     * its right hand side, which is the one thing a table in this program must not do. Every table
+     * here is a list to be read whole - what somebody holds, what has been traded, what is waiting
+     * in a book - and a list read through a window three rows tall is not the list, it is a sample
+     * of it. Worse, the bar is inside a panel that is itself inside a scrolling page, so a roll of
+     * the wheel over one of these tables scrolls whichever of the two happens to be under the
+     * pointer.
+     *
+     * <p>So the height is not a setting any more. It is added up from what is actually there - the
+     * headings, a row apiece, and the bar along the bottom if the columns are wider than the panel
+     * - and it is set as the smallest, the preferred and the largest height at once, so that
+     * nothing above can stretch the table past its rows or squeeze it under them either. The page
+     * these panels sit on scrolls, and that is where a long history belongs: one scroll bar for
+     * the whole screen rather than one per table on it.
+     */
+    private static void fitHeight(TableView<?> table) {
+        double needed = neededHeight(table);
+        table.setMinHeight(needed);
+        table.setPrefHeight(needed);
+        table.setMaxHeight(needed);
+    }
+
+    /** @return the height at which every row of the table is on the screen at once. */
+    private static double neededHeight(TableView<?> table) {
+        double frame = table.getInsets().getTop() + table.getInsets().getBottom()
+                + horizontalBarHeight(table);
+        int rows = table.getItems() == null ? 0 : table.getItems().size();
+        return rows == 0
+                ? frame + emptyHeight(table)
+                : frame + headingsHeight(table) + rows * rowHeight(table);
+    }
+
+    /**
+     * @return how tall the headings are, asking the drawn ones first because a table whose columns
+     *         are grouped under headings of their own has two rows of them and not one
+     */
+    private static double headingsHeight(TableView<?> table) {
+        Node headings = table.lookup(".column-header-background");
+        double drawn = headings == null ? 0 : headings.prefHeight(-1);
+        return drawn > 0 ? drawn : HEADINGS_HEIGHT;
+    }
+
+    /** @return how tall one row is, measured from a drawn one where there is one to measure. */
+    private static double rowHeight(TableView<?> table) {
+        for (Node node : table.lookupAll(".table-row-cell")) {
+            double drawn = node.prefHeight(-1);
+            if (drawn > 0) {
+                return drawn;
+            }
+        }
+        return ROW_HEIGHT;
+    }
+
+    /**
+     * @return how much room the sentence shown in place of the rows needs
+     *
+     * <p>An empty table is not drawn as a table at all - the stylesheet takes its headings and its
+     * frame away - so what has to be made room for is the sentence and nothing else.
+     */
+    private static double emptyHeight(TableView<?> table) {
+        Node saying = table.getPlaceholder();
+        if (saying == null) {
+            return EMPTY_TABLE_PADDING;
+        }
+        double room = table.getWidth() - table.getInsets().getLeft()
+                - table.getInsets().getRight() - EMPTY_TABLE_PADDING;
+        return saying.prefHeight(room > 0 ? room : -1) + EMPTY_TABLE_PADDING;
+    }
+
+    /**
+     * @return how tall the bar along the bottom is, or nought when there is not going to be one
+     *
+     * <p>Worked out the same way {@link #shareWidth} works out whether it has anything to share,
+     * rather than by looking for a bar on the screen. The two questions are asked at different
+     * moments - a table is given its height while the width it will be laid out at is still being
+     * settled - and a bar that is looked for before it has been drawn is a bar whose height is
+     * left out of a table that is about to have one.
+     */
+    private static double horizontalBarHeight(TableView<?> table) {
+        double wanted = 0;
+        for (TableColumn<?, ?> column : table.getVisibleLeafColumns()) {
+            wanted += column.getMinWidth();
+        }
+        double room = table.getWidth()
+                - table.getInsets().getLeft() - table.getInsets().getRight()
+                - scrollBarBreadth(table);
+        if (room <= 0 || wanted <= room) {
+            return 0;
+        }
+        for (Node node : table.lookupAll(".scroll-bar")) {
+            if (node instanceof ScrollBar bar && bar.getOrientation() == Orientation.HORIZONTAL) {
+                return bar.prefHeight(-1);
             }
         }
         return SCROLL_BAR_BREADTH;

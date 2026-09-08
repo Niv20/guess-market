@@ -141,7 +141,7 @@
     <!-- LMSR: what each option is worth, and how many of its shares have been bought -->
     <VBox fx:id="lmsrBox" styleClass="card" spacing="8">
         <Label text="OPTIONS" styleClass="panel-title"/>
-        <TableView fx:id="optionsTable" prefHeight="112" minHeight="90"/>
+        <TableView fx:id="optionsTable"/>
     </VBox>
 
     <!-- Order book: one book per option, side by side -->
@@ -156,13 +156,13 @@
     <!-- who is in the event and what they hold -->
     <VBox fx:id="participantsBox" styleClass="card" spacing="8">
         <Label text="PARTICIPANTS" styleClass="panel-title"/>
-        <TableView fx:id="participantsTable" prefHeight="170" minHeight="110"/>
+        <TableView fx:id="participantsTable"/>
     </VBox>
 
     <!-- everything that has happened, newest first -->
     <VBox fx:id="historyBox" styleClass="card" spacing="8">
         <Label text="TRADING HISTORY" styleClass="panel-title"/>
-        <TableView fx:id="historyTable" prefHeight="200" minHeight="110"/>
+        <TableView fx:id="historyTable"/>
     </VBox>
 
     <!-- how the price of each option has moved -->

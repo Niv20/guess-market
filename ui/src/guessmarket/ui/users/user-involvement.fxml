@@ -47,22 +47,22 @@
 
     <VBox fx:id="holdingsBox" spacing="6">
         <Label text="SHARES HELD" styleClass="field-label"/>
-        <TableView fx:id="holdingsTable" prefHeight="100" minHeight="80"/>
+        <TableView fx:id="holdingsTable"/>
     </VBox>
 
     <VBox fx:id="tradesBox" spacing="6">
         <Label text="PURCHASES, NEWEST FIRST" styleClass="field-label"/>
-        <TableView fx:id="tradesTable" prefHeight="150" minHeight="90"/>
+        <TableView fx:id="tradesTable"/>
     </VBox>
 
     <VBox fx:id="ordersBox" spacing="6">
         <Label text="ORDERS STILL WAITING IN THE BOOKS" styleClass="field-label"/>
-        <TableView fx:id="ordersTable" prefHeight="130" minHeight="80"/>
+        <TableView fx:id="ordersTable"/>
     </VBox>
 
     <VBox fx:id="finalTotalsBox" spacing="6">
         <Label text="SHARES BOUGHT IN THE EVENT ALTOGETHER" styleClass="field-label"/>
-        <TableView fx:id="finalTotalsTable" prefHeight="100" minHeight="80"/>
+        <TableView fx:id="finalTotalsTable"/>
     </VBox>
 
 </VBox>
