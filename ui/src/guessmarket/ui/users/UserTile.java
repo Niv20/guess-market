@@ -41,8 +41,7 @@ public final class UserTile {
             tile.getStyleClass().add("tile-inactive");
         }
         tile.getChildren().add(
-                Tiles.body(nameRow(user),
-                        Tiles.meta(describeEvents(user)),
+                Tiles.body(Tiles.words(nameRow(user), Tiles.meta(describeEvents(user))),
                         figures(user)));
         return tile;
     }

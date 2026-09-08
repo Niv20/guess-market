@@ -13,6 +13,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 import java.util.List;
 import java.util.function.Function;
@@ -281,22 +283,52 @@ public final class Tiles {
     }
 
     /**
+     * @return the same quiet line, built out of pieces so that one part of it can be said in a
+     *         colour of its own
+     *
+     * <p>A line and not two labels beside each other. What is coloured here is a remark about the
+     * word in front of it - which person the name belongs to - and a remark set beside the block
+     * of words rather than after the last of them has come loose from what it is about. Written as
+     * one line the pieces stay in the order they are read in however narrow the tile gets, and the
+     * line wraps between them exactly as it wraps between any two words.
+     */
+    public static TextFlow metaLine(Node... pieces) {
+        TextFlow line = new TextFlow(pieces);
+        line.getStyleClass().add("tile-meta-line");
+        return line;
+    }
+
+    /**
+     * @param styles what this piece means, when it means something: {@code mark-mm} for the part
+     *               of the line that says the event is the reader's own
+     * @return one piece of a {@linkplain #metaLine line}
+     */
+    public static Text metaPiece(String text, String... styles) {
+        Text piece = new Text(text);
+        piece.getStyleClass().add("tile-meta-text");
+        piece.getStyleClass().addAll(styles);
+        return piece;
+    }
+
+    /**
+     * @param alignedWith the block of words the mark is held against, which is the same block that
+     *                    was handed to {@link #body} or put at the head of the card
      * @return everything the tile says, with a mark standing in a narrow column of its own down
      *         the left of it
      *
-     * <p>A column and not simply the first thing on the first line. The mark belongs to the whole
-     * of the tile rather than to its name, and put in front of the name it would be read as part
-     * of the name's line and would push the line underneath out of line with it. Given a column
-     * it belongs to every line at once, it is against the middle of them, and — the reason for
-     * doing it at all — it is at the same distance from the edge on every tile in the list, so a
-     * column of tiles has one straight rail of marks down it that is read in a single pass. It
-     * is the same thought as the figures out along the right, at the other edge and one mark
-     * wide.
+     * <p>A column and not simply the first thing on the first line. The mark belongs to more than
+     * the name, and put in front of the name it would be read as part of the name's line and would
+     * push the line underneath out of line with it. Given a column it is at the same distance from
+     * the edge on every tile in the list, so a column of tiles has one straight rail of marks down
+     * it that is read in a single pass. It is the same thought as the figures out along the right,
+     * at the other edge and one mark wide.
+     *
+     * <p>Down that rail it is set against the middle of the words rather than the middle of the
+     * tile, which on a card given more height than it has anything to say in are two quite
+     * different places — see {@link MarkedRow}, which is what finds the first of them.
      */
-    public static Node withMark(Node mark, Node content) {
-        HBox row = new HBox(MARK_GAP, mark, content);
-        row.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(content, Priority.ALWAYS);
+    public static Node withMark(Node mark, Region alignedWith, Node content) {
+        MarkedRow row = new MarkedRow(mark, alignedWith, content, MARK_GAP);
         // For a card that is given more height than it asked for, such as one in a strip: without
         // this the row keeps the height of what is on it and the foot of the card is empty space
         // underneath, which is exactly the space the figures were meant to be pushed into.
@@ -318,7 +350,7 @@ public final class Tiles {
      * looking for their own events is looking for, and read one after another they would have to
      * be looked for a card at a time.
      */
-    public static Node metaRow(Label meta, List<Label> tags) {
+    public static Node metaRow(Node meta, List<Label> tags) {
         HBox row = new HBox(8, meta);
         row.setAlignment(Pos.CENTER_LEFT);
         if (!tags.isEmpty()) {
@@ -331,6 +363,7 @@ public final class Tiles {
     }
 
     /**
+     * @param words the name and the line under it, kept in one block by {@link #words}
      * @return the name, the line under it and the figures, laid out in two columns when the tile
      *         is wide enough to hold them side by side and stacked when it is not
      *
@@ -340,8 +373,20 @@ public final class Tiles {
      * into single words. So the tile is given both and chooses between them from the width it is
      * actually handed — see {@link TileBody} for which and why.
      */
-    public static Node body(Node title, Node meta, FlowPane figures) {
-        return new TileBody(new VBox(4, title, meta), figures);
+    public static Node body(Region words, FlowPane figures) {
+        return new TileBody(words, figures);
+    }
+
+    /**
+     * @return the name and the line under it, as the one block they are read as
+     *
+     * <p>Kept in one piece rather than left as two things a tile happens to put next to each
+     * other, because that block is what the mark down the left is held against and what
+     * {@link #body} moves about as a whole when the tile is wide enough for two columns. Both of
+     * them have to be able to point at the same thing.
+     */
+    public static VBox words(Node title, Node meta) {
+        return new VBox(4, title, meta);
     }
 
     /**

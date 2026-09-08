@@ -827,6 +827,35 @@
 }
 
 /*
+ * The same line, written as flowing text rather than as one label, for the cards that have to say
+ * part of it in a colour of its own.
+ *
+ * It is written in the same size and the same grey as .tile-meta above and reads as the same line;
+ * the pieces of it are Text rather than labels, which is what lets them sit inside one another's
+ * sentence and wrap between the words instead of beside the block. A piece is filled where a label
+ * is text filled, so the two rules say the same thing in two different properties.
+ */
+.tile-meta-line {
+    -fx-padding: 0;
+}
+
+.tile-meta-text {
+    -fx-fill: -app-text-dim;
+    -fx-font-size: 0.88em;
+}
+
+/*
+ * The part of that line which says the event being read about is the reader's own to run.
+ *
+ * The colour of a warning, the same one a market maker is worn in everywhere else, because being
+ * answerable for an event is the one thing on the line worth finding without reading it.
+ */
+.tile-meta-text.mark-mm {
+    -fx-fill: -app-warn;
+    -fx-font-weight: bold;
+}
+
+/*
  * The number the file gave an event, said in front of its name.
  *
  * It is set in a typewriter face and in the colour of the line underneath rather than the colour
