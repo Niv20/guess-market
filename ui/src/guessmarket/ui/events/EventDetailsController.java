@@ -66,7 +66,6 @@ public class EventDetailsController {
     @FXML private Label winnerBadge;
     @FXML private Label descriptionLabel;
 
-    @FXML private Label marketMakerLabel;
     @FXML private Label accountBalanceLabel;
     @FXML private Label commissionLabel;
     @FXML private Label commissionWhenLabel;
@@ -270,7 +269,10 @@ public class EventDetailsController {
         statusBadge.setText(event.status().getDisplayName().toUpperCase());
         statusBadge.getStyleClass().setAll("badge", badgeStyleOf(event.status()));
 
-        methodButton.setText(event.tradingMethod().getDisplayName().toUpperCase());
+        // Not shouted, unlike the badge beside the name above: it now carries somebody's name,
+        // and a name set in capitals is a name being shouted.
+        methodButton.setText(event.tradingMethod().getDisplayName()
+                + " - Run by " + event.marketMakerName());
         methodButton.setTooltip(new Tooltip(event.isLmsr()
                 ? "Show what each option of this event is worth"
                 : "Show the two books this event is traded through"));
@@ -281,7 +283,6 @@ public class EventDetailsController {
     }
 
     private void showStatistics(EventDto event, EventTradingStatusDto status) {
-        marketMakerLabel.setText(event.marketMakerName());
         accountBalanceLabel.setText(Formats.money(event.accountBalance()));
         commissionCollectedLabel.setText(Formats.money(event.totalCommissionCollected()));
 
