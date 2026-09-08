@@ -7,6 +7,12 @@ XML file, are run by a **market maker**, and are traded either against the event
 The full documentation that accompanies the submission — including every assumption made — is in
 [`readme.docx`](readme.docx).
 
+<img width="1471" height="960" alt="SCR-20260908-kufc" src="https://github.com/user-attachments/assets/4eb32782-ca6e-4e28-922e-6b1cc55a3898" />
+<img width="1510" height="1056" alt="SCR-20260908-kvau" src="https://github.com/user-attachments/assets/968c7b38-f017-4de5-b36d-f41978873c40" />
+<img width="1471" height="1039" alt="SCR-20260908-kupx" src="https://github.com/user-attachments/assets/21464815-b9a8-4ea4-871c-b2a6fb6b4964" />
+<img width="1472" height="960" alt="SCR-20260908-kxjd" src="https://github.com/user-attachments/assets/a5880833-4525-4cb5-88cb-7444115fac08" />
+
+
 ## What it does
 
 - Loads a system details file through a file chooser, on a JavaFX `Task` with a progress bar.
