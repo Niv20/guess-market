@@ -16,7 +16,7 @@ The full documentation that accompanies the submission — including every assum
   minting between two buyers of opposite options.
 - Shows every event with three filters over it, and every user with what they hold, what they
   have done and what they may do next.
-- Keeps every preference behind one settings sheet, opened by the cog in the top left corner:
+- Keeps every preference behind one settings sheet, opened by the cog in the top right corner:
   the skin, the animations, and saving or reopening the whole system.
 
 ## Modules
@@ -68,10 +68,14 @@ straight away.
 
 ## Sample data
 
-`data/` holds files to try the system with. The three whose names do not begin with `invalid`
-are valid; every other one breaks exactly one rule and is named after it, so the message the
-program shows can be checked against the file. `data/folder with spaces/` is there to show that a
-path containing spaces causes no trouble.
+`data/` holds files to try the system with. `full-market.xml` is the one to start with: twelve
+events and ten users covering both trading methods, both commission methods and every edge of the
+rules. `full-market-in-play.gmstate` is that same market after 86 actions — 67 trades, 14 resting
+orders, two closed events, one event created inside the program and one blocked user — and is
+opened through **Settings → Load state**. The other three files whose names do not begin with
+`invalid` are smaller valid ones; every `invalid-` file breaks exactly one rule and is named after
+it, so the message the program shows can be checked against the file. `data/folder with spaces/`
+is there to show that a path containing spaces causes no trouble.
 
 ## Bonuses
 
@@ -80,7 +84,9 @@ All four bonuses of this exercise are implemented, and the bonus of exercise 1 s
 | Bonus | Where |
 |---|---|
 | Skins — three colour schemes, each with its own background, buttons and label font | the **Skin** row of the settings, default **Midnight** |
-| Animations — four, none longer than half a second, off by default | the **Animations** switch in the settings |
+| Animations — five, none longer than half a second, off by default | the **Animations** switch in the settings |
 | Graphs — option price per transaction, and account balance per action | inside an event's details, and inside a user's details |
-| Creating an event | the **Create an event** button on the events screen |
+| Creating an event | the **Create an event** row at the foot of the events list |
 | Exercise 1: saving and loading the system | the **Save state** and **Load state** rows of the settings |
+
+The settings sheet is opened by the cog in the top right corner of the window.
