@@ -27,13 +27,13 @@
       fx:controller="guessmarket.ui.events.EventDetailsController">
 
     <!--
-        What the event is, and everything the file settled about it, in four tiers.
+        What the event is, and everything the file settled about it, in three tiers.
 
         The header used to be nine identical boxes, which is nine things of equal weight and so no
         weight at all. They are told apart here by what they are, not by what they say:
 
-        the name, the state and the question are what the event IS, and are read first;
-        who runs it and how it trades frame everything below;
+        the name, the state, the question, and under it how it is traded and whose it is - all of
+            which is what the event IS, and is read first and as one thing;
         the account and the commission earned MOVE, every time somebody trades;
         and the terms were settled when the event was made and will never change again.
 
@@ -52,23 +52,27 @@
                        visible="false" text="Winner"/>
             </HBox>
             <Label fx:id="descriptionLabel" styleClass="lead" wrapText="true" text=""/>
+
+            <!--
+                How the event is traded and whose it is, on one pill directly under the question.
+
+                Those two things are what frames the question above them: they say which half of
+                everything further down the screen applies, and who is answerable for all of it.
+                They were a row of their own further down, with the runner named on the left and
+                the method held out on the right, which is two facts about the same event put as
+                far apart as the row would allow and read as two.
+
+                Said together and set immediately under the description, they finish the sentence
+                the description started - this is the question, this is how it is traded and this
+                is whose it is - and the reader has the whole of the event before the first figure
+                on the card. It is also still the one thing in this header that can be pressed:
+                pressing it goes to the part of the screen that does the trading it names.
+            -->
+            <HBox alignment="CENTER_LEFT">
+                <Button fx:id="methodButton" styleClass="method-link" text="Method"
+                        minWidth="-Infinity" onAction="#onShowMarket"/>
+            </HBox>
         </VBox>
-
-        <!--
-            Whose event it is, and how it is traded.
-
-            The trading method is not a figure like the ones below it: it says which half of
-            everything further down the screen applies to this event. So it is offered as the way
-            of getting to that half rather than as one more thing to read past, and it is the only
-            thing in this header that can be pressed.
-        -->
-        <HBox alignment="CENTER_LEFT" spacing="8">
-            <Label text="MARKET MAKER" styleClass="field-label"/>
-            <Label fx:id="marketMakerLabel" styleClass="inline-value"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="methodButton" styleClass="method-link" text="Method"
-                    onAction="#onShowMarket"/>
-        </HBox>
 
         <!-- the two figures that move while people trade -->
         <FlowPane styleClass="stat-band" hgap="44" vgap="14" rowValignment="TOP">
