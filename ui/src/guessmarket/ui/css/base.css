@@ -892,23 +892,31 @@
  *
  * A list is scanned for the rows that are still running before a word of it is read, and one
  * colour repeated down the left hand edge is found in a single pass where a word has to be read
- * row by row. The three colours are the ones the rest of the program already means these things
- * in — the colour of a loss for an event that is over, the colour of a gain for one that is
- * open — so nothing here has to be learned twice.
+ * row by row. The three colours are a set of traffic lights, which is the one arrangement of
+ * three colours nobody has to be taught: red for an event that has not been opened and in which
+ * nothing at all can happen yet, amber for one that is running, green for one that is over and
+ * has paid everybody out.
+ *
+ * The amber one beats, when the animations are on. Amber on a road means a state that is about
+ * to end and this one means a state that is in motion, which is the same thing said about a
+ * market: the difference between an event that is open and one that was open when the list was
+ * drawn. It beats rather than blinks, and it is a fade rather than a stylesheet rule, because
+ * JavaFX has no animation in its stylesheets - see Animations.pulse for the fade and for the
+ * switch in the settings that stops it.
  *
  * The size is set in Tiles rather than here, because a shape is drawn at a radius and not at a
  * font size, and saying it twice is how the two come to disagree.
  */
 .status-dot-idle {
-    -fx-fill: -app-text-faint;
+    -fx-fill: -app-status-waiting;
 }
 
 .status-dot-live {
-    -fx-fill: -app-yes;
+    -fx-fill: -app-status-open;
 }
 
 .status-dot-over {
-    -fx-fill: -app-no;
+    -fx-fill: -app-status-done;
 }
 
 /* The figures stand a little away from the words above them, so they read as a row of their own. */
@@ -990,10 +998,41 @@
     -fx-text-fill: -app-text-dim;
 }
 
-.badge-active {
+/*
+ * The badge naming the option that won, which is not a state and so is not one of the three
+ * below: it is the answer the event was asked for, and it is in the accent, which is the colour
+ * the one thing that matters most on a panel is always in.
+ */
+.badge-winner {
     -fx-background-color: -app-accent-soft;
     -fx-border-color: -app-accent;
     -fx-text-fill: -app-accent;
+}
+
+/*
+ * What stage an event has reached, written out where a tile would have shown a dot.
+ *
+ * The same three traffic lights as .status-dot above and in the same order, so that the badge on
+ * an event and the mark beside it in the list are one statement in two sizes. Outlined and not
+ * filled: a badge is a word already, and a word in a coloured box beside a heading reads as a
+ * warning rather than as a state.
+ */
+.badge-waiting {
+    -fx-background-color: transparent;
+    -fx-border-color: -app-status-waiting;
+    -fx-text-fill: -app-status-waiting;
+}
+
+.badge-open {
+    -fx-background-color: transparent;
+    -fx-border-color: -app-status-open;
+    -fx-text-fill: -app-status-open;
+}
+
+.badge-done {
+    -fx-background-color: transparent;
+    -fx-border-color: -app-status-done;
+    -fx-text-fill: -app-status-done;
 }
 
 .badge-closed {
