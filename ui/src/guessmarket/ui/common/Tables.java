@@ -41,9 +41,11 @@ import java.util.function.Function;
  * so a wide window is filled rather than ending in an empty strip, and a window too narrow even
  * for the measured widths keeps every column readable and scrolls sideways instead.
  *
- * <p>Sideways only when it really is too narrow. Everything above is worked out in whole points
- * and adds up to no more than the table has, so a bar along the bottom edge means the columns do
- * not fit and never means they missed by one.
+ * <p>Sideways only when it really is too narrow. A column is measured twice - at what the text
+ * in it needs, and at the little more it would like for the arrow of a column somebody has sorted
+ * by - and a table short of width takes back what was only wanted before it will scroll. That,
+ * and everything above being worked out in whole points, is what makes a bar along the bottom
+ * edge mean that the columns do not fit rather than that they missed by one.
  *
  * <p>No table is given a height by hand either, and no table has a height that hides anything: it
  * is as tall as its headings and its rows together, always, so that every row it has is on the
@@ -60,22 +62,36 @@ public final class Tables {
 
     /**
      * What a cell adds to the text in it: the eight points of padding the stylesheet gives it on
-     * each side, and the one point of border underneath.
+     * each side. The one point of border it also carries runs along the bottom of the row and
+     * takes nothing away from the width.
      */
-    private static final double CELL_PADDING = 17;
+    private static final double CELL_PADDING = 16;
 
     /**
-     * What a heading adds to the text in it: four points of padding on each side, one of border,
-     * and seven for the arrow that appears in a column somebody has sorted by.
-     *
-     * <p>Seven and not the full width of an arrow, which is what this used to keep clear. Only one
-     * column at a time can be sorted by, so keeping the room in all of them cost every table
-     * fifteen points a column - a hundred and fifty across the widest of them - to hold open a
-     * space that at most one of them would ever use, and it was those hundred and fifty points
-     * that put a scroll bar under a table with room to spare. What is kept now is enough that a
-     * sorted heading is crowded rather than cut, in the one column that is ever sorted.
+     * What a heading adds to the text in it: four points of padding on each side and one of
+     * border down its right hand edge.
      */
-    private static final double HEADING_PADDING = 16;
+    private static final double HEADING_PADDING = 9;
+
+    /**
+     * The room a heading keeps for the arrow that appears in the column somebody has sorted by.
+     *
+     * <p>It is wanted rather than needed, and that distinction is the whole of why a column is
+     * measured twice. At most one column in a table is ever sorted, so this is space that all but
+     * one of them hold open for nothing; and a table a few points short of the sum of those asks
+     * used to answer with a scroll bar along its bottom edge - a bar that would have slid the
+     * columns by those few points, under a table that was in truth showing every word it had.
+     * {@link #shareWidth} hands this room back, as much of it as it takes, before it will let a
+     * table scroll, so a bar means what it says: the text itself does not fit.
+     *
+     * <p>Seven and not the full width of an arrow, so that the heading of the one column that is
+     * sorted is crowded rather than cut.
+     */
+    private static final double SORT_ARROW_ROOM = 7;
+
+    /** Where a column keeps what it was measured at: what it needs, and what it would like. */
+    private static final String NEEDED = "guessmarket.needed";
+    private static final String LIKED = "guessmarket.liked";
 
     /** The size a heading is set in, as a fraction of the size of the rows underneath it. */
     private static final double HEADING_FONT_SCALE = 0.82;
@@ -327,7 +343,12 @@ public final class Tables {
         });
     }
 
-    /** Gives every column the width of the longest thing in it, its heading included. */
+    /**
+     * Measures every column against the longest thing in it, its heading included, and writes
+     * down both of the widths that measurement gives: what the column needs to show its text in
+     * full, and what it would like on top of that for a sort arrow. {@link #shareWidth} decides
+     * between the two according to how much width the table turns out to have.
+     */
     private static void measure(TableView<?> table) {
         List<? extends TableColumn<?, ?>> columns = table.getVisibleLeafColumns();
         if (columns.isEmpty()) {
@@ -349,7 +370,11 @@ public final class Tables {
             // Rounded up to a whole point, because a column is drawn on whole points whatever it
             // is told: ten columns each rounded up a fraction of a point are a table three points
             // wider than the sum it was shared out from, and three points is a scroll bar.
-            columns.get(i).setMinWidth(Math.ceil(widths.get(i)));
+            double needed = Math.ceil(widths.get(i));
+            TableColumn<?, ?> column = columns.get(i);
+            column.getProperties().put(NEEDED, needed);
+            column.getProperties().put(LIKED, needed + SORT_ARROW_ROOM);
+            column.setMinWidth(needed);
         }
     }
 
@@ -408,28 +433,33 @@ public final class Tables {
     }
 
     /**
-     * Shares whatever the table has over and above the measured widths between the columns, in
-     * proportion to those widths, so that the columns with the most in them get the most of it.
+     * Gives every column a width, out of the width the table has to give.
      *
-     * <p>A column is only ever made wider than its measurement by this, so widening the columns
-     * cannot change the width of the table that holds them, and the two cannot chase each other.
+     * <p>There are three things that can be true of a table, and each is answered differently.
+     * It can have more width than the columns asked for, and then the extra is shared between
+     * them in proportion to what they asked, so that the columns with the most in them get the
+     * most of it and a wide window is filled rather than ending in an empty strip. It can have
+     * less, and then the columns give back the room they were holding open for a sort arrow -
+     * as much of it as it takes - and fill exactly the width there is. Or it can have less even
+     * than the text in them needs, and only then does the table scroll sideways.
+     *
+     * <p>A column is never made narrower than the text in it by any of this, so no column here is
+     * ever shortened into an ellipsis, and widening the columns cannot change the width of the
+     * table that holds them: the two cannot chase each other.
      */
     private static void shareWidth(TableView<?> table) {
         List<? extends TableColumn<?, ?>> columns = table.getVisibleLeafColumns();
-        double wanted = wantedWidth(table);
+        double needed = totalWidth(table, NEEDED);
+        double liked = totalWidth(table, LIKED);
         double room = roomForColumns(table);
-        if (wanted <= 0 || room <= 0) {
+        if (liked <= 0 || room <= 0) {
             return;
         }
-        double scale = Math.max(1, room / wanted);
         double given = 0;
         for (int i = 0; i < columns.size(); i++) {
             TableColumn<?, ?> column = columns.get(i);
-            // Downwards, so that what is handed out is never more than there was to hand out.
-            // Every measured width is already a whole point, so a column can only lose the part
-            // of the sharing that was fractional, and never fall under what it needs.
-            double share = Math.floor(column.getMinWidth() * scale);
-            if (scale > 1 && i == columns.size() - 1) {
+            double share = shareFor(column, room, needed, liked);
+            if (room >= needed && i == columns.size() - 1) {
                 // Whatever all that rounding down left over goes to the last column, so the row
                 // ends exactly where the table does rather than a few points short of it.
                 share = Math.max(share, room - given);
@@ -439,13 +469,47 @@ public final class Tables {
         }
     }
 
-    /** @return what the columns need altogether, which is what they were measured at. */
-    private static double wantedWidth(TableView<?> table) {
-        double wanted = 0;
-        for (TableColumn<?, ?> column : table.getVisibleLeafColumns()) {
-            wanted += column.getMinWidth();
+    /**
+     * @return the width one column is to be drawn at, out of the {@code room} the table has for
+     *         all of them together
+     */
+    private static double shareFor(TableColumn<?, ?> column, double room,
+                                   double needed, double liked) {
+        double mine = measurement(column, NEEDED);
+        if (room < needed) {
+            return mine;
         }
-        return wanted;
+        // Downwards in both of what follows, so that what is handed out is never more than there
+        // was to hand out. Every measurement is already a whole point, so a column can only lose
+        // the part of the sharing that was fractional, and never fall under what it needs.
+        if (room >= liked) {
+            return Math.floor(measurement(column, LIKED) * (room / liked));
+        }
+        // Between the two: every column keeps the whole of what it needs, and gets the same
+        // fraction of what it asked for on top, so the columns come to exactly the width there is.
+        double fraction = (room - needed) / (liked - needed);
+        return Math.floor(mine + (measurement(column, LIKED) - mine) * fraction);
+    }
+
+    /**
+     * @return what the columns come to altogether at one of the two widths they were measured at
+     *
+     * <p>Nought until they have been measured, which is what tells the callers to leave the table
+     * alone: a table is laid out, and so asked to share out its width, before it has been
+     * measured for the first time.
+     */
+    private static double totalWidth(TableView<?> table, String kind) {
+        double total = 0;
+        for (TableColumn<?, ?> column : table.getVisibleLeafColumns()) {
+            total += measurement(column, kind);
+        }
+        return total;
+    }
+
+    /** @return one of the two widths a column was measured at, or nought before it was measured */
+    private static double measurement(TableColumn<?, ?> column, String kind) {
+        Object width = column.getProperties().get(kind);
+        return width instanceof Double taken ? taken : 0;
     }
 
     /**
@@ -551,15 +615,15 @@ public final class Tables {
     /**
      * @return how tall the bar along the bottom is, or nought when there is not going to be one
      *
-     * <p>Worked out the same way {@link #shareWidth} works out whether it has anything to share,
-     * rather than by looking for a bar on the screen. The two questions are asked at different
-     * moments - a table is given its height while the width it will be laid out at is still being
-     * settled - and a bar that is looked for before it has been drawn is a bar whose height is
-     * left out of a table that is about to have one.
+     * <p>Worked out the same way {@link #shareWidth} works out whether the columns fit, rather
+     * than by looking for a bar on the screen. The two questions are asked at different moments -
+     * a table is given its height while the width it will be laid out at is still being settled -
+     * and a bar that is looked for before it has been drawn is a bar whose height is left out of
+     * a table that is about to have one.
      */
     private static double horizontalBarHeight(TableView<?> table) {
         double room = roomForColumns(table);
-        if (room <= 0 || wantedWidth(table) <= room) {
+        if (room <= 0 || totalWidth(table, NEEDED) <= room) {
             return 0;
         }
         for (Node node : table.lookupAll(".scroll-bar")) {
