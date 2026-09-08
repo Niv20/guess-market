@@ -85,6 +85,11 @@ public final class EventTile {
      * whispered it. A card in a row of cards should carry what tells one of them from the next,
      * and nothing that the thing it opens will say again anyway.
      *
+     * <p>Two lines on a card built for three, which is what a name long enough to wrap needs, so
+     * most cards in the strip have height left over. It is given to neither end: the words sit
+     * against the middle, where every card in the row says what it has to say in the same band
+     * whether its name took one line or three. See {@link Tiles#centredWords}.
+     *
      * <p>The one thing this card says that the event itself does not is what the reader is to it,
      * and it is not said after the name: on a card this narrow a tag there takes that width out of
      * the name, and a name cut off in the middle is the one thing a card somebody is choosing from
@@ -94,7 +99,7 @@ public final class EventTile {
      */
     public static Node compact(EventDto event, Role role) {
         VBox card = Tiles.stripTile();
-        VBox words = Tiles.words(nameRow(event), runnerRow(event, role));
+        VBox words = Tiles.centredWords(nameRow(event), runnerRow(event, role));
         card.getChildren().add(Tiles.withMark(statusDot(event), words, words));
         return card;
     }

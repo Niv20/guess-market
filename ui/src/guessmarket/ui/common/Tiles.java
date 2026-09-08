@@ -376,6 +376,27 @@ public final class Tiles {
     }
 
     /**
+     * @return the same block of words, set against the middle of whatever height it is handed
+     *         rather than along the top of it
+     *
+     * <p>For the card of a {@linkplain #renderStrip strip}, which is given the height of the strip
+     * whether it has that much to say or not. Left along the top, a card whose name fits on one
+     * line is that line with a third of a card of nothing underneath it, and a row of cards that
+     * wrapped onto different numbers of lines is a row read across a ragged edge. Against the
+     * middle every card in the row says what it has to say in the same band, and a card with less
+     * to say is quieter rather than unfinished.
+     *
+     * <p>A column of tiles does not want this and does not get it: there the tile is only as tall
+     * as what is on it, so the middle of the block and the top of it are the same place, and the
+     * one thing that would move is a tile whose figures sit out to the right of the words.
+     */
+    public static VBox centredWords(Node title, Node meta) {
+        VBox words = words(title, meta);
+        words.setAlignment(Pos.CENTER_LEFT);
+        return words;
+    }
+
+    /**
      * @return the row of figures a tile ends with, which wraps instead of overflowing
      *
      * <p>It keeps its height when a card has less room than it wants, so that a long name is
