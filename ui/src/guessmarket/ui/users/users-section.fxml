@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.HBox?>
@@ -28,6 +29,14 @@
     it is doing, whose it is and what this user is to it. The users are a column down the left,
     because that list is the screen; the events are a strip read across, because everything worth
     choosing an event for is on the screen underneath them.
+
+    The panel on the right is three groups of cards and is ruled off as three. The person comes
+    first - who they are, what their account holds and how it has moved; then the events they are
+    in, which is the list the rest of the panel is chosen from; then everything about the one event
+    they have chosen. Every card in a group is about the same thing as the cards beside it, and
+    without the rules a reader coming down the panel has nothing but a repeated gap to tell the end
+    of one subject from the start of the next. The lines stop well short of both edges: a rule the
+    full width of the panel is a border and reads as the top of whatever is underneath it.
 
     The list of people carries no title of its own. The tab above already says which screen this
     is, and a word repeating it cost the panel a row and gave nothing back; the titles that are
@@ -130,6 +139,8 @@
                         </LineChart>
                     </VBox>
 
+                    <Separator styleClass="section-rule"/>
+
                     <!--
                         The events they run or take part in, and everything else they may join.
 
@@ -157,6 +168,14 @@
                         <ListView fx:id="eventsList" styleClass="tile-list, tile-strip"
                                   prefHeight="158" minHeight="158" maxHeight="158"/>
                     </VBox>
+
+                    <!--
+                        Everything below is about one event rather than about the person, so the
+                        rule appears with it and goes when nothing is chosen: a line with nothing
+                        under it says a panel failed to load rather than that a group has ended.
+                    -->
+                    <Separator fx:id="chosenEventRule" styleClass="section-rule"
+                               managed="false" visible="false"/>
 
                     <fx:include fx:id="userInvolvement" source="user-involvement.fxml"/>
                     <fx:include fx:id="tradePanel"
