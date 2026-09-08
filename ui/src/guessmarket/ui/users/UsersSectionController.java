@@ -8,6 +8,7 @@ import guessmarket.dto.UserEventInvolvementDto;
 import guessmarket.ui.app.AppContext;
 import guessmarket.ui.app.AppSection;
 import guessmarket.ui.common.Animations;
+import guessmarket.ui.common.Charts;
 import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Tiles;
 import guessmarket.ui.events.EventDetailsController;
@@ -18,6 +19,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -224,6 +226,7 @@ public class UsersSectionController implements AppSection {
             series.getData().add(new XYChart.Data<>(point.step(), point.balance()));
         }
         balanceChart.getData().setAll(List.of(series));
+        Charts.countAlong((NumberAxis) balanceChart.getXAxis(), balanceChart.getData());
         showNode(balanceChartBox, history.size() > 1);
     }
 

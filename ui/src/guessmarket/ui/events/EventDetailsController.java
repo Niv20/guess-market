@@ -9,6 +9,7 @@ import guessmarket.dto.OptionStateDto;
 import guessmarket.dto.ParticipantDto;
 import guessmarket.dto.PricePointDto;
 import guessmarket.ui.common.Animations;
+import guessmarket.ui.common.Charts;
 import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Tables;
 import javafx.application.Platform;
@@ -16,6 +17,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -483,6 +485,7 @@ public class EventDetailsController {
             }
         }
         priceChart.getData().setAll(seriesByOption.values());
+        Charts.countAlong((NumberAxis) priceChart.getXAxis(), priceChart.getData());
         showOnly(chartBox, started(event) && !priceHistory.isEmpty());
     }
 
