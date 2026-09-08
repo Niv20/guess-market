@@ -134,6 +134,9 @@ public class EventDetailsController {
     /** The event account balance the panel last showed, so a balance that has moved can be marked. */
     private double shownAccountBalance;
 
+    /** Whether whoever is reading this is the one person an unopened event is waiting for. */
+    private boolean viewerIsMarketMaker;
+
     /**
      * Whether this panel has ever been filled, which is what makes its first event arrive
      * differently from every event after it.
@@ -178,9 +181,27 @@ public class EventDetailsController {
         rootPane.setManaged(false);
     }
 
-    /** Fills the component with one event and shows it. */
+    /** Fills the component with one event, as it stands to nobody in particular. */
     public void show(EventTradingStatusDto status, List<PricePointDto> priceHistory) {
+        show(status, priceHistory, null);
+    }
+
+    /**
+     * Fills the component with one event as it stands to one person, and shows it.
+     *
+     * <p>The one thing this panel ever needs to know about who is reading it is whether they are
+     * the market maker of the event, and it needs that for exactly one line: an event that has not
+     * been opened is waiting for its market maker, which is worth saying to everybody except the
+     * market maker, who is not waiting for anybody. Everything else on the panel is the same
+     * picture for all of them, which is the point of the panel.
+     *
+     * @param viewerName who is reading it, or null on the screen where nobody is chosen
+     */
+    public void show(EventTradingStatusDto status, List<PricePointDto> priceHistory,
+                     String viewerName) {
         EventDto event = status.event();
+        this.viewerIsMarketMaker = viewerName != null
+                && event.marketMakerName().equalsIgnoreCase(viewerName);
         boolean anotherEvent = event.id() != shownEventId;
         boolean accountMoved = !anotherEvent && event.accountBalance() != shownAccountBalance;
         shownEventId = event.id();
@@ -216,14 +237,18 @@ public class EventDetailsController {
      * about nothing having happened. Every panel below the terms would therefore be an empty
      * table, and half a dozen empty tables one after another read as a screen that failed to load.
      * So they are taken away together and one line stands where they were, naming the person
-     * everybody is waiting for - which is the only thing about an unopened event anybody can act
-     * on, and, for the person named, the reminder that it is theirs to act on.
+     * everybody is waiting for - which is the only thing about an unopened event anybody else can
+     * do anything about.
+     *
+     * <p>Everybody else. The market maker reading their own unopened event is not waiting for
+     * themselves, and the line would be the program telling them to wait for a thing it is at the
+     * same moment offering them a button to do. They are shown the button and nothing else.
      */
     private void showMarket(EventDto event, EventTradingStatusDto status) {
         boolean started = started(event);
         boolean lmsr = event.isLmsr();
         waitingLabel.setText("Waiting for " + event.marketMakerName() + " to open it.");
-        showOnly(waitingBox, !started);
+        showOnly(waitingBox, !started && !viewerIsMarketMaker);
         showOnly(lmsrBox, started && lmsr);
         showOnly(booksBox, started && !lmsr);
         if (lmsr) {
@@ -348,13 +373,22 @@ public class EventDetailsController {
     /**
      * @return whichever panel stands for this event's market at the moment: its two books, the
      *         values of its options, or - before it has been opened and has either - the line
-     *         saying what it is waiting for
+     *         saying what it is waiting for, and failing all of those the event itself
      */
     private Node marketPanel() {
         if (waitingBox.isManaged()) {
             return waitingBox;
         }
-        return booksBox.isManaged() ? booksBox : lmsrBox;
+        if (booksBox.isManaged()) {
+            return booksBox;
+        }
+        if (lmsrBox.isManaged()) {
+            return lmsrBox;
+        }
+        // An unopened event read by its own market maker has no market and no line standing in
+        // for one, because the button that would create it is on the panel above this. There is
+        // nowhere further down to go, so the button goes back to the top of the event.
+        return rootPane;
     }
 
     /**
