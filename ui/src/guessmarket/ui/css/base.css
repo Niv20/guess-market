@@ -221,17 +221,18 @@
  * The line between one group of cards and the next.
  *
  * A column of cards is already a column of separate things, so a rule between two of them is not
- * there to separate anything: it is there to say that the three cards above it were about one
- * subject and the ones below it are about another. That is worth saying only where the cards
- * cannot say it themselves, which in this program is twice - see users-section.fxml.
+ * there to separate anything: it is there to say that the cards above it were about one subject
+ * and the ones below it are about another. That is worth saying only where the cards cannot say
+ * it themselves, which in this program is twice - see users-section.fxml.
  *
- * It is held well off both edges rather than run from side to side. A line the full width of the
- * panel is a border, and a border is read as the top edge of whatever is drawn under it; the same
- * line stopped short at both ends belongs to the space it is in and is read as a break in it. The
- * room above and below is what makes it a break rather than a fourth thing in the column.
+ * It runs exactly as far as the cards it divides and no further, which is the whole width of the
+ * column it stands in: it is a rule across a page of cards, and a rule that stopped short of them
+ * at both ends read as a fourth object in the column rather than as the edge between two groups
+ * of them. The room above and below is what keeps it from being read as the top of the card
+ * underneath.
  */
 .section-rule {
-    -fx-padding: 5 34 5 34;
+    -fx-padding: 5 0 5 0;
 }
 
 /* ------------------------------------------------------------------ buttons */
