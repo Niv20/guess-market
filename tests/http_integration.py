@@ -80,7 +80,7 @@ def main():
     check(health == {'message': 'Guess Market is ready.', 'service': 'guess-market', 'apiVersion': 2},
           'health identity/version contract changed')
 
-    origin = 'https://niv20.github.io'
+    origin = 'http://localhost:5173'
     status, cors_health, headers = anonymous.request('/health', headers={'Origin': origin}, return_headers=True)
     check(status == 200 and cors_health == health, 'approved web origin could not read health')
     check(headers.get('Access-Control-Allow-Origin') == origin, 'approved origin was not returned exactly')

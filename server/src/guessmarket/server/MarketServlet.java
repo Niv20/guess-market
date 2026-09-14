@@ -52,7 +52,7 @@ import java.util.Set;
 public final class MarketServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final int MAX_FILE_BYTES = 2_097_152;
-    private static final String DEFAULT_ALLOWED_ORIGIN = "https://niv20.github.io";
+    private static final String DEFAULT_ALLOWED_ORIGIN = "http://localhost:5173";
     private static final String ALLOWED_ORIGINS_PROPERTY = "guessmarket.allowedOrigins";
     private static final String ALLOWED_ORIGINS_ENV = "GUESS_MARKET_ALLOWED_ORIGINS";
     private static final Gson JSON = new GsonBuilder().create();
