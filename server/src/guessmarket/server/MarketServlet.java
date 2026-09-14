@@ -11,6 +11,7 @@ import guessmarket.dto.OrderSide;
 import guessmarket.dto.PurchaseRequestDto;
 import guessmarket.dto.SubmitOrderRequestDto;
 import guessmarket.dto.TradingMethod;
+import guessmarket.dto.network.HealthResponseDto;
 import guessmarket.dto.network.MessageDto;
 import guessmarket.dto.network.QuoteDto;
 import guessmarket.engine.exception.EventAlreadyStartedException;
@@ -34,11 +35,16 @@ import jakarta.servlet.http.Part;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.Enumeration;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 
 /**
- * JSON endpoints translating session-bound requests to engine commands. Native Servlet multipart
+ * JSON endpoints translating credential-bound requests to engine commands. Native Servlet multipart
  * stays in RAM: the threshold covers the entire permitted request and Part.write is never used.
  */
 @WebServlet(name = "GuessMarketApi", urlPatterns = "/api/*", loadOnStartup = 1)
@@ -46,8 +52,13 @@ import java.util.Locale;
 public final class MarketServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final int MAX_FILE_BYTES = 2_097_152;
+    private static final String DEFAULT_ALLOWED_ORIGIN = "https://niv20.github.io";
+    private static final String ALLOWED_ORIGINS_PROPERTY = "guessmarket.allowedOrigins";
+    private static final String ALLOWED_ORIGINS_ENV = "GUESS_MARKET_ALLOWED_ORIGINS";
     private static final Gson JSON = new GsonBuilder().create();
     private ApplicationService application;
+    private Set<String> allowedOrigins;
+    private BrowserHostAllowlist allowedBrowserHosts;
 
     @Override
     public void init() throws ServletException {
@@ -56,6 +67,12 @@ public final class MarketServlet extends HttpServlet {
             throw new ServletException("The market application has not been initialized.");
         }
         application = market;
+        allowedOrigins = configuredAllowedOrigins();
+        try {
+            allowedBrowserHosts = BrowserHostAllowlist.configured();
+        } catch (IllegalArgumentException invalid) {
+            throw new ServletException(invalid.getMessage(), invalid);
+        }
     }
 
     @Override
@@ -65,7 +82,13 @@ public final class MarketServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setHeader("Cache-Control", "no-store");
         response.setHeader("X-Content-Type-Options", "nosniff");
+        response.setHeader("Vary", "Origin");
         try {
+            configureCors(request, response);
+            if ("OPTIONS".equals(request.getMethod())) {
+                preflight(response);
+                return;
+            }
             Object result = dispatch(request, response);
             write(response, result);
         } catch (ApiException failure) {
@@ -93,7 +116,7 @@ public final class MarketServlet extends HttpServlet {
         }
         if (path.equals("/health")) {
             requireMethod(request, response, "GET");
-            return new MessageDto("Guess Market is ready.");
+            return new HealthResponseDto("Guess Market is ready.", "guess-market", 2);
         }
         if (path.equals("/login")) {
             requireMethod(request, response, "POST");
@@ -104,41 +127,42 @@ public final class MarketServlet extends HttpServlet {
             return application.login(session, name);
         }
         HttpSession session = request.getSession(false);
-        application.requireAuthenticated(session);
+        String bearerToken = bearerToken(request);
+        application.requireAuthenticated(session, bearerToken);
         return switch (path) {
             case "/snapshot" -> {
                 requireMethod(request, response, "GET");
-                yield application.snapshot(session);
+                yield application.snapshot(session, bearerToken);
             }
             case "/logout" -> {
                 requireMethod(request, response, "POST");
-                application.logout(session);
+                application.logout(session, bearerToken);
                 yield new MessageDto("You have logged out.");
             }
             case "/upload" -> {
                 requireMethod(request, response, "POST");
-                yield upload(request, session);
+                yield upload(request, session, bearerToken);
             }
             case "/quote" -> {
                 requireMethod(request, response, "GET");
                 int eventId = integerParameter(request, "eventId");
                 int optionIndex = integerParameter(request, "optionIndex");
                 long shares = longParameter(request, "shares");
-                yield application.authenticated(session, (engine, username) ->
+                yield application.authenticated(session, bearerToken, (engine, username) ->
                         new QuoteDto(engine.quotePurchaseCost(eventId, optionIndex, shares)));
             }
             case "/funds", "/events/open", "/events/close", "/events/buy", "/events/order", "/events/create", "/chat" -> {
                 requireMethod(request, response, "POST");
                 JsonInput input = JsonInput.read(request);
                 input.requireSessionIdentity();
-                yield command(path, input, session);
+                yield command(path, input, session, bearerToken);
             }
             default -> throw new ApiException(404, "This endpoint does not exist.");
         };
     }
 
-    private Object command(String path, JsonInput input, HttpSession session) {
-        return application.authenticated(session, (engine, username) -> switch (path) {
+    private Object command(String path, JsonInput input, HttpSession session, String bearerToken) {
+        return application.authenticated(session, bearerToken, (engine, username) -> switch (path) {
             case "/funds" -> engine.depositFunds(username, input.number("amount"));
             case "/events/open" -> engine.openEvent(new OpenEventRequestDto(username, input.integer("eventId")));
             case "/events/close" -> engine.closeEvent(new CloseEventRequestDto(username,
@@ -158,12 +182,12 @@ public final class MarketServlet extends HttpServlet {
                         method == TradingMethod.ORDER_BOOK ? input.integer("baseValue") : 0,
                         method == TradingMethod.ORDER_BOOK && input.bool("mintAllowed")));
             }
-            case "/chat" -> application.sendChat(session, input.string("message"));
+            case "/chat" -> application.sendChat(session, bearerToken, input.string("message"));
             default -> throw new ApiException(404, "This endpoint does not exist.");
         });
     }
 
-    private LoadResultDto upload(HttpServletRequest request, HttpSession session) throws IOException {
+    private LoadResultDto upload(HttpServletRequest request, HttpSession session, String bearerToken) throws IOException {
         String type = request.getContentType();
         if (type == null || !type.split(";", 2)[0].strip().toLowerCase(Locale.ROOT).equals("multipart/form-data")) {
             throw new ApiException(415, "Choose an XML file and upload it as multipart/form-data.");
@@ -201,8 +225,86 @@ public final class MarketServlet extends HttpServlet {
             throw new ApiException(413, "The XML file must be no larger than 2 MB.");
         }
         String fileName = name;
-        return application.authenticated(session, (engine, username) ->
+        return application.authenticated(session, bearerToken, (engine, username) ->
                 engine.uploadEvents(username, new ByteArrayInputStream(content), fileName));
+    }
+
+    private void configureCors(HttpServletRequest request, HttpServletResponse response) {
+        Enumeration<String> values = request.getHeaders("Origin");
+        if (!values.hasMoreElements()) {
+            return;
+        }
+        String origin = values.nextElement();
+        if (values.hasMoreElements() || !allowedOrigins.contains(origin)) {
+            throw new ApiException(403, "This website is not allowed to use the local Guess Market server.");
+        }
+        if (!allowedBrowserHosts.allows(request.getServerName())) {
+            throw new ApiException(403, "This server address is not approved for browser access.");
+        }
+        response.setHeader("Access-Control-Allow-Origin", origin);
+    }
+
+    private void preflight(HttpServletResponse response) {
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        // Compatibility with Chrome's older preflight-based Private Network Access rollout.
+        response.setHeader("Access-Control-Allow-Private-Network", "true");
+        response.setHeader("Allow", "GET, POST, OPTIONS");
+        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+        response.setContentLength(0);
+    }
+
+    private String bearerToken(HttpServletRequest request) {
+        Enumeration<String> values = request.getHeaders("Authorization");
+        if (!values.hasMoreElements()) {
+            return null;
+        }
+        String authorization = values.nextElement();
+        if (values.hasMoreElements() || authorization.length() != 50
+                || !authorization.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            throw invalidAuthorization();
+        }
+        String token = authorization.substring(7);
+        if (!token.matches("[A-Za-z0-9_-]{43}")) {
+            throw invalidAuthorization();
+        }
+        return token;
+    }
+
+    private ApiException invalidAuthorization() {
+        return new ApiException(401, "Your session has ended. Please log in.");
+    }
+
+    private Set<String> configuredAllowedOrigins() throws ServletException {
+        String configured = System.getProperty(ALLOWED_ORIGINS_PROPERTY);
+        if (configured == null || configured.isBlank()) {
+            configured = System.getenv(ALLOWED_ORIGINS_ENV);
+        }
+        if (configured == null || configured.isBlank()) {
+            configured = DEFAULT_ALLOWED_ORIGIN;
+        }
+        Set<String> result = new LinkedHashSet<>();
+        for (String value : configured.split(",", -1)) {
+            String origin = value.strip();
+            if (!validOrigin(origin)) {
+                throw new ServletException("Invalid allowed web origin: " + origin);
+            }
+            result.add(origin);
+        }
+        return Set.copyOf(result);
+    }
+
+    private boolean validOrigin(String origin) {
+        try {
+            URI uri = new URI(origin);
+            String scheme = uri.getScheme();
+            return ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
+                    && uri.getHost() != null && uri.getUserInfo() == null
+                    && !uri.getRawAuthority().endsWith(":") && uri.getPath().isEmpty()
+                    && uri.getQuery() == null && uri.getFragment() == null;
+        } catch (URISyntaxException invalid) {
+            return false;
+        }
     }
 
     private void requireMethod(HttpServletRequest request, HttpServletResponse response, String expected) {

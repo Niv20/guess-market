@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Black-box Exercise 3 checks against a fresh deployed WAR (standard library only)."""
 import concurrent.futures
+import base64
 import http.cookiejar
 import json
 import math
@@ -27,17 +28,24 @@ class Client:
         self.jar = http.cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar))
 
-    def request(self, path, body=None, method=None, raw=None, content_type=None):
+    def request(self, path, body=None, method=None, raw=None, content_type=None,
+                headers=None, return_headers=False):
         data = raw if raw is not None else (json.dumps(body).encode() if body is not None else None)
+        request_headers = dict(headers or {})
+        if data is not None:
+            request_headers.setdefault('Content-Type', content_type or 'application/json')
         request = urllib.request.Request(BASE + path, data=data, method=method,
-            headers={'Content-Type': content_type or 'application/json'} if data is not None else {})
+            headers=request_headers)
         try:
             response = self.opener.open(request, timeout=15)
         except urllib.error.HTTPError as error:
             response = error
         with response:
             payload = response.read()
-            return response.status, json.loads(payload) if payload else None
+            result = json.loads(payload) if payload else None
+            if return_headers:
+                return response.status, result, response.headers
+            return response.status, result
 
     def ok(self, path, body=None, **kwargs):
         status, result = self.request(path, body, **kwargs)
@@ -68,7 +76,54 @@ def event_id(snapshot, text):
 
 def main():
     anonymous = Client()
-    anonymous.ok('/health')
+    health = anonymous.ok('/health')
+    check(health == {'message': 'Guess Market is ready.', 'service': 'guess-market', 'apiVersion': 2},
+          'health identity/version contract changed')
+
+    origin = 'https://niv20.github.io'
+    status, cors_health, headers = anonymous.request('/health', headers={'Origin': origin}, return_headers=True)
+    check(status == 200 and cors_health == health, 'approved web origin could not read health')
+    check(headers.get('Access-Control-Allow-Origin') == origin, 'approved origin was not returned exactly')
+    check('Origin' in headers.get('Vary', ''), 'CORS response is missing Vary: Origin')
+    status, _, _ = anonymous.request('/health', headers={'Origin': origin, 'Host': 'rebind.example:8080'},
+                                     return_headers=True)
+    check(status == 403, 'approved origin bypassed the exact Host allowlist')
+    status, _, _ = anonymous.request('/health', headers={'Origin': origin, 'Host': 'guess-market.test:8443'},
+                                     return_headers=True)
+    check(status == 200, 'explicitly configured browser Host was rejected')
+    status, _, _ = anonymous.request('/health', headers={'Origin': origin, 'Host': 'localhost:49152'},
+                                     return_headers=True)
+    check(status == 200, 'browser Host validation incorrectly fixed the server port')
+    status, payload, headers = anonymous.request('/snapshot', method='OPTIONS', headers={
+        'Origin': origin,
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'authorization,content-type',
+        'Access-Control-Request-Private-Network': 'true',
+    }, return_headers=True)
+    check(status == 204 and payload is None, 'authenticated route preflight was not answered before auth')
+    check(headers.get('Access-Control-Allow-Methods') == 'GET, POST, OPTIONS', 'preflight methods changed')
+    check(headers.get('Access-Control-Allow-Headers') == 'Content-Type, Authorization', 'preflight headers changed')
+    check(headers.get('Access-Control-Allow-Private-Network') == 'true', 'PNA preflight permission missing')
+    status, error, headers = anonymous.request('/health', headers={'Origin': 'https://attacker.example'},
+                                               return_headers=True)
+    check(status == 403 and bool(error.get('message')), 'unapproved present Origin was not denied')
+    check(headers.get('Access-Control-Allow-Origin') is None, 'unapproved origin received CORS permission')
+
+    browser = Client()
+    login = browser.ok('/login', {'username': 'Hosted Browser'}, headers={'Origin': origin})
+    token = login.get('token')
+    check(isinstance(token, str) and len(token) == 43, 'login did not return an opaque bearer token')
+    check(len(base64.urlsafe_b64decode(token + '=')) == 32, 'browser token is not 256 bits')
+    browser.jar.clear()
+    bearer_headers = {'Origin': origin, 'Authorization': 'Bearer ' + token}
+    check(browser.ok('/snapshot', headers=bearer_headers)['self']['name'] == 'Hosted Browser',
+          'bearer identity did not survive without cookies')
+    status, _ = Client().request('/snapshot?token=' + ('A' * 43))
+    check(status == 401, 'token in a URL was accepted')
+    browser.ok('/logout', {}, headers=bearer_headers)
+    status, _ = browser.request('/snapshot', headers=bearer_headers)
+    check(status == 401, 'logout did not revoke the bearer token')
+
     for path in ['/snapshot', '/quote?eventId=1&optionIndex=0&shares=1']:
         anonymous.bad(path, expected=401)
     anonymous.bad('/funds', {'amount': 10}, expected=401)

@@ -38,6 +38,7 @@ with tempfile.TemporaryDirectory(prefix='http-test-', dir=ROOT / 'out') as tmp:
     config.write(base / 'conf/server.xml', encoding='UTF-8', xml_declaration=True)
     shutil.copyfile(WAR, base / 'webapps/guess-market.war')
     env = dict(os.environ, CATALINA_BASE=str(base), CATALINA_HOME=str(TOMCAT))
+    env['GUESS_MARKET_ALLOWED_HOSTS'] = 'localhost,127.0.0.1,::1,guess-market.test'
     url = f'http://127.0.0.1:{port}/guess-market/api'
     with (reports / 'tomcat-http.log').open('w') as log:
         server = subprocess.Popen([str(TOMCAT / 'bin/catalina.sh'), 'run'], env=env,

@@ -29,6 +29,8 @@ run.bat --server=http://localhost:8080/guess-market/api/
 
 The health endpoint is /api/health under the deployed context.
 
+A web client hosted at `https://niv20.github.io` can use this loopback API as a local companion. The server remains bound to `127.0.0.1`; only that exact web origin receives CORS access. Set `GUESS_MARKET_ALLOWED_ORIGINS` (comma-separated origins, with no paths) before starting the server to use a different trusted website. Browser requests must also use a Host in `GUESS_MARKET_ALLOWED_HOSTS`, whose default is `localhost,127.0.0.1,::1`. A deliberate LAN or remote deployment can set it to the complete exact comma-separated list of permitted plain hostnames or IP literals; schemes, paths, ports and wildcards are rejected. This setting grants no network exposure and does not change the launcher's loopback binding. Do not expose the Tomcat port to the public internet without configuring and securing that deployment separately.
+
 ### Run from the source repository
 
 On macOS or Linux, install JDK 25 or newer and run these commands from the repository root. If the client has not been built, run ./build.sh before ./run.sh:
@@ -88,8 +90,10 @@ The client communicates only through HTTP. Tomcat creates one application servic
 | Class | Role |
 | --- | --- |
 | ApplicationListener | Creates fresh ApplicationService state on deployment and removes the context reference when the application stops. |
-| ApplicationService | Owns the online engine, session authentication and shared chat. It holds the engine monitor while applying actions or collecting a complete snapshot. |
-| MarketServlet | Routes /api/* requests, binds identity from the session, translates commands to engine DTOs, maps failures to JSON and handles uploads entirely in memory. |
+| ApplicationService | Owns the online engine, cookie and bearer authentication, and shared chat. It holds the engine monitor while applying actions or collecting a complete snapshot. |
+| AccessTokenStore | Issues 256-bit browser tokens, refreshes their 30-minute inactivity window and revokes them at logout. |
+| BrowserHostAllowlist | Validates and matches the exact local, LAN or remote server names approved for browser access. |
+| MarketServlet | Routes /api/* requests, enforces the exact web-origin allowlist, binds authenticated identity, maps failures to JSON and handles uploads entirely in memory. |
 | JsonInput | Reads a bounded strict JSON object, requires the correct primitive types and required fields, and rejects identity overrides in action payloads. |
 | ApiException | Carries an expected HTTP status and a user-facing error message inside the server. |
 
@@ -127,7 +131,7 @@ EventDetailsController, OptionBookController, EventTile and UserInvolvementContr
 | PublicUserDto | Username, balance and whether that user runs at least one event. |
 | AccountEntryDto | Operation sequence, description, signed amount, balance before and balance after. Deposits, trades, commissions and settlement changes remain separate rows. |
 | ChatMessageDto | Monotonic message ID, authenticated username, message text and a server timestamp in epoch milliseconds. |
-| LoginResponseDto | The canonical username assigned to the authenticated session. |
+| LoginResponseDto | The canonical username and an opaque browser bearer token; JavaFX continues to use its session cookie. |
 | QuoteDto | The current LMSR share cost, before commission. |
 | MessageDto | One message field for structured errors and simple acknowledgements. |
 
@@ -135,13 +139,13 @@ Records copy their collections defensively, including lists nested in snapshot p
 
 ## HTTP protocol and concurrency
 
-All paths below are relative to http://localhost:8080/guess-market/api/. JSON requests use Content-Type: application/json; the upload uses multipart/form-data. Event option indexes start at zero. The server uses a cookie-backed HTTP session, with HttpOnly and SameSite=Lax cookie settings.
+All paths below are relative to http://localhost:8080/guess-market/api/. JSON requests use Content-Type: application/json; the upload uses multipart/form-data. Event option indexes start at zero. JavaFX uses its HttpOnly, SameSite=Lax session cookie. Hosted browsers send the login result's token as `Authorization: Bearer <token>` and never place it in a URL.
 
 | Method and path | Request and result |
 | --- | --- |
-| GET /health | No authentication. Returns a readiness message. |
-| POST /login | {username} creates a session and returns LoginResponseDto. An existing name returns HTTP 409. |
-| POST /logout | Invalidates the session; returns an acknowledgement. |
+| GET /health | No authentication. Returns the readiness message plus `service: "guess-market"` and `apiVersion: 2`. |
+| POST /login | {username} creates a session and returns LoginResponseDto with a bearer token. An existing name returns HTTP 409. |
+| POST /logout | Invalidates the cookie session and/or revokes its bearer token; returns an acknowledgement. |
 | GET /snapshot | Returns SnapshotDto with all public market information and this session's private account records. |
 | POST /funds | {amount} deposits funds in this session's account and returns UserDto. |
 | POST /upload | One multipart field named file, containing one XML file. Returns LoadResultDto. |
@@ -155,7 +159,7 @@ All paths below are relative to http://localhost:8080/guess-market/api/. JSON re
 
 ### Authorization and failures
 
-Every API route except login and health requires a valid session. A client cannot choose another buyer, seller or market maker: action identity is taken only from that session. The server checks market-maker permissions and all engine rules even if the client has already enabled or disabled the corresponding button.
+Every API route except login and health requires a valid cookie session or bearer token. Browser tokens expire after about 30 minutes of inactivity. A client cannot choose another buyer, seller or market maker: action identity is taken only from its credential. The server checks market-maker permissions and all engine rules even if the client has already enabled or disabled the corresponding button. Approved CORS preflights receive 204 before authentication; a present, unapproved Origin is rejected.
 
 Errors use the JSON shape {"message":"..."}. Expected failures include invalid input (400), expired sessions (401), forbidden actions (403), missing events or endpoints (404), wrong methods (405), conflicting state (409), oversized uploads (413) and unsupported content types (415). XML failures include their individual validation reasons.
 
@@ -195,7 +199,7 @@ Run ./test.sh for the project checks. Set CATALINA_HOME to the installed Tomcat 
 
 New accounts start at zero. Load funds before paying an opening subsidy or trading. A positive finite deposit is required. The inherited Exercise 2 blocking rule remains permanent: an account that was blocked stays blocked even if a later deposit or payout makes its balance positive.
 
-Usernames are case-insensitive and remain reserved for the server lifetime, including after logout, client closure or session expiry. This prevents a fresh session from claiming an existing account without a password. Keep the same client window open to retain access. Sessions expire after 30 minutes without requests; active polling keeps them alive.
+Usernames are case-insensitive and remain reserved for the server lifetime, including after logout, client closure or credential expiry. This prevents a fresh session from claiming an existing account without a password. Keep the same client window open to retain access. Cookie sessions and browser bearer tokens expire after 30 minutes without requests; active polling keeps them alive.
 
 Events, accounts, history, chat and sessions exist only in memory and disappear when the application or server stops. Tomcat session persistence is explicitly disabled. XML upload bytes remain in memory through native Servlet multipart handling; no uploaded content is saved to a server file.
 

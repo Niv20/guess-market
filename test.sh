@@ -10,6 +10,11 @@ javac --release 25 -Xlint:all,-serial -Werror \
 java -ea -classpath 'out/test-classes:out/artifacts/dto.jar:out/artifacts/engine.jar:lib/*' \
     guessmarket.tests.OnlineMarketEngineTest
 javac --release 25 -Xlint:all,-serial -Werror \
+    -classpath 'out/classes/server:out/artifacts/dto.jar:out/artifacts/engine.jar:lib/*:lib/provided/*' \
+    -d out/test-classes tests/server/AccessTokenStoreTest.java tests/server/BrowserHostAllowlistTest.java
+java -ea -classpath 'out/test-classes:out/classes/server' guessmarket.server.AccessTokenStoreTest
+java -ea -classpath 'out/test-classes:out/classes/server' guessmarket.server.BrowserHostAllowlistTest
+javac --release 25 -Xlint:all,-serial -Werror \
     -classpath 'out/artifacts/client/client.jar:out/artifacts/client/dto.jar:lib/*:lib/provided/*' \
     -d out/test-classes tests/client/ApiClientIntegrationTest.java
 if [ -n "${CATALINA_HOME:-}" ]; then
