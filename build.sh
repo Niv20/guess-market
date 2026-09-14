@@ -66,7 +66,7 @@ for resource in events/event-details.fxml events/option-book.fxml users/user-inv
     cp "$CLASSES_DIR/ui/guessmarket/ui/$resource" "$CLASSES_DIR/ui-common/guessmarket/ui/$resource"
 done
 compile_module server "$CLASSES_DIR/dto:$CLASSES_DIR/engine:lib/*:lib/provided/*"
-compile_module client "$CLASSES_DIR/dto:$CLASSES_DIR/ui-common:lib/gson-2.13.2.jar" "${JAVAFX_ARGS[@]}"
+compile_module client "$CLASSES_DIR/dto:$CLASSES_DIR/ui-common:lib/gson-2.13.2.jar:lib/provided/*" "${JAVAFX_ARGS[@]}"
 copy_resources client
 LIB_ENTRIES=""
 for file in lib/*.jar; do LIB_ENTRIES="$LIB_ENTRIES lib/$(basename "$file")"; done
