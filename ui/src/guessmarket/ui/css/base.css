@@ -169,6 +169,59 @@
     -fx-padding: 14;
 }
 
+#login-split {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+#login-split > .split-pane-divider {
+    -fx-padding: 0 1 0 1;
+    -fx-background-color: -app-border;
+    -fx-background-insets: 0;
+}
+
+#login-split > .split-pane-divider .line {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+#login-form-side,
+#login-hero-side {
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+#login-form-side {
+    -fx-background-color: -app-surface;
+}
+
+#login-hero-side {
+    -fx-background-color: -app-surface-2;
+}
+
+#login-hero,
+#login-form {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+}
+
+#login-hero .login-hero-title {
+    -fx-font-size: 2.25em;
+}
+
+#login-hero .login-hero-paragraph {
+    -fx-font-size: 1.25em;
+    -fx-line-spacing: 4;
+}
+
+.login-feature {
+    -fx-font-size: 1.08em;
+    -fx-text-fill: -app-text-faint;
+}
+
 .card-sunken {
     -fx-background-color: -app-surface-2;
     -fx-background-radius: 10;

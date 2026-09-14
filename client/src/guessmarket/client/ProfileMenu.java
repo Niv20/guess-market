@@ -2,6 +2,7 @@ package guessmarket.client;
 
 import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Icons;
+import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Skin;
 import guessmarket.ui.common.ToggleSwitch;
 import javafx.application.Platform;
@@ -36,8 +37,6 @@ import javafx.stage.PopupWindow;
 import javafx.stage.Screen;
 import javafx.stage.Window;
 
-import guessmarket.ui.common.Formats;
-
 import java.util.List;
 import java.util.Objects;
 
@@ -46,7 +45,7 @@ final class ProfileMenu {
     private final Scene scene;
     private final MenuButton profile = new MenuButton();
     private final Label name = new Label();
-    private final Label balance = new Label("Balance —");
+    private final Label balance = new Label();
     private final StackPane settings = new StackPane();
     private final BooleanProperty settingsOpen = new SimpleBooleanProperty(false);
     private final Button closeSettings = new Button();
@@ -81,6 +80,7 @@ final class ProfileMenu {
         balance.setId("profile-balance");
         balance.getStyleClass().add("profile-balance");
         balance.setWrapText(true);
+        balance.setMaxWidth(190);
         CustomMenuItem balanceItem = new CustomMenuItem(balance, false);
         balanceItem.setDisable(true);
         balanceItem.getStyleClass().add("profile-balance-item");
@@ -128,14 +128,18 @@ final class ProfileMenu {
 
     Node button() { return profile; }
 
+    void setBalance(double amount) {
+        setBalance("Balance " + Formats.money(amount));
+    }
+
+    void setBalance(String text) {
+        balance.setText(text == null || text.isBlank() ? "—" : text);
+    }
+
     void setUser(String username) {
         name.setText(username == null ? "" : username);
         profile.setAccessibleText(username == null || username.isBlank()
                 ? "User profile" : "User profile: " + username);
-    }
-
-    void setBalance(double amount) {
-        balance.setText(Double.isNaN(amount) ? "Balance —" : "Balance " + Formats.money(amount));
     }
 
     Node settingsView() { return settings; }
@@ -147,7 +151,7 @@ final class ProfileMenu {
         profile.hide();
         settingsOpen.set(false);
         setUser(null);
-        setBalance(Double.NaN);
+        setBalance("—");
     }
 
     private void positionPopup(int retries) {

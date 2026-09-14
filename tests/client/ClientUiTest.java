@@ -74,6 +74,7 @@ public final class ClientUiTest extends Application {
                     "Chat is no longer a tab");
             SplitPane split = node("events-split", SplitPane.class);
             require(split.getOrientation() == Orientation.HORIZONTAL, "Desktop split is horizontal");
+            double defaultEventsDivider = split.getDividerPositions()[0];
             for (Skin skin : Skin.values()) {
                 skin.applyTo(scene); layout();
                 double y = node("event-status-filter", ComboBox.class).getLayoutY();
@@ -154,6 +155,12 @@ public final class ClientUiTest extends Application {
             require(!chat.isOpen() && !tabs.isDisabled(), "Closing chat restores app interaction");
 
             tabs.getSelectionModel().select(1); layout();
+            SplitPane accountSplit = node("account-split", SplitPane.class);
+            require(accountSplit.getOrientation() == Orientation.HORIZONTAL, "Desktop account split is horizontal");
+            require(Math.abs(accountSplit.getDividerPositions()[0] - defaultEventsDivider) < 0.002,
+                    "Events and My account use the same default left-pane width");
+            require(scene.lookup("#users-table") == null && !labelText(scene.getRoot(), "Other users"),
+                    "My account omits the public users table");
             TextField funds = node("account-funds-amount", TextField.class);
             Button load = node("account-funds-button", Button.class);
             for (String invalid : List.of("-1", "abc", "0", "NaN", "Infinity", "1d", "0x1p2", "")) {

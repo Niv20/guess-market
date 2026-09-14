@@ -41,9 +41,10 @@ import java.util.Objects;
  * same engine-independent FXML components used by Exercise 2.
  */
 public final class GuessMarketClient extends Application implements ClientSession.Listener {
+    private static final double DEFAULT_HORIZONTAL_DIVIDER_POSITION = 0.36;
+
     private final BooleanProperty busy = new SimpleBooleanProperty();
     private final BorderPane root = new BorderPane();
-    private final Label balance = label("—", "value", "value-accent");
     private final ProgressIndicator progress = new ProgressIndicator();
     private final TextField username = new TextField();
     private final TextField server = new TextField(ApiClient.DEFAULT_SERVER);
@@ -61,7 +62,6 @@ public final class GuessMarketClient extends Application implements ClientSessio
     private final Label accountBalance = label("—", "value", "value-hero", "value-accent");
     private final Label accountState = label("", "muted");
     private final TableView<AccountEntryDto> ledger = new TableView<>();
-    private final TableView<PublicUserDto> users = new TableView<>();
     private final TabPane tabs = new TabPane();
     private final NumberAxis balanceAxis = new NumberAxis();
     private final NumberAxis stepAxis = new NumberAxis();
@@ -118,13 +118,12 @@ public final class GuessMarketClient extends Application implements ClientSessio
         lastAccountDetails = null; lastAccountPrices = null;
         events.getItems().clear(); myEvents.getItems().clear(); myEvents.setValue(null);
         search.clear(); status.setValue(null); method.setValue(null); commission.setValue(null);
-        ledger.getItems().clear(); users.getItems().clear(); balanceChart.getData().clear();
+        ledger.getItems().clear(); balanceChart.getData().clear();
         accountName.setText(""); accountBalance.setText("—"); accountState.setText("");
-        balance.setText("—");
         details.clear(); accountDetails.clear(); accountInvolvement.clear(); trade.show(null, null); accountTrade.show(null, null);
         uploadPath.clear();
         username.clear();
-        username.setId("login-username"); username.setPromptText("Choose a unique username");
+        username.setId("login-username"); username.setPromptText("Choose a username");
         server.setId("login-server");
         login.setId("login-button"); login.getStyleClass().setAll("button", "button-primary");
         login.disableProperty().unbind(); login.disableProperty().bind(busy);
@@ -132,17 +131,42 @@ public final class GuessMarketClient extends Application implements ClientSessio
         server.disableProperty().unbind(); server.disableProperty().bind(busy);
         login.setMaxWidth(Double.MAX_VALUE);
         login.setOnAction(action -> logIn()); username.setOnAction(action -> logIn());
-        Label intro = label("Your own account. One shared market.", "lead");
-        Label explanation = label("Choose a name to join. Each name is reserved until the server restarts. Keep this window open to retain access to your account.", "muted");
-        explanation.setWrapText(true);
-        VBox card = new VBox(18, label("Guess Market", "app-title"), intro, explanation,
-                TradeActions.field("USERNAME", CharacterCount.wrap(username, 40)), TradeActions.field("SERVER", server), login);
-        card.setId("login-card");
-        card.getStyleClass().add("card"); card.setMaxWidth(520); card.setPadding(new Insets(30));
-        VBox holder = new VBox(12, card);
-        holder.setAlignment(Pos.CENTER); holder.setPadding(new Insets(36));
-        ScrollPane scroll = scroll(holder); holder.minHeightProperty().bind(scroll.heightProperty().subtract(4));
-        root.setCenter(scroll);
+
+        VBox info = new VBox(22,
+                label("Welcome to Guess Market", "app-title", "login-hero-title"),
+                label("Trade together in one shared, live market. Create prediction events, take positions, and watch every trade reshape the market.", "lead", "login-hero-paragraph"),
+                label("Follow balances and results in real time, stay part of the shared conversation, and see where the crowd is leaning.", "lead", "login-hero-paragraph"));
+        info.setId("login-hero");
+        info.setMaxWidth(520);
+
+        VBox form = new VBox(16,
+                TradeActions.field("USERNAME", CharacterCount.wrap(username, 40)),
+                TradeActions.field("SERVER", server), login);
+        form.setId("login-form");
+        form.setMaxWidth(420);
+
+        login.setPadding(new Insets(10, 14, 10, 14));
+        for (Node child : info.getChildren()) {
+            if (child instanceof Label label) {
+                label.setWrapText(true);
+            }
+        }
+
+        VBox formSide = new VBox(form);
+        formSide.setId("login-form-side");
+        formSide.setPadding(new Insets(36));
+        formSide.setAlignment(Pos.CENTER);
+        VBox heroSide = new VBox(info);
+        heroSide.setId("login-hero-side");
+        heroSide.setPadding(new Insets(36));
+        heroSide.setAlignment(Pos.CENTER);
+
+        SplitPane loginSplit = new SplitPane(heroSide, formSide);
+        loginSplit.setId("login-split");
+        loginSplit.setDividerPositions(0.5);
+        loginSplit.setOrientation(Orientation.HORIZONTAL);
+        loginSplit.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        root.setCenter(loginSplit);
         stage.setTitle("Guess Market · Sign in");
         javafx.application.Platform.runLater(() -> {
             username.requestFocus();
@@ -164,7 +188,7 @@ public final class GuessMarketClient extends Application implements ClientSessio
         progress.visibleProperty().bind(busy); progress.managedProperty().bind(busy);
         profileMenu = new ProfileMenu(scene, busy, this::logOut);
         Region spacer = new Region(); HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox heading = new HBox(18, title, spacer, balance, progress, profileMenu.button());
+        HBox heading = new HBox(18, title, spacer, progress, profileMenu.button());
         heading.setAlignment(Pos.CENTER_LEFT);
         Button upload = new Button("Upload events"); upload.setId("upload-button");
         upload.setGraphic(Icons.openFolder(Icons.SMALL)); upload.getStyleClass().add("button-primary");
@@ -226,23 +250,28 @@ public final class GuessMarketClient extends Application implements ClientSessio
             @Override public CommissionType fromString(String value) { return null; }
         });
         commission.setPromptText("All commissions"); commission.setOnAction(action -> filterEvents());
+        for (ComboBox<?> filter : List.of(status, method)) {
+            filter.setMinWidth(0);
+            filter.setPrefWidth(124);
+        }
+        commission.setMinWidth(0); commission.setPrefWidth(150);
         FlowPane filters = new FlowPane(8, 8, status, method, commission);
         VBox sidebar = new VBox(10, search, filters, eventCount, events);
-        sidebar.setId("event-sidebar"); sidebar.setPrefWidth(560);
+        sidebar.setId("event-sidebar");
         sidebar.setPadding(new Insets(16, 8, 16, 16)); sidebar.setMinWidth(270); VBox.setVgrow(events, Priority.ALWAYS);
         SplitPane split = new SplitPane(sidebar, marketScroll); split.setId("events-split");
-        split.setDividerPositions(0.45);
-        // Set a generous initial width once; ordinary resizes must preserve the user's divider.
+        split.setDividerPositions(DEFAULT_HORIZONTAL_DIVIDER_POSITION);
+        // Both signed-in tabs use the same initial horizontal divider position. Ordinary resizes
+        // still preserve any adjustment the user makes on this tab.
         boolean[] initialized = {false};
         boolean[] horizontalInitialized = {false};
-        double[] horizontalPosition = {0.45};
+        double[] horizontalPosition = {DEFAULT_HORIZONTAL_DIVIDER_POSITION};
         split.widthProperty().addListener((o, old, width) -> {
             if (width.doubleValue() <= 0) return;
             Orientation orientation = width.doubleValue() < 950 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
             if (!initialized[0]) {
                 initialized[0] = true;
                 if (orientation == Orientation.HORIZONTAL) {
-                    horizontalPosition[0] = Math.min(0.60, 560 / width.doubleValue());
                     horizontalInitialized[0] = true;
                 }
                 split.setOrientation(orientation);
@@ -251,7 +280,6 @@ public final class GuessMarketClient extends Application implements ClientSessio
             } else if (split.getOrientation() != orientation) {
                 if (split.getOrientation() == Orientation.HORIZONTAL) horizontalPosition[0] = split.getDividerPositions()[0];
                 if (orientation == Orientation.HORIZONTAL && !horizontalInitialized[0]) {
-                    horizontalPosition[0] = Math.min(0.60, 560 / width.doubleValue());
                     horizontalInitialized[0] = true;
                 }
                 split.setOrientation(orientation);
@@ -293,7 +321,7 @@ public final class GuessMarketClient extends Application implements ClientSessio
         Button load = new Button("Load funds"); load.setId("account-funds-button"); load.disableProperty().bind(busy);
         load.setOnAction(action -> deposit(funds)); funds.setOnAction(action -> deposit(funds));
         identityCard.getChildren().add(new FlowPane(8, 8, funds, load));
-        VBox account = new VBox(14, buildUsers(), identityCard,
+        VBox account = new VBox(14, identityCard,
                 card(label("ACCOUNT LEDGER", "panel-title"), ledger), card(label("BALANCE HISTORY", "panel-title"), balanceChart));
         account.setPadding(new Insets(16, 8, 16, 16)); account.setMinWidth(0);
         FXMLLoader detailsLoader = new FXMLLoader(getClass().getResource("/guessmarket/ui/events/event-details.fxml"));
@@ -303,23 +331,21 @@ public final class GuessMarketClient extends Application implements ClientSessio
         // Each screen hosts the very same reusable components; only the selected event differs.
         VBox eventPane = new VBox(14, participation, accountTrade, eventDetails);
         eventPane.setPadding(new Insets(16)); eventPane.setMinWidth(0);
-        SplitPane split = new SplitPane(scroll(account), scroll(eventPane)); split.setDividerPositions(0.36);
+        SplitPane split = new SplitPane(scroll(account), scroll(eventPane));
+        split.setId("account-split");
+        split.setDividerPositions(DEFAULT_HORIZONTAL_DIVIDER_POSITION);
+        double[] horizontalPosition = {DEFAULT_HORIZONTAL_DIVIDER_POSITION};
         split.widthProperty().addListener((o, old, width) -> {
             Orientation orientation = width.doubleValue() < 1100 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
-            if (split.getOrientation() != orientation) { split.setOrientation(orientation); split.setDividerPositions(0.42); }
+            if (split.getOrientation() != orientation) {
+                if (split.getOrientation() == Orientation.HORIZONTAL) {
+                    horizontalPosition[0] = split.getDividerPositions()[0];
+                }
+                split.setOrientation(orientation);
+                split.setDividerPositions(orientation == Orientation.VERTICAL ? 0.42 : horizontalPosition[0]);
+            }
         });
         return split;
-    }
-
-    private Node buildUsers() {
-        users.setId("users-table");
-        Tables.columns(users, Tables.text("USER", PublicUserDto::name),
-                Tables.number("BALANCE", user -> Formats.money(user.balance())),
-                Tables.text("MM", user -> user.marketMaker() ? "Yes" : "No"));
-        Tables.emptyMessage(users, "No other users have joined this server yet.");
-        VBox box = new VBox(14, label("Other users", "screen-title"),
-                label("Public balances update automatically. MM means market maker.", "muted"), card(users));
-        box.setMinWidth(0); return box;
     }
 
     private boolean confirmLeave() {
@@ -415,12 +441,11 @@ public final class GuessMarketClient extends Application implements ClientSessio
 
     @Override public void snapshotReceived(SnapshotDto next) {
         SnapshotDto previous = snapshot; snapshot = next;
-        profileMenu.setUser(next.self().name()); balance.setText("Balance " + Formats.money(next.self().balance()));
-        profileMenu.setBalance(next.self().balance());
+        profileMenu.setUser(next.self().name()); profileMenu.setBalance(next.self().balance());
         accountName.setText(next.self().name() + " · My account"); accountBalance.setText(Formats.money(next.self().balance()));
         accountState.setText(next.self().blocked() ? "Blocked" : "Available to trade");
         if (previous != null && previous.self().balance() != next.self().balance()) {
-            Animations.flash(balance); Animations.flash(accountBalance);
+            Animations.flash(accountBalance);
         }
         filterEvents();
         if (previous == null || !previous.involvements().equals(next.involvements())) {
@@ -434,8 +459,6 @@ public final class GuessMarketClient extends Application implements ClientSessio
         }
         renderInvolvement();
         if (previous == null || !previous.accountEntries().equals(next.accountEntries())) ledger.getItems().setAll(next.accountEntries());
-        if (previous == null || !previous.users().equals(next.users())) users.getItems().setAll(next.users().stream()
-                .filter(user -> !user.name().equalsIgnoreCase(next.self().name())).toList());
         if (previous == null || !previous.balanceHistory().equals(next.balanceHistory())) {
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
             for (BalancePointDto point : next.balanceHistory()) series.getData().add(new XYChart.Data<>(point.step(), point.balance()));
@@ -477,6 +500,7 @@ public final class GuessMarketClient extends Application implements ClientSessio
     private static VBox card(Node... children) {
         VBox card = new VBox(10, children); card.getStyleClass().add("card"); card.setMinWidth(0); return card;
     }
+
     private static ScrollPane scroll(Node content) {
         ScrollPane scroll = new ScrollPane(content); scroll.setFitToWidth(true); scroll.setPannable(true);
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
