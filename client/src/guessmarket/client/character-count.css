@@ -1,0 +1,6 @@
+.character-count-wrapper > .character-counter {
+    -fx-text-fill: #85858a;
+    -fx-font-size: 0.82em;
+    -fx-font-weight: normal;
+    -fx-padding: 0;
+}

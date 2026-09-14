@@ -24,7 +24,7 @@ import java.util.Set;
  * The short animations that accompany the actions of the program, and the one switch that turns
  * all of them off.
  *
- * <p>They are off when the program starts. Nothing here decides what ends up on the screen, only
+ * <p>They are on when the program starts. Nothing here decides what ends up on the screen, only
  * how it gets there, so with the switch off the interface shows exactly what it would show if
  * this class did not exist — it simply shows it at once. No animation is longer than
  * {@link #LONGEST}, {@link #pulse} included: a pulse is one short beat played again rather than
@@ -77,13 +77,9 @@ public final class Animations {
     private static final double SLIDE_FROM_OPACITY = 0.15;
 
     /**
-     * Whether the animations are on when the program starts. They are not: an interface that has
-     * only just appeared should show what it has to show, and a movement is something the person
-     * asks for once they have seen it standing still. It is named here rather than written into
-     * the property below because the settings sheet offers to put everything back the way it
-     * started, and has to know what that was.
+     * Animations are enabled by default and can be switched off in Settings.
      */
-    public static final boolean ENABLED_AT_START = false;
+    public static final boolean ENABLED_AT_START = true;
 
     private static final BooleanProperty ENABLED = new SimpleBooleanProperty(ENABLED_AT_START);
 

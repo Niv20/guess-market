@@ -3,10 +3,14 @@ package guessmarket.ui.common;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.stage.Window;
 
 import java.util.List;
@@ -66,6 +70,55 @@ public final class Dialogs {
         alert.getButtonTypes().setAll(ButtonType.CANCEL, ButtonType.OK);
         Optional<ButtonType> answer = alert.showAndWait();
         return answer.isPresent() && answer.get() == ButtonType.OK;
+    }
+
+    /** Makes leaving an account explicit and keeps Enter, Escape and closing the dialog safe. */
+    public static boolean confirmLeave(Window owner, String headline, String message) {
+        return confirmDestructive(owner, headline, message, "Leave", "leave-button");
+    }
+
+    /** Confirms an explicit logout while keeping the safe choice as the keyboard default. */
+    public static boolean confirmLogout(Window owner, String headline, String message) {
+        return confirmDestructive(owner, headline, message, "Logout", "logout-button");
+    }
+
+    private static boolean confirmDestructive(Window owner, String headline, String message,
+                                              String actionText, String actionId) {
+        Alert alert = build(owner, Alert.AlertType.CONFIRMATION, "Guess Market", headline, message);
+        ButtonType destructiveAction = new ButtonType(actionText, ButtonBar.ButtonData.OTHER);
+        ButtonType stay = new ButtonType("Stay", ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.getButtonTypes().setAll(stay, destructiveAction);
+
+        Button actionButton = (Button) alert.getDialogPane().lookupButton(destructiveAction);
+        actionButton.setId(actionId);
+        actionButton.getStyleClass().add("button-danger");
+        actionButton.setDefaultButton(false);
+        actionButton.setCancelButton(false);
+
+        Button stayButton = (Button) alert.getDialogPane().lookupButton(stay);
+        stayButton.setId("stay-button");
+        stayButton.setDefaultButton(true);
+        stayButton.setCancelButton(true);
+        alert.setOnShown(event -> alignConfirmButtons(alert.getDialogPane(), stayButton));
+        return alert.showAndWait().filter(destructiveAction::equals).isPresent();
+    }
+
+    private static void alignConfirmButtons(DialogPane pane, Button stayButton) {
+        Node buttonBarNode = pane.lookup(".button-bar");
+        if (buttonBarNode instanceof ButtonBar buttonBar) {
+            // C = cancel/Stay, U = the custom destructive action. Setting the ButtonBar order keeps
+            // its result wiring intact while making the dangerous action the rightmost one.
+            buttonBar.setButtonOrder("CU");
+            buttonBar.applyCss();
+            buttonBar.layout();
+        }
+
+        Node buttonContainer = pane.lookup(".button-bar > .container");
+        if (buttonContainer instanceof HBox container) {
+            container.setAlignment(Pos.CENTER_RIGHT);
+            container.setSpacing(10);
+        }
+        stayButton.requestFocus();
     }
 
     private static void show(Window owner, Alert.AlertType type,
@@ -131,7 +184,9 @@ public final class Dialogs {
     private static Node markedHeader(Node mark, String headline) {
         Label text = new Label(headline);
         text.setWrapText(true);
-        HBox header = new HBox(HEADER_SPACING, mark, text);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox header = new HBox(HEADER_SPACING, text, spacer, mark);
         header.setAlignment(Pos.CENTER_LEFT);
         header.getStyleClass().add("dialog-header");
         return header;

@@ -109,7 +109,7 @@ public final class ClientSession implements AutoCloseable {
             SnapshotDto state = api.snapshot();
             dispatch(token, () -> {
                 listener.snapshotReceived(state);
-                listener.connectionChanged(true, "Live · refreshes every second");
+                listener.connectionChanged(true, "");
             });
         } catch (Exception error) {
             if (!expireIfUnauthorized(token, error)) {

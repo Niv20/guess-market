@@ -493,6 +493,95 @@
     -fx-stroke: -app-accent-contrast;
 }
 
+/* Popup windows are separate scenes. Their root must stay clear so rounded menus do not sit on
+ * top of the square application background inherited by every ordinary scene root. */
+.root.popup {
+    -fx-background-color: transparent;
+}
+
+.context-menu {
+    -fx-background-color: -app-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 14;
+    -fx-border-color: -app-border-soft;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-border-insets: 0;
+    -fx-padding: 7;
+    -fx-min-width: 200;
+    -fx-max-width: 240;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 18, 0, 0, 6);
+}
+
+.profile-name-item,
+.profile-balance-item,
+.profile-menu-item {
+    -fx-padding: 9 12;
+    -fx-background-radius: 10;
+    -fx-min-width: 200;
+    -fx-max-width: 230;
+}
+
+.profile-name-item {
+    -fx-padding: 11 12 2 12;
+}
+
+.profile-balance-item {
+    -fx-padding: 2 12 11 12;
+}
+
+.profile-name-item:disabled {
+    -fx-opacity: 1;
+}
+
+.profile-name {
+    -fx-text-fill: -app-text;
+    -fx-font-weight: bold;
+    -fx-opacity: 1;
+}
+
+.profile-name-item > .label,
+.profile-menu-item > .label {
+    -fx-text-fill: -app-text;
+}
+
+.profile-balance {
+    -fx-text-fill: -app-text-faint;
+    -fx-font-size: 0.87em;
+    -fx-max-width: 176;
+}
+
+.profile-balance-item > .label {
+    -fx-text-fill: -app-text-faint;
+}
+
+.profile-name-item:focused,
+.profile-balance-item:focused,
+.profile-menu-item:focused {
+    -fx-background-color: -app-accent-soft;
+}
+
+.profile-logout-item > .label {
+    -fx-text-fill: -app-no;
+}
+
+.context-menu .separator:horizontal {
+    -fx-padding: 5 8;
+}
+
+.context-menu .separator:horizontal .line {
+    -fx-border-color: -app-border-soft transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.context-menu .menu-item > .left-container,
+.context-menu .menu-item > .right-container,
+.context-menu .menu-item > .graphic-container {
+    -fx-padding: 0;
+    -fx-pref-width: 0;
+    -fx-max-width: 0;
+}
+
 .check-box {
     -fx-text-fill: -app-text-dim;
     -fx-font-size: 0.9em;
@@ -1256,6 +1345,8 @@
 
 .dialog-pane > .button-bar > .container {
     -fx-padding: 10;
+    -fx-alignment: center-right;
+    -fx-spacing: 10;
 }
 
 /* ------------------------------------------------------------------ line drawings */

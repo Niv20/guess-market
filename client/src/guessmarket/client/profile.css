@@ -1,0 +1,51 @@
+.menu-button.profile-menu-button {
+    -fx-background-color: -app-surface-3;
+    -fx-background-radius: 24;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 24;
+    -fx-border-width: 1;
+    -fx-padding: 8;
+    -fx-cursor: hand;
+    -fx-min-width: 44;
+    -fx-pref-width: 44;
+    -fx-min-height: 44;
+    -fx-pref-height: 44;
+}
+
+.menu-button.profile-menu-button:hover,
+.menu-button.profile-menu-button:focused,
+.menu-button.profile-menu-button:showing {
+    -fx-background-color: -app-accent-soft;
+    -fx-border-color: -app-accent;
+}
+
+.profile-menu-button > .label {
+    -fx-padding: 0;
+}
+
+.profile-menu-button > .arrow-button {
+    -fx-padding: 0;
+    -fx-max-width: 0;
+}
+
+.profile-menu-button > .arrow-button > .arrow {
+    -fx-padding: 0;
+    -fx-shape: "";
+}
+
+.profile-settings-backdrop {
+    -fx-background-color: rgba(8, 8, 10, 0.58);
+}
+
+.profile-settings-sheet {
+    -fx-padding: 0 0 8 0;
+}
+
+.button.profile-settings-close:focused {
+    -fx-background-color: -app-accent-soft;
+    -fx-border-color: -app-accent;
+}
+
+.profile-settings-sheet .toggle-switch:focused .toggle-switch-track {
+    -fx-border-color: -app-accent;
+}

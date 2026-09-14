@@ -12,6 +12,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.HorizontalDirection;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -29,9 +30,6 @@ import javafx.util.StringConverter;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -43,19 +41,13 @@ import java.util.Objects;
  * same engine-independent FXML components used by Exercise 2.
  */
 public final class GuessMarketClient extends Application implements ClientSession.Listener {
-    private static final DateTimeFormatter CHAT_TIME = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
     private final BooleanProperty busy = new SimpleBooleanProperty();
     private final BorderPane root = new BorderPane();
-    private final Label notice = label("", "muted");
-    private final Label connection = label("Connecting…", "faint");
     private final Label balance = label("—", "value", "value-accent");
-    private final Label identity = label("", "muted");
     private final ProgressIndicator progress = new ProgressIndicator();
     private final TextField username = new TextField();
     private final TextField server = new TextField(ApiClient.DEFAULT_SERVER);
     private final Button login = new Button("Join Guess Market");
-    private final Label loginStatus = label("", "muted");
-    private final Label loginFeedback = label("", "value-accent");
     private final ListView<EventDto> events = new ListView<>();
     private final TextField search = new TextField();
     private final ComboBox<EventStatus> status = new ComboBox<>();
@@ -70,8 +62,6 @@ public final class GuessMarketClient extends Application implements ClientSessio
     private final Label accountState = label("", "muted");
     private final TableView<AccountEntryDto> ledger = new TableView<>();
     private final TableView<PublicUserDto> users = new TableView<>();
-    private final ListView<ChatMessageDto> chat = new ListView<>();
-    private final TextField chatInput = new TextField();
     private final TabPane tabs = new TabPane();
     private final NumberAxis balanceAxis = new NumberAxis();
     private final NumberAxis stepAxis = new NumberAxis();
@@ -93,6 +83,9 @@ public final class GuessMarketClient extends Application implements ClientSessio
     private UserEventInvolvementDto lastInvolvement;
     private boolean rebuilding;
     private String signedName;
+    private ChatDrawer chatDrawer;
+    private ProfileMenu profileMenu;
+    private boolean connectionInterrupted;
 
     @Override public void start(Stage primaryStage) throws IOException {
         stage = primaryStage;
@@ -107,27 +100,31 @@ public final class GuessMarketClient extends Application implements ClientSessio
         stage.setScene(scene);
         stage.setMinWidth(720);
         stage.setMinHeight(650);
+        stage.setOnCloseRequest(event -> {
+            if (signedName != null && !confirmLeave()) event.consume();
+        });
         stage.show();
     }
 
     private void showLogin(String reason) {
+        chatDrawer.reset();
+        profileMenu.reset();
+        connectionInterrupted = false;
         snapshot = null;
         signedName = null;
         lastDetails = null;
         lastPrices = null;
         lastInvolvement = null;
         lastAccountDetails = null; lastAccountPrices = null;
-        events.getItems().clear(); myEvents.getItems().clear(); myEvents.setValue(null); chat.getItems().clear();
+        events.getItems().clear(); myEvents.getItems().clear(); myEvents.setValue(null);
         search.clear(); status.setValue(null); method.setValue(null); commission.setValue(null);
         ledger.getItems().clear(); users.getItems().clear(); balanceChart.getData().clear();
         accountName.setText(""); accountBalance.setText("—"); accountState.setText("");
-        identity.setText(""); balance.setText("—"); chatInput.clear();
-        connection.setText("Connecting…");
+        balance.setText("—");
         details.clear(); accountDetails.clear(); accountInvolvement.clear(); trade.show(null, null); accountTrade.show(null, null);
         uploadPath.clear();
         username.clear();
-        username.setId("login-username"); username.setPromptText("Choose a unique username (up to 40 characters)");
-        if (username.getTextFormatter() == null) username.setTextFormatter(new TextFormatter<String>(change -> change.getControlNewText().length() <= 40 ? change : null));
+        username.setId("login-username"); username.setPromptText("Choose a unique username");
         server.setId("login-server");
         login.setId("login-button"); login.getStyleClass().setAll("button", "button-primary");
         login.disableProperty().unbind(); login.disableProperty().bind(busy);
@@ -138,31 +135,25 @@ public final class GuessMarketClient extends Application implements ClientSessio
         Label intro = label("Your own account. One shared market.", "lead");
         Label explanation = label("Choose a name to join. Each name is reserved until the server restarts. Keep this window open to retain access to your account.", "muted");
         explanation.setWrapText(true);
-        loginFeedback.setId("login-feedback"); loginFeedback.setText(reason);
-        loginStatus.setId("login-status"); loginStatus.setText("");
-        for (Label information : List.of(loginFeedback, loginStatus)) {
-            information.setMaxWidth(520);
-            information.visibleProperty().bind(information.textProperty().isNotEmpty());
-            information.managedProperty().bind(information.visibleProperty());
-        }
-        notice.setText("");
         VBox card = new VBox(18, label("Guess Market", "app-title"), intro, explanation,
-                TradeActions.field("USERNAME", username), TradeActions.field("SERVER", server), login);
+                TradeActions.field("USERNAME", CharacterCount.wrap(username, 40)), TradeActions.field("SERVER", server), login);
         card.setId("login-card");
         card.getStyleClass().add("card"); card.setMaxWidth(520); card.setPadding(new Insets(30));
-        VBox holder = new VBox(12, card, loginFeedback, loginStatus);
+        VBox holder = new VBox(12, card);
         holder.setAlignment(Pos.CENTER); holder.setPadding(new Insets(36));
         ScrollPane scroll = scroll(holder); holder.minHeightProperty().bind(scroll.heightProperty().subtract(4));
         root.setCenter(scroll);
         stage.setTitle("Guess Market · Sign in");
-        javafx.application.Platform.runLater(username::requestFocus);
+        javafx.application.Platform.runLater(() -> {
+            username.requestFocus();
+            if (!reason.isBlank()) Dialogs.information(stage, "Signed out", reason);
+        });
     }
 
     private void logIn() {
         if (busy.get()) return;
         String name = username.getText().strip();
         if (name.isBlank()) { error("Enter a username to join."); return; }
-        loginFeedback.setText("");
         session.login(server.getText(), name);
     }
 
@@ -171,45 +162,37 @@ public final class GuessMarketClient extends Application implements ClientSessio
         Label title = label("Guess Market", "app-title");
         progress.setMaxSize(20, 20); progress.setPrefSize(20, 20);
         progress.visibleProperty().bind(busy); progress.managedProperty().bind(busy);
-        FlowPane heading = new FlowPane(18, 8, title, identity, balance, progress);
+        profileMenu = new ProfileMenu(scene, busy, this::logOut);
+        Region spacer = new Region(); HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox heading = new HBox(18, title, spacer, balance, progress, profileMenu.button());
         heading.setAlignment(Pos.CENTER_LEFT);
         Button upload = new Button("Upload events"); upload.setId("upload-button");
         upload.setGraphic(Icons.openFolder(Icons.SMALL)); upload.getStyleClass().add("button-primary");
         upload.disableProperty().bind(busy); upload.setOnAction(action -> upload());
-        TextField funds = new TextField(); funds.setId("funds-amount"); funds.setPromptText("Amount to load"); funds.setPrefColumnCount(12);
-        Button addFunds = new Button("Load funds"); addFunds.setId("funds-button"); addFunds.disableProperty().bind(busy);
-        addFunds.setOnAction(action -> deposit(funds)); funds.setOnAction(action -> deposit(funds));
-        ComboBox<Skin> theme = new ComboBox<>(FXCollections.observableArrayList(Skin.values()));
-        theme.setValue(Skin.DEFAULT); theme.setId("theme-selector");
-        theme.setOnAction(action -> { if (theme.getValue() != null) theme.getValue().applyTo(scene); });
-        Button signout = new Button("Sign out"); signout.setId("signout-button"); signout.disableProperty().bind(busy);
-        signout.setOnAction(action -> {
-            if (Dialogs.confirm(stage, "Sign out of " + signedName + "?",
-                    "Your name stays reserved until the server restarts. You will not be able to return to this account after signing out. Keep this window open if you want to continue using it.")) session.logout();
-        });
-        FlowPane toolbar = new FlowPane(10, 8, funds, addFunds, theme, signout);
         uploadPath.setId("upload-path"); uploadPath.setEditable(false); uploadPath.setPromptText("No file uploaded in this session");
         HBox uploadRow = new HBox(10, upload, uploadPath); HBox.setHgrow(uploadPath, Priority.ALWAYS);
-        Label actionNotice = label("", "muted"); actionNotice.setWrapText(true); actionNotice.setId("action-notice");
-        actionNotice.textProperty().bind(notice.textProperty());
-        connection.setWrapText(true); connection.setId("connection-status");
-        VBox header = new VBox(10, heading, toolbar, uploadRow, actionNotice, connection); header.getStyleClass().add("header-bar");
+        VBox header = new VBox(10, heading, uploadRow); header.getStyleClass().add("header-bar");
         shell.setTop(header);
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        tabs.getTabs().setAll(new Tab("Events", buildEvents()), new Tab("My account", buildAccount()), new Tab("Chat", buildChat()));
+        tabs.getTabs().setAll(new Tab("Events", buildEvents()), new Tab("My account", buildAccount()));
         tabs.getSelectionModel().selectedItemProperty().addListener((observable, old, selected) -> {
             if (selected != null) javafx.application.Platform.runLater(() -> {
                 // Hidden tabs have not resolved their fonts when a snapshot first fills them.
                 // Measure shared tables again once the selected tab has its actual CSS and size.
                 Node content = selected.getContent();
                 content.applyCss();
+                Animations.slideIn(content, tabs.getTabs().indexOf(selected) > tabs.getTabs().indexOf(old)
+                        ? HorizontalDirection.LEFT : HorizontalDirection.RIGHT);
                 for (Node node : content.lookupAll(".table-view")) {
                     if (node instanceof TableView<?> table) Tables.fit(table);
                 }
             });
         });
         shell.setCenter(tabs);
-        return shell;
+        chatDrawer = new ChatDrawer(session, stage, busy);
+        shell.disableProperty().bind(chatDrawer.openProperty().or(profileMenu.settingsOpenProperty()));
+        chatDrawer.view().disableProperty().bind(profileMenu.settingsOpenProperty());
+        return new StackPane(shell, chatDrawer.view(), profileMenu.settingsView());
     }
 
     private Node buildEvents() throws IOException {
@@ -221,7 +204,7 @@ public final class GuessMarketClient extends Application implements ClientSessio
         ScrollPane marketScroll = scroll(content); marketScroll.setId("market-scroll");
         events.setId("events-list"); events.getStyleClass().add("tile-list"); events.setMinWidth(240);
         Tiles.render(events, EventTile::of);
-        Tiles.emptyMessage(events, "No matching events. Upload an Exercise 3 XML file to add markets.");
+        events.setPlaceholder(new Region());
         events.getSelectionModel().selectedItemProperty().addListener((o, old, value) -> { if (!rebuilding) renderSelectedEvent(); });
         search.setId("event-filter"); search.setPromptText("Search event, description or market maker");
         search.textProperty().addListener((o, old, value) -> filterEvents());
@@ -243,15 +226,36 @@ public final class GuessMarketClient extends Application implements ClientSessio
             @Override public CommissionType fromString(String value) { return null; }
         });
         commission.setPromptText("All commissions"); commission.setOnAction(action -> filterEvents());
-        FlowPane filters = new FlowPane(8, 8, status, method, commission, eventCount);
-        VBox sidebar = new VBox(10, search, filters, events);
+        FlowPane filters = new FlowPane(8, 8, status, method, commission);
+        VBox sidebar = new VBox(10, search, filters, eventCount, events);
+        sidebar.setId("event-sidebar"); sidebar.setPrefWidth(560);
         sidebar.setPadding(new Insets(16, 8, 16, 16)); sidebar.setMinWidth(270); VBox.setVgrow(events, Priority.ALWAYS);
-        SplitPane split = new SplitPane(sidebar, marketScroll); split.setDividerPositions(0.30);
+        SplitPane split = new SplitPane(sidebar, marketScroll); split.setId("events-split");
+        split.setDividerPositions(0.45);
+        // Set a generous initial width once; ordinary resizes must preserve the user's divider.
+        boolean[] initialized = {false};
+        boolean[] horizontalInitialized = {false};
+        double[] horizontalPosition = {0.45};
         split.widthProperty().addListener((o, old, width) -> {
+            if (width.doubleValue() <= 0) return;
             Orientation orientation = width.doubleValue() < 950 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
-            if (split.getOrientation() != orientation) {
-                split.setOrientation(orientation); sidebar.setMinHeight(210);
-                split.setDividerPositions(orientation == Orientation.VERTICAL ? 0.32 : 0.30);
+            if (!initialized[0]) {
+                initialized[0] = true;
+                if (orientation == Orientation.HORIZONTAL) {
+                    horizontalPosition[0] = Math.min(0.60, 560 / width.doubleValue());
+                    horizontalInitialized[0] = true;
+                }
+                split.setOrientation(orientation);
+                sidebar.setMinHeight(210);
+                split.setDividerPositions(orientation == Orientation.VERTICAL ? 0.32 : horizontalPosition[0]);
+            } else if (split.getOrientation() != orientation) {
+                if (split.getOrientation() == Orientation.HORIZONTAL) horizontalPosition[0] = split.getDividerPositions()[0];
+                if (orientation == Orientation.HORIZONTAL && !horizontalInitialized[0]) {
+                    horizontalPosition[0] = Math.min(0.60, 560 / width.doubleValue());
+                    horizontalInitialized[0] = true;
+                }
+                split.setOrientation(orientation);
+                split.setDividerPositions(orientation == Orientation.VERTICAL ? 0.32 : horizontalPosition[0]);
             }
         });
         return split;
@@ -283,7 +287,7 @@ public final class GuessMarketClient extends Application implements ClientSessio
                 Tables.number("AFTER", row -> Formats.money(row.balanceAfter())));
         Tables.emptyMessage(ledger, "Your account operations will appear here. Load funds to begin.");
         stepAxis.setLabel("Account operation"); stepAxis.setMinorTickCount(0); balanceAxis.setLabel("Balance ($)");
-        balanceChart.setAnimated(false); balanceChart.setLegendVisible(false); balanceChart.setPrefHeight(260);
+        balanceChart.animatedProperty().bind(Animations.enabledProperty()); balanceChart.setLegendVisible(false); balanceChart.setPrefHeight(260);
         balanceChart.setMinHeight(220); balanceChart.setCreateSymbols(true);
         TextField funds = new TextField(); funds.setId("account-funds-amount"); funds.setPromptText("Amount to load"); funds.setPrefColumnCount(10);
         Button load = new Button("Load funds"); load.setId("account-funds-button"); load.disableProperty().bind(busy);
@@ -318,33 +322,22 @@ public final class GuessMarketClient extends Application implements ClientSessio
         box.setMinWidth(0); return box;
     }
 
-    private Node buildChat() {
-        chat.setId("chat-messages"); chat.getStyleClass().add("tile-list");
-        chat.setPlaceholder(label("Start a conversation with everyone on this server.", "faint"));
-        chat.setCellFactory(list -> new ListCell<>() {
-            @Override protected void updateItem(ChatMessageDto entry, boolean empty) {
-                super.updateItem(entry, empty); setText(null);
-                if (empty || entry == null) { setGraphic(null); return; }
-                Label heading = label(entry.username() + "  ·  " + CHAT_TIME.format(Instant.ofEpochMilli(entry.timestamp())), "field-label");
-                Label body = label(entry.message(), "lead"); body.setWrapText(true);
-                VBox bubble = card(heading, body); bubble.prefWidthProperty().bind(chat.widthProperty().subtract(48));
-                setGraphic(bubble);
-            }
-        });
-        chatInput.setId("chat-message"); chatInput.setPromptText("Message everyone… (up to 1,000 characters)");
-        chatInput.setTextFormatter(new TextFormatter<String>(change -> change.getControlNewText().length() <= 1000 ? change : null));
-        Button send = new Button("Send"); send.setId("chat-send"); send.getStyleClass().add("button-primary"); send.disableProperty().bind(busy);
-        send.setOnAction(action -> sendChat()); chatInput.setOnAction(action -> sendChat());
-        HBox composer = new HBox(10, chatInput, send); HBox.setHgrow(chatInput, Priority.ALWAYS);
-        VBox box = new VBox(12, label("Market chat", "screen-title"), label("Visible to everyone on this server.", "muted"), chat, composer);
-        box.setPadding(new Insets(16)); VBox.setVgrow(chat, Priority.ALWAYS); return box;
+    private boolean confirmLeave() {
+        return Dialogs.confirmLeave(stage, "Leave " + signedName + "?",
+                "Your name stays reserved until the server restarts. You will not be able to return to this account after leaving.");
+    }
+
+    private void logOut() {
+        if (!busy.get() && Dialogs.confirmLogout(stage, "Logout " + signedName + "?",
+                "Your name stays reserved until the server restarts. You will not be able to return to this account after logging out.")) {
+            session.logout();
+        }
     }
 
     private void upload() {
         FileChooser chooser = new FileChooser(); chooser.setTitle("Upload Exercise 3 events");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML event files", "*.xml"));
         File file = chooser.showOpenDialog(stage); if (file == null) return;
-        message("Uploading " + file.getName() + "…");
         session.perform(api -> api.upload(file.toPath()), result -> {
             uploadPath.setText(file.getAbsolutePath());
             message("Uploaded " + Formats.count(result.eventCount(), "event") + " from " + file.getName() + ". You are their market maker.");
@@ -358,15 +351,7 @@ public final class GuessMarketClient extends Application implements ClientSessio
             session.perform(api -> api.post("funds", Map.of("amount", amount), UserDto.class), user -> {
                 field.clear(); message("Loaded " + Formats.money(amount) + ". Your balance is " + Formats.money(user.balance()) + ".");
             });
-        } catch (IllegalArgumentException error) { message(error.getMessage()); }
-    }
-
-    private void sendChat() {
-        String text = chatInput.getText().trim(); if (text.isBlank() || busy.get()) return;
-        session.perform(api -> api.post("chat", Map.of("message", text), ChatMessageDto.class), result -> {
-            if (chatInput.getText().trim().equals(text)) chatInput.clear();
-            message("Message sent.");
-        });
+        } catch (IllegalArgumentException error) { error(error.getMessage()); }
     }
 
     private void filterEvents() {
@@ -430,9 +415,13 @@ public final class GuessMarketClient extends Application implements ClientSessio
 
     @Override public void snapshotReceived(SnapshotDto next) {
         SnapshotDto previous = snapshot; snapshot = next;
-        identity.setText(next.self().name()); balance.setText("Balance " + Formats.money(next.self().balance()));
+        profileMenu.setUser(next.self().name()); balance.setText("Balance " + Formats.money(next.self().balance()));
+        profileMenu.setBalance(next.self().balance());
         accountName.setText(next.self().name() + " · My account"); accountBalance.setText(Formats.money(next.self().balance()));
         accountState.setText(next.self().blocked() ? "Blocked" : "Available to trade");
+        if (previous != null && previous.self().balance() != next.self().balance()) {
+            Animations.flash(balance); Animations.flash(accountBalance);
+        }
         filterEvents();
         if (previous == null || !previous.involvements().equals(next.involvements())) {
             Integer chosen = myEvents.getValue() == null ? null : myEvents.getValue().id();
@@ -452,33 +441,30 @@ public final class GuessMarketClient extends Application implements ClientSessio
             for (BalancePointDto point : next.balanceHistory()) series.getData().add(new XYChart.Data<>(point.step(), point.balance()));
             balanceChart.getData().setAll(List.of(series)); Charts.countAlong(stepAxis, List.of(series));
         }
-        if (previous == null || !previous.chat().equals(next.chat())) {
-            boolean follow = chat.getSelectionModel().getSelectedIndex() < 0
-                    || chat.getSelectionModel().getSelectedIndex() >= chat.getItems().size() - 2;
-            chat.getItems().setAll(next.chat()); if (follow && !chat.getItems().isEmpty()) chat.scrollTo(chat.getItems().size() - 1);
-        }
+        chatDrawer.updateMessages(next.chat());
     }
 
     @Override public void loggedIn(String username) {
         signedName = username; root.setCenter(signedIn); tabs.getSelectionModel().selectFirst();
-        notice.setText("Welcome, " + username + ". Load funds to trade, or upload an Exercise 3 XML file to create your markets.");
-        connection.setText("Loading the latest market…"); stage.setTitle("Guess Market · " + username);
+        profileMenu.setUser(username); chatDrawer.setUser(username);
+        stage.setTitle("Guess Market · " + username);
+        Animations.switchIn(signedIn);
     }
     @Override public void loggedOut(String reason) { showLogin(reason); }
     @Override public void busyChanged(boolean value) {
         busy.set(value);
-        if (signedName == null) loginStatus.setText(value ? "Connecting to Guess Market…" : "");
+        login.setText(value && signedName == null ? "Joining…" : "Join Guess Market");
     }
     @Override public void connectionChanged(boolean connected, String text) {
-        connection.setText(text); connection.getStyleClass().setAll(connected ? "faint" : "value-negative");
+        if (connected) { connectionInterrupted = false; return; }
+        if (signedName == null || connectionInterrupted) return;
+        connectionInterrupted = true;
+        Dialogs.error(stage, "Connection interrupted", text);
     }
     @Override public void error(String text) {
-        boolean signingIn = signedName == null;
-        if (signingIn) loginStatus.setText("");
-        else message(text);
-        Dialogs.error(stage, signingIn ? "Unable to sign in" : "Operation could not be completed", text);
+        Dialogs.error(stage, signedName == null ? "Unable to sign in" : "Operation could not be completed", text);
     }
-    private void message(String text) { notice.setText(text); }
+    private void message(String text) { Dialogs.information(stage, "Guess Market", text); }
     @Override public void stop() { if (session != null) session.close(); }
 
     private static void prefixIds(Node node, String prefix) {
