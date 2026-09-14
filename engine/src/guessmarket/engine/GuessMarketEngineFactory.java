@@ -24,4 +24,3 @@ public final class GuessMarketEngineFactory {
         return new OnlineMarketEngineImpl();
     }
 }
-

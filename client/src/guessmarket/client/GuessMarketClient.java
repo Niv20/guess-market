@@ -186,6 +186,17 @@ public final class GuessMarketClient extends Application implements ClientSessio
         shell.setTop(header);
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.getTabs().setAll(new Tab("Events", buildEvents()), new Tab("My account", buildAccount()), new Tab("Chat", buildChat()));
+        tabs.getSelectionModel().selectedItemProperty().addListener((observable, old, selected) -> {
+            if (selected != null) javafx.application.Platform.runLater(() -> {
+                // Hidden tabs have not resolved their fonts when a snapshot first fills them.
+                // Measure shared tables again once the selected tab has its actual CSS and size.
+                Node content = selected.getContent();
+                content.applyCss();
+                for (Node node : content.lookupAll(".table-view")) {
+                    if (node instanceof TableView<?> table) Tables.fit(table);
+                }
+            });
+        });
         shell.setCenter(tabs);
         return shell;
     }
