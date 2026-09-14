@@ -52,10 +52,18 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     /** Null until a valid file has been loaded; replaced whole by every successful load. */
     private GuessMarketSystem system;
 
+    public GuessMarketEngineImpl() {
+    }
+
+    /** Starts a server engine with an empty, already available system. */
+    protected GuessMarketEngineImpl(GuessMarketSystem initialSystem) {
+        this.system = initialSystem;
+    }
+
     // ------------------------------------------------------------------ loading
 
     @Override
-    public LoadResultDto loadSystemDetailsFile(String path) {
+    public synchronized LoadResultDto loadSystemDetailsFile(String path) {
         GuessMarketSystem loadedSystem = fileLoader.load(path);
         this.system = loadedSystem;
         return new LoadResultDto(path == null ? "" : path.trim(),
@@ -63,34 +71,34 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     }
 
     @Override
-    public boolean isSystemLoaded() {
+    public synchronized boolean isSystemLoaded() {
         return system != null;
     }
 
     // ------------------------------------------------------------------ looking at the system
 
     @Override
-    public List<EventDto> getAllEvents() {
+    public synchronized List<EventDto> getAllEvents() {
         return DtoFactory.toEventDtos(loadedSystem().getEvents());
     }
 
     @Override
-    public EventTradingStatusDto getEventTradingStatus(int eventId) {
+    public synchronized EventTradingStatusDto getEventTradingStatus(int eventId) {
         return DtoFactory.toTradingStatusDto(loadedSystem().requireEvent(eventId));
     }
 
     @Override
-    public List<UserDto> getAllUsers() {
+    public synchronized List<UserDto> getAllUsers() {
         return DtoFactory.toUserDtos(loadedSystem().getUsers());
     }
 
     @Override
-    public UserDto getUser(String userName) {
+    public synchronized UserDto getUser(String userName) {
         return DtoFactory.toUserDto(loadedSystem().requireUser(userName));
     }
 
     @Override
-    public List<UserEventInvolvementDto> getUserInvolvements(String userName) {
+    public synchronized List<UserEventInvolvementDto> getUserInvolvements(String userName) {
         User user = loadedSystem().requireUser(userName);
         List<UserEventInvolvementDto> involvements = new ArrayList<>();
         for (Event event : loadedSystem().getEvents()) {
@@ -102,7 +110,7 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     }
 
     @Override
-    public UserEventInvolvementDto getUserInvolvement(String userName, int eventId) {
+    public synchronized UserEventInvolvementDto getUserInvolvement(String userName, int eventId) {
         User user = loadedSystem().requireUser(userName);
         return DtoFactory.toInvolvementDto(user, loadedSystem().requireEvent(eventId));
     }
@@ -110,7 +118,7 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     // ------------------------------------------------------------------ running an event
 
     @Override
-    public OpenEventResultDto openEvent(OpenEventRequestDto request) {
+    public synchronized OpenEventResultDto openEvent(OpenEventRequestDto request) {
         requireRequest(request);
         GuessMarketSystem loaded = loadedSystem();
         Event event = loaded.requireEvent(request.eventId());
@@ -124,7 +132,7 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     }
 
     @Override
-    public CloseEventResultDto closeEvent(CloseEventRequestDto request) {
+    public synchronized CloseEventResultDto closeEvent(CloseEventRequestDto request) {
         requireRequest(request);
         GuessMarketSystem loaded = loadedSystem();
         Event event = loaded.requireEvent(request.eventId());
@@ -146,12 +154,12 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     // ------------------------------------------------------------------ taking part
 
     @Override
-    public double quotePurchaseCost(int eventId, int optionIndex, long shares) {
+    public synchronized double quotePurchaseCost(int eventId, int optionIndex, long shares) {
         return requireLmsr(loadedSystem().requireEvent(eventId)).quotePurchase(optionIndex, shares);
     }
 
     @Override
-    public PurchaseResultDto purchaseShares(PurchaseRequestDto request) {
+    public synchronized PurchaseResultDto purchaseShares(PurchaseRequestDto request) {
         requireRequest(request);
         GuessMarketSystem loaded = loadedSystem();
         LmsrEvent event = requireLmsr(loaded.requireEvent(request.eventId()));
@@ -169,7 +177,7 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     }
 
     @Override
-    public SubmitOrderResultDto submitOrder(SubmitOrderRequestDto request) {
+    public synchronized SubmitOrderResultDto submitOrder(SubmitOrderRequestDto request) {
         requireRequest(request);
         GuessMarketSystem loaded = loadedSystem();
         OrderBookEvent event = requireOrderBook(loaded.requireEvent(request.eventId()));
@@ -193,7 +201,7 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     // ------------------------------------------------------------------ extras
 
     @Override
-    public EventDto createEvent(CreateEventRequestDto request) {
+    public synchronized EventDto createEvent(CreateEventRequestDto request) {
         requireRequest(request);
         GuessMarketSystem loaded = loadedSystem();
         Event event = NewEventBuilder.build(loaded, request);
@@ -203,26 +211,26 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     }
 
     @Override
-    public List<PricePointDto> getEventPriceHistory(int eventId) {
+    public synchronized List<PricePointDto> getEventPriceHistory(int eventId) {
         return DtoFactory.toPriceHistory(loadedSystem().requireEvent(eventId));
     }
 
     @Override
-    public List<BalancePointDto> getUserBalanceHistory(String userName) {
+    public synchronized List<BalancePointDto> getUserBalanceHistory(String userName) {
         return DtoFactory.toBalanceHistory(loadedSystem().requireUser(userName));
     }
 
     // ------------------------------------------------------------------ saving and restoring
 
     @Override
-    public StateFileResultDto saveSystemState(String pathWithoutExtension) {
+    public synchronized StateFileResultDto saveSystemState(String pathWithoutExtension) {
         GuessMarketSystem systemToSave = loadedSystem();
         String writtenFile = SystemStateStore.save(systemToSave, pathWithoutExtension);
         return new StateFileResultDto(writtenFile, systemToSave.getEventCount());
     }
 
     @Override
-    public StateFileResultDto loadSystemState(String pathWithoutExtension) {
+    public synchronized StateFileResultDto loadSystemState(String pathWithoutExtension) {
         GuessMarketSystem restoredSystem = SystemStateStore.load(pathWithoutExtension);
         this.system = restoredSystem;
         return new StateFileResultDto(pathWithoutExtension.trim()
@@ -232,7 +240,7 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
     // ------------------------------------------------------------------ checks
 
     /** @return the loaded system, or fails when nothing has been loaded yet. */
-    private GuessMarketSystem loadedSystem() {
+    protected final GuessMarketSystem loadedSystem() {
         if (system == null) {
             throw new SystemNotLoadedException();
         }
