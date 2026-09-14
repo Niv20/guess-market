@@ -5,19 +5,27 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
 CLASSES_DIR="out/classes"
 ARTIFACTS_DIR="out/artifacts"
-case "$(uname -s)/$(uname -m)" in
-    Darwin/arm64) DEFAULT_PLATFORM=mac-aarch64 ;;
-    Darwin/*) DEFAULT_PLATFORM=mac ;;
-    MINGW*|MSYS*|CYGWIN*) DEFAULT_PLATFORM=win ;;
-    *) DEFAULT_PLATFORM=linux ;;
+SERVER_ONLY=false
+case "$#:${1:-}" in
+    0:) ;;
+    1:--server-only) SERVER_ONLY=true ;;
+    *) echo "Usage: $0 [--server-only]" >&2; exit 2 ;;
 esac
-JAVAFX_PLATFORM="${JAVAFX_PLATFORM:-$DEFAULT_PLATFORM}"
-JAVAFX_DIR="lib/javafx/$JAVAFX_PLATFORM"
-if [ ! -d "$JAVAFX_DIR" ]; then
-    echo "Missing JavaFX runtime: $JAVAFX_DIR. Set JAVAFX_PLATFORM to an available folder." >&2
-    exit 1
+if [ "$SERVER_ONLY" = false ]; then
+    case "$(uname -s)/$(uname -m)" in
+        Darwin/arm64) DEFAULT_PLATFORM=mac-aarch64 ;;
+        Darwin/*) DEFAULT_PLATFORM=mac ;;
+        MINGW*|MSYS*|CYGWIN*) DEFAULT_PLATFORM=win ;;
+        *) DEFAULT_PLATFORM=linux ;;
+    esac
+    JAVAFX_PLATFORM="${JAVAFX_PLATFORM:-$DEFAULT_PLATFORM}"
+    JAVAFX_DIR="lib/javafx/$JAVAFX_PLATFORM"
+    if [ ! -d "$JAVAFX_DIR" ]; then
+        echo "Missing JavaFX runtime: $JAVAFX_DIR. Set JAVAFX_PLATFORM to an available folder." >&2
+        exit 1
+    fi
+    JAVAFX_ARGS=(--module-path "$JAVAFX_DIR" --add-modules javafx.controls,javafx.fxml)
 fi
-JAVAFX_ARGS=(--module-path "$JAVAFX_DIR" --add-modules javafx.controls,javafx.fxml)
 compile_module() {
     local module="$1" classpath="$2"
     shift 2
@@ -44,6 +52,32 @@ write_manifest() {
         echo
     } > "out/manifests/$module.mf"
 }
+package_war() {
+    cp "$ARTIFACTS_DIR/engine.jar" "$ARTIFACTS_DIR/dto.jar" lib/*.jar out/war/WEB-INF/lib/
+    cp -R "$CLASSES_DIR/server" out/war/WEB-INF/classes
+    cp -R server/web/. out/war/
+    jar --create --file "$ARTIFACTS_DIR/guess-market.war" -C out/war .
+}
+if [ "$SERVER_ONLY" = true ]; then
+    # Refresh only server build products; a separately built client stays exactly as packaged.
+    rm -rf "$CLASSES_DIR/dto" "$CLASSES_DIR/engine" "$CLASSES_DIR/server" out/war
+    rm -f "$ARTIFACTS_DIR/dto.jar" "$ARTIFACTS_DIR/engine.jar" "$ARTIFACTS_DIR/guess-market.war"
+    mkdir -p "$ARTIFACTS_DIR" out/manifests out/war/WEB-INF/lib
+    compile_module dto ""
+    compile_module engine "$CLASSES_DIR/dto:lib/*"
+    copy_resources engine
+    compile_module server "$CLASSES_DIR/dto:$CLASSES_DIR/engine:lib/*:lib/provided/*"
+    LIB_ENTRIES=""
+    for file in lib/*.jar; do LIB_ENTRIES="$LIB_ENTRIES lib/$(basename "$file")"; done
+    write_manifest dto ""
+    write_manifest engine "dto.jar$LIB_ENTRIES"
+    for module in dto engine; do
+        jar --create --file "$ARTIFACTS_DIR/$module.jar" --manifest "out/manifests/$module.mf" -C "$CLASSES_DIR/$module" .
+    done
+    package_war
+    echo "Server build complete: $ARTIFACTS_DIR/guess-market.war"
+    exit 0
+fi
 # Clean generated build products only; tests and submission staging have separate lifetimes.
 rm -rf "$CLASSES_DIR" "$ARTIFACTS_DIR" out/manifests out/war
 mkdir -p "$ARTIFACTS_DIR/client/lib" out/manifests out/war/WEB-INF/lib
@@ -78,10 +112,7 @@ write_manifest client "dto.jar ui-common.jar lib/gson-2.13.2.jar" guessmarket.cl
 for module in dto engine ui ui-common client; do
     jar --create --file "$ARTIFACTS_DIR/$module.jar" --manifest "out/manifests/$module.mf" -C "$CLASSES_DIR/$module" .
 done
-cp "$ARTIFACTS_DIR/engine.jar" "$ARTIFACTS_DIR/dto.jar" lib/*.jar out/war/WEB-INF/lib/
-cp -R "$CLASSES_DIR/server" out/war/WEB-INF/classes
-cp -R server/web/. out/war/
-jar --create --file "$ARTIFACTS_DIR/guess-market.war" -C out/war .
+package_war
 cp "$ARTIFACTS_DIR/client.jar" "$ARTIFACTS_DIR/dto.jar" "$ARTIFACTS_DIR/ui-common.jar" "$ARTIFACTS_DIR/client/"
 cp lib/gson-2.13.2.jar "$ARTIFACTS_DIR/client/lib/"
 cp -R lib/javafx "$ARTIFACTS_DIR/client/lib/"
