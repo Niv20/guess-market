@@ -1,8 +1,7 @@
 package guessmarket.engine.exception;
 
 /**
- * Thrown when the requested number of shares cannot be bought, because it is not a positive
- * whole number.
+ * Thrown when a requested quantity is nonpositive or would exceed the market's share capacity.
  */
 public class InvalidShareQuantityException extends GuessMarketException {
 
@@ -12,4 +11,8 @@ public class InvalidShareQuantityException extends GuessMarketException {
         super("The number of shares to buy must be a whole number of at least 1, but "
                 + shares + " was requested.");
     }
+    public InvalidShareQuantityException(String reason) {
+        super(reason);
+    }
 }
+

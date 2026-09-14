@@ -275,7 +275,15 @@ public class OrderBookEvent extends Event {
             return false;
         }
 
-        long shares = Math.min(order.getRemaining(), waiting.getRemaining());
+        // Existing and incoming orders may each fit in a long while their cumulative mint
+        // does not. Limit this execution before moving either user's money. Any remainder can
+        // still trade existing shares or rest in the book, like another partially filled order.
+        long capacity = Math.min(Long.MAX_VALUE - option(otherIndex).getSharesOutstanding(),
+                Long.MAX_VALUE - option(order.getOptionIndex()).getSharesOutstanding());
+        if (capacity <= 0) {
+            return false;
+        }
+        long shares = Math.min(capacity, Math.min(order.getRemaining(), waiting.getRemaining()));
         double waitingPrice = waiting.getPricePerShare();
         double arrivingPrice = baseValue - waitingPrice;
 
