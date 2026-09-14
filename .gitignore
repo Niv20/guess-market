@@ -44,3 +44,6 @@ Thumbs.db
 # Python test runner caches
 __pycache__/
 *.pyc
+
+# Local Tomcat distribution, deployment and logs
+.runtime/

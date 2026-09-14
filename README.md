@@ -27,7 +27,21 @@ The default API address is http://localhost:8080/guess-market/api/. The login sc
 run.bat --server=http://localhost:8080/guess-market/api/
 ```
 
-The health endpoint is /api/health under the deployed context. The source repository is listed in the submitter table above and linked at the end of this guide.
+The health endpoint is /api/health under the deployed context.
+
+### Run from the source repository
+
+On macOS or Linux, install JDK 25 or newer and run these commands from the repository root. If the client has not been built, run ./build.sh before ./run.sh:
+
+```text
+./start-guess-market.sh     # start the server
+./run.sh                   # launch a client separately
+./start-guess-market.sh --stop
+```
+
+The launcher builds and starts only the server. On first use it downloads Tomcat 10.1.59, unless CATALINA_HOME points to an existing Tomcat 10.1 installation. Downloads and local server files stay in .runtime. Its server-only build preserves existing client outputs.
+
+Use --port 8081 to choose another port and update the client Server field to match. Use --no-build to start the existing WAR. Stop the local server before rebuilding or changing its port.
 
 ## Using the application
 
