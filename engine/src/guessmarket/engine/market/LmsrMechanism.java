@@ -1,5 +1,7 @@
 package guessmarket.engine.market;
 
+import guessmarket.engine.exception.InvalidShareQuantityException;
+
 import java.io.Serial;
 import java.io.Serializable;
 
@@ -73,9 +75,40 @@ public final class LmsrMechanism implements Serializable {
      * @return what that purchase costs, before any commission
      */
     public double purchaseCost(long[] quantities, int optionIndex, long shares) {
-        long[] quantitiesAfterPurchase = quantities.clone();
-        quantitiesAfterPurchase[optionIndex] += shares;
-        return cost(quantitiesAfterPurchase) - cost(quantities);
+        if (shares <= 0 || shares > Long.MAX_VALUE - quantities[optionIndex]) {
+            throw new InvalidShareQuantityException("This purchase exceeds the remaining share "
+                    + "capacity of the selected option. Choose a smaller quantity.");
+        }
+        long after = quantities[optionIndex] + shares;
+        if (quantities.length == 1) {
+            return shares;
+        }
+        // Evaluate C(q + shares) - C(q) without subtracting two enormous pool values. That
+        // subtraction rounds small purchases to zero once a pool holds very many shares.
+        long largestOther = 0;
+        for (int i = 0; i < quantities.length; i++) {
+            if (i != optionIndex) largestOther = Math.max(largestOther, quantities[i]);
+        }
+        double otherWeight = 0;
+        for (int i = 0; i < quantities.length; i++) {
+            if (i != optionIndex) {
+                otherWeight += Math.exp((double) (quantities[i] - largestOther) / liquidityParameter);
+            }
+        }
+        double logOtherWeight = Math.log(otherWeight);
+        double beforeGap = (double) (quantities[optionIndex] - largestOther)
+                / liquidityParameter - logOtherWeight;
+        double afterGap = (double) (after - largestOther) / liquidityParameter - logOtherWeight;
+        if (beforeGap >= 0) {
+            return shares + liquidityParameter
+                    * (Math.log1p(Math.exp(-afterGap)) - Math.log1p(Math.exp(-beforeGap)));
+        }
+        if (afterGap <= 0) {
+            return liquidityParameter
+                    * (Math.log1p(Math.exp(afterGap)) - Math.log1p(Math.exp(beforeGap)));
+        }
+        return liquidityParameter * (afterGap + Math.log1p(Math.exp(-afterGap))
+                - Math.log1p(Math.exp(beforeGap)));
     }
 
     /** @return the total value of the pool for the given holdings, {@code C(q)}. */

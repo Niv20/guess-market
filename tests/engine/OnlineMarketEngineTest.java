@@ -2,6 +2,11 @@ package guessmarket.tests;
 
 import guessmarket.dto.AccountEntryDto;
 import guessmarket.dto.CloseEventRequestDto;
+import guessmarket.dto.CommissionType;
+import guessmarket.dto.CreateEventRequestDto;
+import guessmarket.dto.OrderSide;
+import guessmarket.dto.SubmitOrderRequestDto;
+import guessmarket.dto.TradingMethod;
 import guessmarket.dto.EventDto;
 import guessmarket.dto.OpenEventRequestDto;
 import guessmarket.dto.PurchaseRequestDto;
@@ -10,6 +15,8 @@ import guessmarket.engine.GuessMarketEngineFactory;
 import guessmarket.engine.OnlineMarketEngine;
 import guessmarket.engine.exception.FileLoadException;
 import guessmarket.engine.exception.InvalidFileContentException;
+import guessmarket.engine.exception.InvalidShareQuantityException;
+import guessmarket.engine.market.LmsrMechanism;
 import guessmarket.engine.exception.UserAlreadyExistsException;
 
 import java.io.ByteArrayInputStream;
@@ -36,6 +43,7 @@ public final class OnlineMarketEngineTest {
         atomicValidation();
         accountLedgerTracksOtherUsers();
         concurrentOperations();
+        numericShareCapacity();
         previousExerciseStillWorks();
         System.out.println("OnlineMarketEngineTest: " + assertions + " checks passed.");
     }
@@ -214,6 +222,77 @@ public final class OnlineMarketEngineTest {
         check(uploads.get() == 1 && engine.getAllEvents().size() == 1, "atomic duplicate upload");
         check(engine.getUser("Contended").marketMakerEventIds().size() == 1,
                 "concurrent uploads do not duplicate ownership");
+    }
+
+    private static void numericShareCapacity() {
+        LmsrMechanism pricing = new LmsrMechanism(100);
+        close(pricing.purchaseCost(new long[]{Long.MAX_VALUE - 1, 0}, 0, 1), 1,
+                "one share remains correctly priced in a very large pool");
+        double balancedOneShare = 100 * Math.log1p(Math.expm1(0.01) / 2);
+        close(pricing.purchaseCost(new long[]{Long.MAX_VALUE - 1, Long.MAX_VALUE - 1}, 0, 1),
+                balancedOneShare, "balanced large pool preserves small price increments");
+        expect(InvalidShareQuantityException.class,
+                () -> pricing.purchaseCost(new long[]{Long.MAX_VALUE, 0}, 0, 1));
+        double maximumError = 0;
+        for (long left : new long[]{0, 1, 50, 1000}) {
+            for (long right : new long[]{0, 1, 50, 1000}) {
+                for (long quantity : new long[]{1, 3, 50, 2000}) {
+                    double before = 100 * Math.log(Math.exp(left / 100.0) + Math.exp(right / 100.0));
+                    double after = 100 * Math.log(Math.exp((left + quantity) / 100.0) + Math.exp(right / 100.0));
+                    maximumError = Math.max(maximumError,
+                            Math.abs(pricing.purchaseCost(new long[]{left, right}, 0, quantity) - (after - before)));
+                }
+            }
+        }
+        check(maximumError < 0.000000001, "stable formula matches ordinary LMSR prices");
+
+        OnlineMarketEngine engine = GuessMarketEngineFactory.createOnlineEngine();
+        for (String user : List.of("Owner", "Buyer", "Other", "Resale buyer")) {
+            engine.registerUser(user);
+            engine.depositFunds(user, 1e20);
+        }
+        upload(engine, xml(event("Capacity LMSR", "0")));
+        int id = engine.getAllEvents().getFirst().id();
+        engine.openEvent(new OpenEventRequestDto("Owner", id));
+        engine.purchaseShares(new PurchaseRequestDto("Buyer", id, 0, Long.MAX_VALUE - 1));
+        close(engine.quotePurchaseCost(id, 0, 1), 1, "server quotes final available share");
+        engine.purchaseShares(new PurchaseRequestDto("Buyer", id, 0, 1));
+        var stateBefore = engine.getEventTradingStatus(id);
+        var ledgerBefore = engine.getAccountHistory("Buyer");
+        expect(InvalidShareQuantityException.class, () -> engine.quotePurchaseCost(id, 0, 1));
+        expect(InvalidShareQuantityException.class,
+                () -> engine.purchaseShares(new PurchaseRequestDto("Buyer", id, 0, 1)));
+        check(engine.getEventTradingStatus(id).equals(stateBefore), "rejected overflow leaves event unchanged");
+        check(engine.getAccountHistory("Buyer").equals(ledgerBefore), "rejected overflow leaves account unchanged");
+        check(stateBefore.totalSharesByOption().getFirst() == Long.MAX_VALUE,
+                "LMSR holdings never wrap to a negative number");
+
+        int bookId = engine.createEvent(new CreateEventRequestDto("Owner", "Capacity book", "Capacity test", 0,
+                CommissionType.ON_PURCHASE, List.of("Yes", "No"), TradingMethod.ORDER_BOOK,
+                0, 0, 1, true)).id();
+        engine.openEvent(new OpenEventRequestDto("Owner", bookId));
+        engine.submitOrder(new SubmitOrderRequestDto("Buyer", bookId, 0, OrderSide.BUY, Long.MAX_VALUE - 1, 0.5));
+        var initialMint = engine.submitOrder(new SubmitOrderRequestDto("Other", bookId, 1,
+                OrderSide.BUY, Long.MAX_VALUE, 0.5));
+        check(initialMint.quantityMinted() == Long.MAX_VALUE - 1 && initialMint.quantityResting() == 1,
+                "large initial mint fills only the matching quantity");
+        var lastMint = engine.submitOrder(new SubmitOrderRequestDto("Buyer", bookId, 0, OrderSide.BUY, 5, 0.5));
+        check(lastMint.quantityMinted() == 1 && lastMint.quantityResting() == 4,
+                "mint stops at representable capacity and rests the remainder");
+        var noCapacity = engine.submitOrder(new SubmitOrderRequestDto("Other", bookId, 1,
+                OrderSide.BUY, Long.MAX_VALUE, 0.5));
+        check(noCapacity.quantityFilled() == 0 && noCapacity.quantityResting() == Long.MAX_VALUE,
+                "full market leaves further bids unfilled");
+        engine.submitOrder(new SubmitOrderRequestDto("Buyer", bookId, 0, OrderSide.BUY, Long.MAX_VALUE, 0.5));
+        check(engine.getEventTradingStatus(bookId).totalSharesByOption()
+                .equals(List.of(Long.MAX_VALUE, Long.MAX_VALUE)),
+                "multiple enormous resting orders do not overflow minted supply");
+        engine.submitOrder(new SubmitOrderRequestDto("Resale buyer", bookId, 0, OrderSide.BUY, 1, 0.6));
+        var resale = engine.submitOrder(new SubmitOrderRequestDto("Buyer", bookId, 0, OrderSide.SELL, 1, 0.6));
+        check(resale.quantityFilled() == 1 && resale.quantityMinted() == 0,
+                "existing shares can still be resold at full issuance capacity");
+        check(engine.getEventTradingStatus(bookId).totalSharesByOption()
+                .equals(List.of(Long.MAX_VALUE, Long.MAX_VALUE)), "resale preserves bounded total supply");
     }
 
     private static void previousExerciseStillWorks() {
