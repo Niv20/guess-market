@@ -1,6 +1,6 @@
 # Guess Market Exercise 3
 
-Chat bonus implemented. The Chat tab lets logged-in users exchange messages through the central server. The newest 500 messages are shared automatically.
+Chat bonus implemented. The floating chat button lets logged-in users exchange messages through the central server. The newest 500 messages are shared automatically.
 
 Guess Market now runs as a Tomcat application with separate JavaFX clients. One server owns every event, account and trade. This guide explains deployment, the grading workflow, the main new classes and the choices made for Exercise 3.
 
@@ -57,7 +57,7 @@ Get quote asks the server for the current LMSR share cost before commission. The
 
 My account follows the supplied sketch: the left side shows public summaries of other users, your own balance and funding controls, the account ledger and balance chart. The right side shows events you run or participate in, your holdings and orders, full event details and the same trading controls used on Events.
 
-Other users are represented by username, balance and market-maker status only. Private account rows and personal involvement records always belong to the logged-in user. The header keeps your current balance visible on every tab and provides Upload events, Load funds, a skin selector and Sign out. Midnight, Daylight and Neon reuse the earlier design.
+Other users are represented by username, balance and market-maker status only. Private account rows and personal involvement records always belong to the logged-in user. The header keeps your current balance visible and provides Upload events and a profile icon. The profile dropdown shows your username, Settings and Logout. Settings offers Midnight, Daylight and Neon themes and an animations switch; animations start enabled. Funding controls live only in My account. Leaving an account or closing the client asks you to choose Leave or Stay.
 
 ### Upload event files
 
@@ -67,9 +67,9 @@ Every accepted upload adds to the existing market. The server generates unique e
 
 ### Live updates and chat
 
-The client pulls a complete snapshot about once per second, with no overlapping requests. Views preserve selections and refresh when their data changes. The Chat tab shares messages with every client; messages contain server-supplied names and timestamps. It accepts up to 1,000 characters and retains the newest 500 entries.
+The client pulls a complete snapshot about once per second, with no overlapping requests. Views preserve selections and refresh when their data changes. The floating chat button at the bottom right opens a chat drawer over a dark backdrop, with an unread-message badge for new incoming messages. Close it with its close button, Escape or the backdrop. Own messages appear on the right in the current theme color, and other messages appear on the left in gray. Chat shares messages with every client; messages contain server-supplied names and timestamps. It accepts up to 1,000 characters and retains the newest 500 entries. Username and message fields display live character counters, including for pasted and replaced text. Message sends do not produce a success notification. Other action results and failures use dialogs instead of header notices.
 
-Layouts wrap controls, provide scrolling and rearrange their split panes vertically in narrower windows. Window resizing leaves both the event and private account details accessible.
+The event filter pane starts wide enough to show all three filters on one row, and its divider remains draggable. Layouts wrap controls, provide scrolling and rearrange their split panes vertically in narrower windows. Window resizing leaves both the event and private account details accessible.
 
 ## Server and engine architecture
 
@@ -109,7 +109,7 @@ The client communicates only through HTTP. Tomcat creates one application servic
 | Class | Role |
 | --- | --- |
 | Main | A small launcher that starts JavaFX with the application JAR on the classpath and JavaFX on the module path. |
-| GuessMarketClient | Builds the login screen, Events, My account and Chat; applies snapshots; preserves selections; manages skins, upload and funding controls. |
+| GuessMarketClient | Builds the login screen, Events and My account; applies snapshots; preserves selections; connects the profile settings, floating chat, upload and account funding controls. |
 | ClientSession | Runs login, actions and polling on one worker. It delivers callbacks on the JavaFX thread and discards callbacks from older sessions after logout or expiry. |
 | ApiClient | Uses JDK HttpClient, a cookie store and Gson for HTTP/JSON. It resolves the server URL, posts multipart bytes, enforces timeouts and reads structured errors. |
 | ApiClient.ApiException | Preserves an HTTP error status so ClientSession can distinguish an expired session from a recoverable connection failure. |
@@ -202,3 +202,7 @@ Events, accounts, history, chat and sessions exist only in memory and disappear 
 After a connection interruption, polling retries automatically. Mutating actions are not automatically repeated: inspect the refreshed market and account before retrying a deposit, order or purchase whose response was lost. If login cannot reach the server, verify Tomcat, the deployed WAR filename, the Java version and the Server field.
 
 Source code: [Niv20/guess-market](https://github.com/Niv20/guess-market)
+
+### Desktop interaction regression checks
+
+After `./build.sh`, run `./tests/run_ui_tests.sh` in a desktop session with a display. These isolated JavaFX checks exercise character editing and paste limits, responsive layouts and themes, profile settings, modal chat and unread counts, funds errors and Leave/Stay choices. They do not write to a market server. Rendered UI checks are saved under out/ui-checks.
