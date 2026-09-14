@@ -55,17 +55,25 @@ with tempfile.TemporaryDirectory(prefix='http-test-', dir=ROOT / 'out') as tmp:
             else:
                 raise RuntimeError('Tomcat did not become ready; see out/reports/tomcat-http.log')
             # The course grader cannot write uploaded files. Prove uploads need no temp files.
-            (base / 'temp').chmod(0o555)
+            upload_directories = [base / 'temp', base / 'work/Catalina/localhost/guess-market']
+            for directory in upload_directories:
+                if not directory.is_dir():
+                    raise AssertionError('Tomcat upload directory missing: ' + str(directory))
+                directory.chmod(0o555)
+            original_files = {directory: set(directory.rglob('*')) for directory in upload_directories}
             subprocess.run([sys.executable, str(ROOT / 'tests/http_integration.py'), url], check=True)
             classpath = os.pathsep.join(str(ROOT / path) for path in [
                 'out/test-classes', 'out/artifacts/client/client.jar', 'out/artifacts/client/dto.jar',
                 'out/artifacts/client/lib/gson-2.13.2.jar'])
             subprocess.run(['java', '-ea', '-cp', classpath, 'guessmarket.tests.ApiClientIntegrationTest', url], check=True)
-            if list((base / 'temp').iterdir()):
-                raise AssertionError('An upload wrote to the server temp directory')
-            print('PASS: uploads work with a read-only server temp directory')
+            for directory in upload_directories:
+                if set(directory.rglob('*')) != original_files[directory]:
+                    raise AssertionError('An upload wrote to ' + str(directory))
+            print('PASS: uploads work with read-only server and servlet temp directories')
         finally:
-            (base / 'temp').chmod(0o755)
+            for directory in [base / 'temp', base / 'work/Catalina/localhost/guess-market']:
+                if directory.is_dir():
+                    directory.chmod(0o755)
             server.terminate()
             try:
                 server.wait(timeout=10)
