@@ -180,7 +180,13 @@ final class TradeActions extends VBox {
         catch (NumberFormatException error) { throw new IllegalArgumentException("Shares must be a positive whole number."); }
     }
     static double positiveMoney(String value, String field) {
-        try { double number = Double.parseDouble(value.trim()); if (!Double.isFinite(number) || number <= 0) throw new NumberFormatException(); return number; }
+        try {
+            String amount = value == null ? "" : value.trim();
+            if (!amount.matches("[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+")) throw new NumberFormatException();
+            double number = Double.parseDouble(amount);
+            if (!Double.isFinite(number) || number <= 0) throw new NumberFormatException();
+            return number;
+        }
         catch (NumberFormatException error) { throw new IllegalArgumentException(field + " must be a positive amount."); }
     }
     static VBox field(String caption, Node input) {
