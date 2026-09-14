@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <!-- This exercise deliberately loses users, balances, events and sessions on restart. -->
+    <Manager pathname="" />
+    <CookieProcessor sameSiteCookies="lax" />
+</Context>
