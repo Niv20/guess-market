@@ -9,7 +9,6 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.stage.Window;
 
@@ -85,21 +84,25 @@ public final class Dialogs {
     private static boolean confirmDestructive(Window owner, String headline, String message,
                                               String actionText, String actionId) {
         Alert alert = build(owner, Alert.AlertType.CONFIRMATION, "Guess Market", headline, message);
+        DialogPane pane = alert.getDialogPane();
+        pane.setHeader(alertHeader(Icons.warningTriangle(), headline));
+        pane.setGraphic(null);
+
         ButtonType destructiveAction = new ButtonType(actionText, ButtonBar.ButtonData.OTHER);
         ButtonType stay = new ButtonType("Stay", ButtonBar.ButtonData.CANCEL_CLOSE);
         alert.getButtonTypes().setAll(stay, destructiveAction);
 
-        Button actionButton = (Button) alert.getDialogPane().lookupButton(destructiveAction);
+        Button actionButton = (Button) pane.lookupButton(destructiveAction);
         actionButton.setId(actionId);
         actionButton.getStyleClass().add("button-danger");
         actionButton.setDefaultButton(false);
         actionButton.setCancelButton(false);
 
-        Button stayButton = (Button) alert.getDialogPane().lookupButton(stay);
+        Button stayButton = (Button) pane.lookupButton(stay);
         stayButton.setId("stay-button");
         stayButton.setDefaultButton(true);
         stayButton.setCancelButton(true);
-        alert.setOnShown(event -> alignConfirmButtons(alert.getDialogPane(), stayButton));
+        alert.setOnShown(event -> alignConfirmButtons(pane, stayButton));
         return alert.showAndWait().filter(destructiveAction::equals).isPresent();
     }
 
@@ -136,6 +139,7 @@ public final class Dialogs {
         Node mark = markFor(type);
         if (mark == null) {
             alert.setHeaderText(headline);
+            pane.setGraphic(null);
         } else {
             pane.setHeader(markedHeader(mark, headline));
             // The ready made graphic belongs to the ready made header, which is no longer being
@@ -184,9 +188,16 @@ public final class Dialogs {
     private static Node markedHeader(Node mark, String headline) {
         Label text = new Label(headline);
         text.setWrapText(true);
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox header = new HBox(HEADER_SPACING, text, spacer, mark);
+        HBox header = new HBox(HEADER_SPACING, mark, text);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.getStyleClass().add("dialog-header");
+        return header;
+    }
+
+    private static Node alertHeader(Node mark, String headline) {
+        Label text = new Label(headline);
+        text.setWrapText(true);
+        HBox header = new HBox(HEADER_SPACING, mark, text);
         header.setAlignment(Pos.CENTER_LEFT);
         header.getStyleClass().add("dialog-header");
         return header;
