@@ -25,7 +25,7 @@ for %%R in (event-details option-book) do copy /y "%CLASSES%\ui\guessmarket\ui\e
 copy /y "%CLASSES%\ui\guessmarket\ui\users\user-involvement.fxml" "%CLASSES%\ui-common\guessmarket\ui\users\" >nul
 call :compile server "%CLASSES%\dto;%CLASSES%\engine;lib\*;lib\provided\*" ""
 if errorlevel 1 goto :failed
-call :compile client "%CLASSES%\dto;%CLASSES%\ui-common;lib\gson-2.13.2.jar" javafx
+call :compile client "%CLASSES%\dto;%CLASSES%\ui-common;lib\gson-2.13.2.jar;lib\provided\*" javafx
 if errorlevel 1 goto :failed
 call :resources client
 set "LIB_ENTRIES="
