@@ -15,4 +15,3 @@ public class InvalidShareQuantityException extends GuessMarketException {
         super(reason);
     }
 }
-
