@@ -55,9 +55,9 @@ Get quote asks the server for the current LMSR share cost before commission. The
 
 ### My account and the shared header
 
-My account follows the supplied sketch: the left side shows public summaries of other users, your own balance and funding controls, the account ledger and balance chart. The right side shows events you run or participate in, your holdings and orders, full event details and the same trading controls used on Events.
+My account follows the supplied sketch: the left side shows your balance and funding controls, the account ledger and balance chart. The right side shows events you run or participate in, your holdings and orders, full event details and the same trading controls used on Events.
 
-Other users are represented by username, balance and market-maker status only. Private account rows and personal involvement records always belong to the logged-in user. The header keeps your current balance visible and provides Upload events and a profile icon. The profile dropdown shows your username, Settings and Logout. Settings offers Midnight, Daylight and Neon themes and an animations switch; animations start enabled. Funding controls live only in My account. Leaving an account or closing the client asks you to choose Leave or Stay.
+Private account rows and personal involvement records always belong to the logged-in user. The header keeps your current balance visible and provides Upload events and a profile icon. The profile dropdown shows your username, Settings and Logout. Settings offers Midnight, Daylight and Neon themes and an animations switch; animations start enabled. Funding controls live only in My account. Leaving an account or closing the client asks you to choose Leave or Stay.
 
 ### Upload event files
 
