@@ -54,16 +54,46 @@ final class LoadedFileValidator {
         return problems;
     }
 
+    /** Event validation shared with Exercise 3; users are registered over HTTP instead. */
+    List<String> findOnlineEventProblems(XmlGuessMarket market) {
+        List<String> problems = new ArrayList<>();
+        List<XmlEvent> events = eventsOf(market);
+        if (events.isEmpty()) {
+            problems.add("The file must contain at least one event under GM-events.");
+        }
+        if (market != null && market.getUsers() != null) {
+            problems.add("Exercise 3 files contain events only. Remove GM-users; "
+                    + "the signed-in uploader becomes every event's market maker.");
+        }
+        validateEvents(problems, events, false);
+        Set<String> names = new LinkedHashSet<>();
+        for (XmlEvent event : events) {
+            if (!isBlank(event.getName())
+                    && !names.add(event.getName().trim().toLowerCase(Locale.ROOT))) {
+                problems.add("More than one event in this file is named \""
+                        + event.getName().trim() + "\". Event names must be unique.");
+            }
+        }
+        return problems;
+    }
+
     // ------------------------------------------------------------------ events
 
     /** @return the ids that were found, so that the market maker checks can be made against them. */
     private Set<Integer> validateEvents(List<String> problems, List<XmlEvent> events) {
+        return validateEvents(problems, events, true);
+    }
+
+    private Set<Integer> validateEvents(List<String> problems, List<XmlEvent> events,
+                                        boolean validateIds) {
         Map<Integer, String> ownerOfId = new LinkedHashMap<>();
         for (int position = 0; position < events.size(); position++) {
             XmlEvent event = events.get(position);
             String where = describeEvent(position + 1, event.getName());
             validateEventName(problems, where, event);
-            validateEventId(problems, where, event, ownerOfId);
+            if (validateIds) {
+                validateEventId(problems, where, event, ownerOfId);
+            }
             validateDescription(problems, where, event);
             validateCommission(problems, where, event);
             validateOptions(problems, where, event);

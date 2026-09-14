@@ -153,9 +153,13 @@ public class SystemFileLoader {
 
     /** Builds one event. Everything read here was already proved valid by the validator. */
     private static Event toEvent(XmlEvent xmlEvent, String marketMakerName) {
+        return toEvent(xmlEvent, marketMakerName, xmlEvent.getId());
+    }
+
+    /** Converts a validated upload, using an id allocated by the shared server. */
+    static Event toEvent(XmlEvent xmlEvent, String marketMakerName, int id) {
         Commission commission = new Commission(xmlEvent.getCommission().getPercent(),
                 CommissionTypeParser.parse(xmlEvent.getCommission().getType()));
-        int id = xmlEvent.getId();
         String name = xmlEvent.getName().trim();
         String description = xmlEvent.getDescription().trim();
         List<String> optionNames = trimmed(xmlEvent.getOptions().getOptionList());

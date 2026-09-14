@@ -14,7 +14,8 @@ import java.util.List;
  * a balance can only go negative in the one case those checks cannot catch, which is an order that
  * was affordable when it was placed and is filled later, after the money has been spent elsewhere.
  * When that happens the account is left overdrawn and its owner is blocked from then on, which is
- * exactly the situation the exercise describes. Accounts are never topped up.
+ * exactly the situation the exercise describes. Online users can top up their balance through
+ * an explicit deposit operation.
  */
 public class UserAccount implements Serializable {
 
@@ -55,6 +56,18 @@ public class UserAccount implements Serializable {
         // Half a cent of slack, so that a purchase priced at exactly the balance is not refused
         // over the last bit of a double that no screen would ever show.
         return balance + 0.005 >= amount;
+    }
+
+    /** Adds funds explicitly loaded by this account's owner, recording one ledger row. */
+    public void addFunds(double amount) {
+        if (!Double.isFinite(amount) || amount <= 0) {
+            throw new IllegalArgumentException("The deposit amount must be a finite number "
+                    + "greater than zero.");
+        }
+        if (!Double.isFinite(balance + amount)) {
+            throw new IllegalArgumentException("The deposit would make the account balance too large.");
+        }
+        deposit(amount, "Funds loaded");
     }
 
     void deposit(double amount, String reason) {
