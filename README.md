@@ -1,98 +1,190 @@
-# Guess Market — Exercise 2
+# Guess Market Exercise 3
 
-A prediction market written in Java 25 with a **JavaFX** interface. Events are loaded from an
-XML file, are run by a **market maker**, and are traded either against the event itself with the
-**Logarithmic Market Scoring Rule (LMSR)** or between participants through an **Order Book**.
+Chat bonus implemented. The Chat tab lets logged-in users exchange messages through the central server. The newest 500 messages are shared automatically.
 
-The full documentation that accompanies the submission — including every assumption made — is in
-[`readme.docx`](readme.docx).
+Guess Market now runs as a Tomcat application with separate JavaFX clients. One server owns every event, account and trade. This guide explains deployment, the grading workflow, the main new classes and the choices made for Exercise 3.
 
-<img width="1471" height="960" alt="SCR-20260908-kufc" src="https://github.com/user-attachments/assets/4eb32782-ca6e-4e28-922e-6b1cc55a3898" />
-<img width="1510" height="1056" alt="SCR-20260908-kvau" src="https://github.com/user-attachments/assets/968c7b38-f017-4de5-b36d-f41978873c40" />
-<img width="1471" height="1039" alt="SCR-20260908-kupx" src="https://github.com/user-attachments/assets/21464815-b9a8-4ea4-871c-b2a6fb6b4964" />
-<img width="1472" height="960" alt="SCR-20260908-kxjd" src="https://github.com/user-attachments/assets/a5880833-4525-4cb5-88cb-7444115fac08" />
+| Submitter | Details |
+| --- | --- |
+| Name | Niv Libovitch |
+| ID number | 207298514 |
+| Email | anivbniv@gmail.com |
+| GitHub repository | https://github.com/Niv20/guess-market |
 
+### Run the submitted application
 
-## What it does
+1. Install Java 25 or newer and Apache Tomcat 10.1. Start Tomcat with that Java runtime. The application uses Jakarta Servlet 6; Tomcat 9 is incompatible.
+2. Extract the submission ZIP. Copy its single guess-market.war into Tomcat's webapps directory, retaining that filename. Start Tomcat and allow automatic deployment to finish.
+3. Open the client directory and run run.bat. JavaFX and the client dependencies are included; Java itself and Tomcat must be installed separately.
+4. Leave the server address at its default, enter an unused username and select the login button. No password or separate registration is required.
+5. Launch run.bat again for another independent user. Load funds, then upload an Exercise 3 XML file from one client; its events appear in the other client automatically.
 
-- Loads a system details file through a file chooser, on a JavaFX `Task` with a progress bar.
-- Manages many users, each with an account that can be spent down and, if it ever goes below
-  zero, blocks its owner from acting again.
-- Runs two kinds of event side by side: LMSR, and an order book with matching, partial fills and
-  minting between two buyers of opposite options.
-- Shows every event with three filters over it, and every user with what they hold, what they
-  have done and what they may do next.
-- Keeps every preference behind one settings sheet, opened by the cog in the top right corner:
-  the skin, the animations, and saving or reopening the whole system.
+### Server address
 
-## Modules
+The default API address is http://localhost:8080/guess-market/api/. The login screen has an editable Server field. A launch argument can also override it:
 
-```
-        dto  (dto.jar)
-        ^          ^
-       ui   ->   engine
-   (ui.jar)     (engine.jar)
+```text
+run.bat --server=http://localhost:8080/guess-market/api/
 ```
 
-| Module | Package root | Responsibility |
-|---|---|---|
-| `dto` | `guessmarket.dto` | Immutable records carrying data between the layers |
-| `engine` | `guessmarket.engine` | Domain model, LMSR pricing, the order book, XML loading and validation, the `GuessMarketEngine` interface and its implementation |
-| `ui` | `guessmarket.ui` | The JavaFX window: layout files, stylesheets, controllers and the loading task; holds `main` |
+The health endpoint is /api/health under the deployed context. The source repository is listed in the submitter table above and linked at the end of this guide.
 
-The engine never depends on the user interface, never returns formatted text, never hands out its
-own domain objects, and has no properties and no listeners on it: it is asked, and it never
-announces. Everything that leaves it is a fresh, read-only DTO.
+## Using the application
 
-## Building and running
+### Events and trading
 
-Java 25 or newer is required. No build tool needs to be installed — the scripts use `javac` and
-`jar` directly. JavaFX is not part of the JDK, so the JavaFX 25 runtime is committed under
-`lib/javafx/`, one folder per operating system (`win`, `mac-aarch64`, `linux`), and the scripts
-pick the one that matches the machine.
+The Events tab lists every event, including unopened, active and closed markets. Search by event, description or market maker, and filter by trading method, status or commission method. Select a tile to see its description, options, terms, account, participants, transactions, order books and price history.
 
-```bash
-./build.sh
+Only your own identity is available for actions. An event's market maker can fund and open it, then choose the winning option and close it. An active LMSR event accepts share purchases; an order book event accepts buy and sell orders with a quantity and limit price. Matching, partial fills, minting, commissions and settlement use the existing engine rules.
+
+Get quote asks the server for the current LMSR share cost before commission. The quote is indicative: a completed purchase recalculates its price against the latest market. Another user may trade between the quote and the purchase. Closing an event requires confirmation in the client.
+
+### My account and the shared header
+
+My account follows the supplied sketch: the left side shows public summaries of other users, your own balance and funding controls, the account ledger and balance chart. The right side shows events you run or participate in, your holdings and orders, full event details and the same trading controls used on Events.
+
+Other users are represented by username, balance and market-maker status only. Private account rows and personal involvement records always belong to the logged-in user. The header keeps your current balance visible on every tab and provides Upload events, Load funds, a skin selector and Sign out. Midnight, Daylight and Neon reuse the earlier design.
+
+### Upload event files
+
+Use Upload events to choose an XML file of at most 2 MB. The server accepts the supplied Exercise 3 format in data/ex3/GM-EX3-Schema.xsd, illustrated by data/ex3/small.xml and data/ex3/multiple.xml. Files contain events without event IDs or a users section. Exercise 1 and 2 system files are not accepted by the online upload endpoint.
+
+Every accepted upload adds to the existing market. The server generates unique event IDs and assigns the uploading user as market maker of every event in that file. It checks the supplied schema, the event-definition rules, duplicate names within the file and names already present on the server. A rejected file reports its reasons and adds nothing. A successful upload does not open the events or debit a subsidy.
+
+### Live updates and chat
+
+The client pulls a complete snapshot about once per second, with no overlapping requests. Views preserve selections and refresh when their data changes. The Chat tab shares messages with every client; messages contain server-supplied names and timestamps. It accepts up to 1,000 characters and retains the newest 500 entries.
+
+Layouts wrap controls, provide scrolling and rearrange their split panes vertically in narrower windows. Window resizing leaves both the event and private account details accessible.
+
+## Server and engine architecture
+
+The client communicates only through HTTP. Tomcat creates one application service and one online engine for the deployment. Existing DTO-based display components are repackaged for the client, while the full trading engine stays inside the WAR.
+
+| Module or artifact | Responsibility |
+| --- | --- |
+| server / guess-market.war | Servlet endpoints, sessions, shared application lifecycle and native multipart handling. The WAR embeds engine.jar, dto.jar, Gson and the JAXB runtime dependencies. |
+| engine / engine.jar | Market model, trading, accounts, XML validation and the online engine extension. The supplied Exercise 3 schema is included as a resource. |
+| dto / dto.jar | Immutable request, result and network records shared by the server and client. |
+| client / client.jar | The independent JavaFX application, HTTP transport and polling lifecycle. |
+| ui / ui-common.jar | A selected subset of existing presentation helpers, FXML, styles and display controllers. Legacy ui.jar remains available for Exercise 2 regression work. |
+
+### Main server classes
+
+| Class | Role |
+| --- | --- |
+| ApplicationListener | Creates fresh ApplicationService state on deployment and removes the context reference when the application stops. |
+| ApplicationService | Owns the online engine, session authentication and shared chat. It holds the engine monitor while applying actions or collecting a complete snapshot. |
+| MarketServlet | Routes /api/* requests, binds identity from the session, translates commands to engine DTOs, maps failures to JSON and handles uploads entirely in memory. |
+| JsonInput | Reads a bounded strict JSON object, requires the correct primitive types and required fields, and rejects identity overrides in action payloads. |
+| ApiException | Carries an expected HTTP status and a user-facing error message inside the server. |
+
+### Main online engine additions
+
+| Class or interface | Role |
+| --- | --- |
+| OnlineMarketEngine | Extends GuessMarketEngine with registration, deposits, stream uploads and account history. |
+| OnlineMarketEngineImpl | Starts with an empty market, adds users and files cumulatively, exposes ledger rows, and disables offline replacement and persistence methods. |
+| OnlineEventFileLoader | Validates an XML stream against the supplied schema, checks event rules and produces all candidate events before any are added. |
+| UserAlreadyExistsException | Reports an attempted registration with an existing username. The factory now exposes createOnlineEngine(). |
+
+## Client classes and shared data
+
+### Main client classes
+
+| Class | Role |
+| --- | --- |
+| Main | A small launcher that starts JavaFX with the application JAR on the classpath and JavaFX on the module path. |
+| GuessMarketClient | Builds the login screen, Events, My account and Chat; applies snapshots; preserves selections; manages skins, upload and funding controls. |
+| ClientSession | Runs login, actions and polling on one worker. It delivers callbacks on the JavaFX thread and discards callbacks from older sessions after logout or expiry. |
+| ApiClient | Uses JDK HttpClient, a cookie store and Gson for HTTP/JSON. It resolves the server URL, posts multipart bytes, enforces timeouts and reads structured errors. |
+| ApiClient.ApiException | Preserves an HTTP error status so ClientSession can distinguish an expired session from a recoverable connection failure. |
+| TradeActions | One reusable trading panel for both main screens. It binds quotes, purchases, orders, opening and closing to the selected market and the current session. |
+
+### Reused components
+
+EventDetailsController, OptionBookController, EventTile and UserInvolvementController retain the earlier event, book and personal-involvement displays. The common formatting, tables, dialogs, icons, tiles, skins, animation helper and styles are packaged with their FXML resources. These components receive DTOs; the client distribution contains no engine classes or engine.jar.
+
+### New records
+
+| Record | Contents |
+| --- | --- |
+| SnapshotDto | All event details and price histories; public user summaries; the current user, involvements, balance history and account entries; the shared chat. |
+| PublicUserDto | Username, balance and whether that user runs at least one event. |
+| AccountEntryDto | Operation sequence, description, signed amount, balance before and balance after. Deposits, trades, commissions and settlement changes remain separate rows. |
+| ChatMessageDto | Monotonic message ID, authenticated username, message text and a server timestamp in epoch milliseconds. |
+| LoginResponseDto | The canonical username assigned to the authenticated session. |
+| QuoteDto | The current LMSR share cost, before commission. |
+| MessageDto | One message field for structured errors and simple acknowledgements. |
+
+Records copy their collections defensively, including lists nested in snapshot price histories. Existing event, order, trade, holding, user and action DTOs continue to carry the domain data; no internal market objects cross the HTTP boundary.
+
+## HTTP protocol and concurrency
+
+All paths below are relative to http://localhost:8080/guess-market/api/. JSON requests use Content-Type: application/json; the upload uses multipart/form-data. Event option indexes start at zero. The server uses a cookie-backed HTTP session, with HttpOnly and SameSite=Lax cookie settings.
+
+| Method and path | Request and result |
+| --- | --- |
+| GET /health | No authentication. Returns a readiness message. |
+| POST /login | {username} creates a session and returns LoginResponseDto. An existing name returns HTTP 409. |
+| POST /logout | Invalidates the session; returns an acknowledgement. |
+| GET /snapshot | Returns SnapshotDto with all public market information and this session's private account records. |
+| POST /funds | {amount} deposits funds in this session's account and returns UserDto. |
+| POST /upload | One multipart field named file, containing one XML file. Returns LoadResultDto. |
+| GET /quote | Query parameters eventId, optionIndex and shares. Returns QuoteDto. |
+| POST /events/open | {eventId}; returns OpenEventResultDto. |
+| POST /events/close | {eventId, winningOptionIndex}; returns CloseEventResultDto. |
+| POST /events/buy | {eventId, optionIndex, shares}; returns PurchaseResultDto. |
+| POST /events/order | {eventId, optionIndex, side, quantity, pricePerShare}; returns SubmitOrderResultDto. side is BUY or SELL. |
+| POST /events/create | CreateEventRequestDto fields except userName; the session is the creator. Returns EventDto. Available through HTTP; the client adds events through XML uploads. |
+| POST /chat | {message}; returns the accepted ChatMessageDto. |
+
+### Authorization and failures
+
+Every API route except login and health requires a valid session. A client cannot choose another buyer, seller or market maker: action identity is taken only from that session. The server checks market-maker permissions and all engine rules even if the client has already enabled or disabled the corresponding button.
+
+Errors use the JSON shape {"message":"..."}. Expected failures include invalid input (400), expired sessions (401), forbidden actions (403), missing events or endpoints (404), wrong methods (405), conflicting state (409), oversized uploads (413) and unsupported content types (415). XML failures include their individual validation reasons.
+
+### A coherent shared market
+
+All engine calls are synchronized. The service also holds that same monitor while collecting an entire snapshot, so another request cannot expose a half-completed trade, commission payment or settlement. Upload validation and insertion are atomic. A slow request delays the next poll instead of creating overlapping pulls.
+
+## Build verification and operating choices
+
+### Build from the repository
+
+The build scripts use javac and jar directly. JavaFX runtimes are included for Windows, Linux and Apple Silicon macOS. The full build compiles the legacy UI for reuse, the online server and the standalone client. Run the command for your operating system from the repository root:
+
+```text
+./build.sh                 # macOS or Linux
+build.bat                  # Windows
 ```
 
-That compiles each module in turn and writes a runnable program to `out/artifacts/`: `dto.jar`,
-`engine.jar`, `ui.jar`, a `lib/` folder and the run scripts. Then:
+Build outputs are out/artifacts/guess-market.war and out/artifacts/client/. The developer run.sh or run.bat starts that client. To assemble the required Windows submission:
 
-```bash
-./run.sh
-```
-
-On Windows, run `build.bat` and then `run.bat`, or double-click `run.bat` inside the extracted
-submission folder. To build the zip that is handed in:
-
-```bash
+```text
 ./package.sh
 ```
 
-The zip carries the Windows build of JavaFX only, and unpacks into a single folder that runs
-straight away.
+The result is out/GuessMarket-Ex3.zip. It contains exactly one WAR, readme.docx and a client directory with its application JARs, Gson, Windows JavaFX and run.bat. The Servlet API is provided by Tomcat; the WAR includes the application libraries it needs. No external Gson or JAXB installation is required.
 
-## Sample data
+### Validation workflow
 
-`data/` holds files to try the system with. `full-market.xml` is the one to start with: twelve
-events and ten users covering both trading methods, both commission methods and every edge of the
-rules. `full-market-in-play.gmstate` is that same market after 86 actions — 67 trades, 14 resting
-orders, two closed events, one event created inside the program and one blocked user — and is
-opened through **Settings → Load state**. The other three files whose names do not begin with
-`invalid` are smaller valid ones; every `invalid-` file breaks exactly one rule and is named after
-it, so the message the program shows can be checked against the file. `data/folder with spaces/`
-is there to show that a path containing spaces causes no trouble.
+Run ./test.sh for the project checks. Set CATALINA_HOME to the installed Tomcat directory to include the isolated HTTP checks; those checks also require Python 3. Engine checks are in tests/engine/OnlineMarketEngineTest.java, HTTP scenarios in tests/http_integration.py and client transport checks in tests/client/ApiClientIntegrationTest.java. For a manual review, use two client windows with different unused names.
 
-## Bonuses
+- Load funds in both accounts, upload small.xml, open a market as its owner and trade from the second client. Observe balances, ledger rows and event history update in both windows.
+- Upload a second valid file to check accumulation. Try a duplicate name and an invalid file; check the error reasons and confirm that the previous market is unchanged.
+- Check that only the owner can open or close an event, that a session cannot trade as someone else, and that every commission and payout reaches the appropriate account.
+- Send chat messages in both directions and resize the Events and My account screens. Sign out and confirm the ended session can no longer call the API.
 
-All four bonuses of this exercise are implemented, and the bonus of exercise 1 still works.
+### State and session choices
 
-| Bonus | Where |
-|---|---|
-| Skins — three colour schemes, each with its own background, buttons and label font | the **Skin** row of the settings, default **Midnight** |
-| Animations — five, none longer than half a second, off by default | the **Animations** switch in the settings |
-| Graphs — option price per transaction, and account balance per action | inside an event's details, and inside a user's details |
-| Creating an event | the **Create an event** row at the foot of the events list |
-| Exercise 1: saving and loading the system | the **Save state** and **Load state** rows of the settings |
+New accounts start at zero. Load funds before paying an opening subsidy or trading. A positive finite deposit is required. The inherited Exercise 2 blocking rule remains permanent: an account that was blocked stays blocked even if a later deposit or payout makes its balance positive.
 
-The settings sheet is opened by the cog in the top right corner of the window.
+Usernames are case-insensitive and remain reserved for the server lifetime, including after logout, client closure or session expiry. This prevents a fresh session from claiming an existing account without a password. Keep the same client window open to retain access. Sessions expire after 30 minutes without requests; active polling keeps them alive.
+
+Events, accounts, history, chat and sessions exist only in memory and disappear when the application or server stops. Tomcat session persistence is explicitly disabled. XML upload bytes remain in memory through native Servlet multipart handling; no uploaded content is saved to a server file.
+
+After a connection interruption, polling retries automatically. Mutating actions are not automatically repeated: inspect the refreshed market and account before retrying a deposit, order or purchase whose response was lost. If login cannot reach the server, verify Tomcat, the deployed WAR filename, the Java version and the Server field.
+
+Source code: [Niv20/guess-market](https://github.com/Niv20/guess-market)
