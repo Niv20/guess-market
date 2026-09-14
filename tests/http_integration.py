@@ -109,6 +109,13 @@ def main():
     mixed = multi.replace(b'Earth Quake on Dead Sea', b'Fresh event before duplicate', 1)
     status, _ = maker.upload(mixed)
     check(400 <= status < 500 and len(state(maker)['events']) == 4, 'partial upload escaped validation')
+    status, error = maker.upload(b'x' * (2 * 1024 * 1024 + 1))
+    check(status == 413 and bool(error.get('message')), 'oversized upload was not rejected clearly')
+    check(len(state(maker)['events']) == 4, 'oversized upload changed the market')
+    maker.bad('/funds', raw=b'{\"amount\":1} trailing', method='POST')
+    maker.bad('/funds', {'amount': 1}, method='GET', expected=405)
+    maker.bad('/unknown-endpoint', expected=404)
+    maker.bad('/funds', {'amount': 1}, content_type='text/plain', expected=415)
     status, _ = maker.upload(small, 'wrong.txt')
     check(400 <= status < 500, 'non-XML extension accepted')
 
