@@ -54,6 +54,8 @@ public final class GuessMarketClient extends Application implements ClientSessio
     private final TextField username = new TextField();
     private final TextField server = new TextField(ApiClient.DEFAULT_SERVER);
     private final Button login = new Button("Join Guess Market");
+    private final Label loginStatus = label("", "muted");
+    private final Label loginFeedback = label("", "value-accent");
     private final ListView<EventDto> events = new ListView<>();
     private final TextField search = new TextField();
     private final ComboBox<EventStatus> status = new ComboBox<>();
@@ -136,12 +138,20 @@ public final class GuessMarketClient extends Application implements ClientSessio
         Label intro = label("Your own account. One shared market.", "lead");
         Label explanation = label("Choose a name to join. Each name is reserved until the server restarts. Keep this window open to retain access to your account.", "muted");
         explanation.setWrapText(true);
-        Label feedback = label(reason, "value-accent"); feedback.setWrapText(true); feedback.setId("login-feedback");
+        loginFeedback.setId("login-feedback"); loginFeedback.setText(reason);
+        loginStatus.setId("login-status"); loginStatus.setText("");
+        for (Label information : List.of(loginFeedback, loginStatus)) {
+            information.setMaxWidth(520);
+            information.visibleProperty().bind(information.textProperty().isNotEmpty());
+            information.managedProperty().bind(information.visibleProperty());
+        }
         notice.setText("");
         VBox card = new VBox(18, label("Guess Market", "app-title"), intro, explanation,
-                TradeActions.field("USERNAME", username), TradeActions.field("SERVER", server), login, feedback, notice);
+                TradeActions.field("USERNAME", username), TradeActions.field("SERVER", server), login);
+        card.setId("login-card");
         card.getStyleClass().add("card"); card.setMaxWidth(520); card.setPadding(new Insets(30));
-        VBox holder = new VBox(card); holder.setAlignment(Pos.CENTER); holder.setPadding(new Insets(36));
+        VBox holder = new VBox(12, card, loginFeedback, loginStatus);
+        holder.setAlignment(Pos.CENTER); holder.setPadding(new Insets(36));
         ScrollPane scroll = scroll(holder); holder.minHeightProperty().bind(scroll.heightProperty().subtract(4));
         root.setCenter(scroll);
         stage.setTitle("Guess Market · Sign in");
@@ -149,9 +159,10 @@ public final class GuessMarketClient extends Application implements ClientSessio
     }
 
     private void logIn() {
-        String name = username.getText().trim();
-        if (name.isBlank()) { notice.setText("Enter a username to join."); return; }
-        notice.setText("Connecting to Guess Market…");
+        if (busy.get()) return;
+        String name = username.getText().strip();
+        if (name.isBlank()) { error("Enter a username to join."); return; }
+        loginFeedback.setText("");
         session.login(server.getText(), name);
     }
 
@@ -454,13 +465,18 @@ public final class GuessMarketClient extends Application implements ClientSessio
         connection.setText("Loading the latest market…"); stage.setTitle("Guess Market · " + username);
     }
     @Override public void loggedOut(String reason) { showLogin(reason); }
-    @Override public void busyChanged(boolean value) { busy.set(value); }
+    @Override public void busyChanged(boolean value) {
+        busy.set(value);
+        if (signedName == null) loginStatus.setText(value ? "Connecting to Guess Market…" : "");
+    }
     @Override public void connectionChanged(boolean connected, String text) {
         connection.setText(text); connection.getStyleClass().setAll(connected ? "faint" : "value-negative");
     }
     @Override public void error(String text) {
-        message(text);
-        if (signedName != null) Dialogs.error(stage, "Operation could not be completed", text);
+        boolean signingIn = signedName == null;
+        if (signingIn) loginStatus.setText("");
+        else message(text);
+        Dialogs.error(stage, signingIn ? "Unable to sign in" : "Operation could not be completed", text);
     }
     private void message(String text) { notice.setText(text); }
     @Override public void stop() { if (session != null) session.close(); }
