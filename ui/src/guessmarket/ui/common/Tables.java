@@ -61,11 +61,11 @@ public final class Tables {
     private static final String ADOPTED = "guessmarket.adopted";
 
     /**
-     * What a cell adds to the text in it: the eight points of padding the stylesheet gives it on
-     * each side. The one point of border it also carries runs along the bottom of the row and
-     * takes nothing away from the width.
+     * Cell padding and borders on both sides, with two extra points for text rounding.
+     * JavaFX 25 reports nine points per side after CSS; accounting only for the stylesheet's
+     * eight-point padding clips digits when a table reaches its measured minimum width.
      */
-    private static final double CELL_PADDING = 16;
+    private static final double CELL_PADDING = 20;
 
     /**
      * What a heading adds to the text in it: four points of padding on each side and one of

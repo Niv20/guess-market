@@ -40,3 +40,7 @@ target/
 Thumbs.db
 *.swp
 *~
+
+# Python test runner caches
+__pycache__/
+*.pyc

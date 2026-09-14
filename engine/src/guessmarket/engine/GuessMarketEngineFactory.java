@@ -1,6 +1,7 @@
 package guessmarket.engine;
 
 import guessmarket.engine.impl.GuessMarketEngineImpl;
+import guessmarket.engine.impl.OnlineMarketEngineImpl;
 
 /**
  * The single place in which a concrete engine is created.
@@ -17,5 +18,9 @@ public final class GuessMarketEngineFactory {
     /** @return a new engine with nothing loaded in it yet. */
     public static GuessMarketEngine createEngine() {
         return new GuessMarketEngineImpl();
+    }
+    /** @return a new in-memory server engine, ready for registrations and event uploads. */
+    public static OnlineMarketEngine createOnlineEngine() {
+        return new OnlineMarketEngineImpl();
     }
 }
