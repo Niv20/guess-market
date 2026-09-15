@@ -59,11 +59,12 @@ class Client:
         check(isinstance(result, dict) and bool(result.get('message')), f'{path}: readable error missing')
         return result
 
-    def upload(self, xml, name='events.xml'):
+    def upload(self, xml, name='events.xml', headers=None):
         boundary = 'GuessMarketTest' + uuid.uuid4().hex
         raw = (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{name}"\r\n'
                'Content-Type: application/xml\r\n\r\n').encode() + xml + f'\r\n--{boundary}--\r\n'.encode()
-        return self.request('/upload', method='POST', raw=raw, content_type='multipart/form-data; boundary=' + boundary)
+        return self.request('/upload', method='POST', raw=raw,
+                            content_type='multipart/form-data; boundary=' + boundary, headers=headers)
 
 
 def state(client):
@@ -72,6 +73,23 @@ def state(client):
 
 def event_id(snapshot, text):
     return next(row['event']['id'] for row in snapshot['events'] if text in row['event']['name'])
+
+
+def create_request(name, method='LMSR', **changes):
+    request = {
+        'name': name,
+        'description': 'Created through the HTTP API',
+        'commissionPercent': 4,
+        'commissionType': 'ON_PURCHASE',
+        'optionNames': ['Yes', 'No'],
+        'tradingMethod': method,
+    }
+    if method == 'LMSR':
+        request['liquidityParameter'] = 120
+    else:
+        request.update(initialInvestment=300, baseValue=10, mintAllowed=True)
+    request.update(changes)
+    return request
 
 
 def main():
@@ -127,6 +145,7 @@ def main():
     for path in ['/snapshot', '/quote?eventId=1&optionIndex=0&shares=1']:
         anonymous.bad(path, expected=401)
     anonymous.bad('/funds', {'amount': 10}, expected=401)
+    anonymous.bad('/events/create', create_request('Anonymous event'), expected=401)
     anonymous.bad('/login', {'username': '   '})
     anonymous.bad('/login', {}, expected=400)
     anonymous.bad('/login', raw=b'{broken', method='POST')
@@ -174,9 +193,63 @@ def main():
     status, _ = maker.upload(small, 'wrong.txt')
     check(400 <= status < 500, 'non-XML extension accepted')
 
+    created_lmsr = maker.ok('/events/create', create_request('HTTP-created LMSR'))
+    created_book = maker.ok('/events/create', create_request('HTTP-created order book', 'ORDER_BOOK',
+        commissionType='ON_CLOSE'))
+    check(created_lmsr['status'] == 'NOT_STARTED' and created_lmsr['tradingMethod'] == 'LMSR'
+          and created_lmsr['lmsr']['liquidityParameter'] == 120,
+          'HTTP-created LMSR settings changed')
+    check(created_book['status'] == 'NOT_STARTED' and created_book['tradingMethod'] == 'ORDER_BOOK'
+          and created_book['orderBook'] == {'initialInvestment': 300, 'initialPairs': 30,
+                                            'baseValue': 10, 'mintAllowed': True},
+          'HTTP-created order-book settings changed')
+    created_ids = {created_lmsr['id'], created_book['id']}
+    check(created_lmsr['marketMakerName'] == 'Market Maker'
+          and created_book['marketMakerName'] == 'Market Maker',
+          'event creator did not come from the authenticated session')
+    maker_after_create = state(maker)
+    check(created_ids.issubset(set(maker_after_create['self']['marketMakerEventIds']))
+          and created_ids.issubset({row['event']['id'] for row in maker_after_create['involvements']}),
+          'created events were not assigned to their market maker')
+    trader_after_create = state(trader)
+    visible = {row['event']['id']: row['event'] for row in trader_after_create['events']}
+    check(created_ids.issubset(visible)
+          and all(visible[event]['marketMakerName'] == 'Market Maker' for event in created_ids),
+          'created events were not visible to another client')
+
+    stable_create_state = (maker_after_create['events'], maker_after_create['self'],
+                           maker_after_create['involvements'])
+    invalid_creates = [
+        create_request('Invalid liquidity', liquidityParameter=0),
+        create_request('Duplicate outcomes', optionNames=['Same', ' same ']),
+        dict(create_request('Forged owner'), userName='Trader'),
+    ]
+    for request in invalid_creates:
+        maker.bad('/events/create', request)
+    after_invalid_creates = state(maker)
+    check((after_invalid_creates['events'], after_invalid_creates['self'],
+           after_invalid_creates['involvements']) == stable_create_state,
+          'rejected event creation changed events or market-maker ownership')
+
     lmsr = event_id(snapshot, 'Mujtaba')
     order_book = event_id(snapshot, 'Earth Quake')
     mint_book = event_id(snapshot, 'World Cap')
+
+    web_uploader = Client()
+    web_token = web_uploader.ok('/login', {'username': 'Browser Uploader'},
+                                headers={'Origin': origin})['token']
+    web_uploader.jar.clear()
+    web_headers = {'Origin': origin, 'Authorization': 'Bearer ' + web_token}
+    browser_xml = small.replace(b'Mujtaba is Dead', b'Browser bearer upload')
+    status, uploaded = web_uploader.upload(browser_xml, headers=web_headers)
+    check(200 <= status < 300 and uploaded['eventCount'] == 1,
+          f'bearer-authenticated browser upload failed: {status}: {uploaded}')
+    uploaded_id = event_id(web_uploader.ok('/snapshot', headers=web_headers), 'Browser bearer upload')
+    uploaded_event = next(row['event'] for row in state(trader)['events']
+                          if row['event']['id'] == uploaded_id)
+    check(uploaded_event['marketMakerName'] == 'Browser Uploader',
+          'bearer upload was not shared under its authenticated owner')
+
     trader.bad('/events/open', {'eventId': lmsr, 'userName': 'Market Maker'})
     maker.ok('/events/open', {'eventId': lmsr})
     quote = trader.ok(f'/quote?eventId={lmsr}&optionIndex=0&shares=10')
