@@ -269,6 +269,15 @@ public final class ClientUiTest extends Application {
                 SelectionRow::id, false);
         require(table.getSelectionModel().getSelectedItem() == null,
                 "Changing table context clears a selection even when a row key is reused");
+
+        TableView<SelectionRow> readOnlyTable = new TableView<>();
+        Tables.columns(readOnlyTable, Tables.text("VALUE", SelectionRow::value));
+        readOnlyTable.setSelectionModel(null);
+        readOnlyTable.setFocusModel(null);
+        Tables.setItemsPreservingSelection(readOnlyTable,
+                List.of(new SelectionRow(21, "read only")), SelectionRow::id);
+        require(readOnlyTable.getItems().equals(List.of(new SelectionRow(21, "read only"))),
+                "Refreshing a display-only table works when it has no selection model");
     }
 
     private record SelectionRow(int id, String value) {

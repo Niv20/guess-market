@@ -150,11 +150,14 @@ public final class Tables {
                                                            Function<? super S, K> keyOf,
                                                            boolean preserveSelection) {
         var selection = table.getSelectionModel();
-        List<K> selectedKeys = preserveSelection
+        List<K> selectedKeys = preserveSelection && selection != null
                 ? selection.getSelectedItems().stream().map(keyOf).toList()
                 : List.of();
 
         table.setItems(FXCollections.observableArrayList(items));
+        if (selection == null) {
+            return;
+        }
         selection.clearSelection();
         for (K selectedKey : selectedKeys) {
             for (int index = 0; index < table.getItems().size(); index++) {
