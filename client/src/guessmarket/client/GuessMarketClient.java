@@ -496,7 +496,9 @@ public final class GuessMarketClient extends Application implements ClientSessio
             rebuilding = false;
         }
         renderInvolvement();
-        if (previous == null || !previous.accountEntries().equals(next.accountEntries())) ledger.getItems().setAll(next.accountEntries());
+        if (previous == null || !previous.accountEntries().equals(next.accountEntries())) {
+            Tables.setItemsPreservingSelection(ledger, next.accountEntries(), AccountEntryDto::sequence);
+        }
         if (previous == null || !previous.balanceHistory().equals(next.balanceHistory())) {
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
             for (BalancePointDto point : next.balanceHistory()) series.getData().add(new XYChart.Data<>(point.step(), point.balance()));

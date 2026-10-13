@@ -4,7 +4,6 @@ import guessmarket.dto.OptionBookDto;
 import guessmarket.dto.OrderDto;
 import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Tables;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
@@ -47,6 +46,11 @@ public class OptionBookController {
 
     /** Fills the component with one book. */
     public void show(OptionBookDto book) {
+        show(book, true);
+    }
+
+    /** Fills the component while retaining an order selection only when this is the same event. */
+    public void show(OptionBookDto book, boolean preserveSelection) {
         optionNameLabel.setText(book.optionName());
         lastLabel.setText(Formats.price(book.lastTradePrice()));
         bidLabel.setText(Formats.price(book.bestBid()));
@@ -56,8 +60,8 @@ public class OptionBookController {
 
         bidTotalLabel.setText(describeDepth(book.totalBidShares()));
         askTotalLabel.setText(describeDepth(book.totalAskShares()));
-        bidsTable.setItems(FXCollections.observableArrayList(book.bids()));
-        asksTable.setItems(FXCollections.observableArrayList(book.asks()));
+        Tables.setItemsPreservingSelection(bidsTable, book.bids(), OrderDto::orderId, preserveSelection);
+        Tables.setItemsPreservingSelection(asksTable, book.asks(), OrderDto::orderId, preserveSelection);
     }
 
     private static String describeDepth(long shares) {

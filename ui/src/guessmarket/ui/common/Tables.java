@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.css.PseudoClass;
@@ -21,6 +22,7 @@ import javafx.scene.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -134,6 +136,41 @@ public final class Tables {
     private static final Text RULER = new Text();
 
     private Tables() {
+    }
+
+    /**
+     * Replaces a table's rows while keeping the selection attached to the same records.
+     *
+     * <p>The caller supplies a stable key because refreshed DTOs are new objects. When a selected
+     * record no longer exists, its selection is cleared. Passing {@code preserveSelection} as
+     * false is useful when the table is changing to a different event or account.
+     */
+    public static <S, K> void setItemsPreservingSelection(TableView<S> table,
+                                                           List<? extends S> items,
+                                                           Function<? super S, K> keyOf,
+                                                           boolean preserveSelection) {
+        var selection = table.getSelectionModel();
+        List<K> selectedKeys = preserveSelection
+                ? selection.getSelectedItems().stream().map(keyOf).toList()
+                : List.of();
+
+        table.setItems(FXCollections.observableArrayList(items));
+        selection.clearSelection();
+        for (K selectedKey : selectedKeys) {
+            for (int index = 0; index < table.getItems().size(); index++) {
+                if (Objects.equals(keyOf.apply(table.getItems().get(index)), selectedKey)) {
+                    selection.select(index);
+                    break;
+                }
+            }
+        }
+    }
+
+    /** Replaces rows and restores selection by the supplied stable record key. */
+    public static <S, K> void setItemsPreservingSelection(TableView<S> table,
+                                                           List<? extends S> items,
+                                                           Function<? super S, K> keyOf) {
+        setItemsPreservingSelection(table, items, keyOf, true);
     }
 
     /** @return a column of plain text, aligned to the left. */

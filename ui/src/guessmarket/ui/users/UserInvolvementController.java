@@ -10,7 +10,6 @@ import guessmarket.dto.UserLmsrInvolvementDto;
 import guessmarket.dto.UserOrderBookInvolvementDto;
 import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Tables;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -28,6 +27,8 @@ import java.util.List;
  * nothing and changes nothing.
  */
 public class UserInvolvementController {
+
+    private static final int NO_EVENT_SHOWN = Integer.MIN_VALUE;
 
     @FXML private VBox rootPane;
     @FXML private Label titleLabel;
@@ -47,6 +48,7 @@ public class UserInvolvementController {
     @FXML private TableView<OrderDto> ordersTable;
     @FXML private VBox finalTotalsBox;
     @FXML private TableView<OptionStateDto> finalTotalsTable;
+    private int shownEventId = NO_EVENT_SHOWN;
 
     @FXML
     private void initialize() {
@@ -86,6 +88,7 @@ public class UserInvolvementController {
 
     public void clear() {
         show(rootPane, false);
+        shownEventId = NO_EVENT_SHOWN;
     }
 
     /**
@@ -102,6 +105,8 @@ public class UserInvolvementController {
             clear();
             return;
         }
+        boolean preserveSelection = involvement.event().id() == shownEventId;
+        shownEventId = involvement.event().id();
         show(rootPane, true);
         titleLabel.setText("IN \"" + involvement.event().name().toUpperCase() + "\"");
         roleBadge.setText(describeRole(involvement));
@@ -114,9 +119,9 @@ public class UserInvolvementController {
         show(ordersBox, !lmsr);
 
         if (lmsr) {
-            showLmsr(involvement.lmsr(), involvement.event().isClosed());
+            showLmsr(involvement.lmsr(), involvement.event().isClosed(), preserveSelection);
         } else {
-            showOrderBook(involvement.orderBook(), involvement.event().isClosed());
+            showOrderBook(involvement.orderBook(), involvement.event().isClosed(), preserveSelection);
         }
         show(emptyLabel, !involvement.participant());
         show(holdingsBox, involvement.participant());
@@ -124,29 +129,34 @@ public class UserInvolvementController {
 
     // ------------------------------------------------------------------ the two kinds
 
-    private void showLmsr(UserLmsrInvolvementDto lmsr, boolean closed) {
+    private void showLmsr(UserLmsrInvolvementDto lmsr, boolean closed, boolean preserveSelection) {
         commissionLabel.setText(Formats.money(lmsr.totalCommissionPaid()));
-        fillHoldings(lmsr.holdings());
-        tradesTable.setItems(FXCollections.observableArrayList(lmsr.trades()));
+        fillHoldings(lmsr.holdings(), preserveSelection);
+        Tables.setItemsPreservingSelection(tradesTable, lmsr.trades(),
+                TradeRecordDto::serialNumber, preserveSelection);
 
         show(finalTotalsBox, closed && !lmsr.finalOptionTotals().isEmpty());
-        finalTotalsTable.setItems(FXCollections.observableArrayList(lmsr.finalOptionTotals()));
+        Tables.setItemsPreservingSelection(finalTotalsTable, lmsr.finalOptionTotals(),
+                OptionStateDto::name, preserveSelection);
 
         showOutcome(closed && lmsr.amountWon() != null, "WON AT THE SETTLEMENT",
                 lmsr.amountWon() == null ? 0 : lmsr.amountWon(), false);
     }
 
-    private void showOrderBook(UserOrderBookInvolvementDto orderBook, boolean closed) {
+    private void showOrderBook(UserOrderBookInvolvementDto orderBook, boolean closed,
+                               boolean preserveSelection) {
         commissionLabel.setText(Formats.money(orderBook.totalCommissionPaid()));
-        fillHoldings(orderBook.holdings());
-        ordersTable.setItems(FXCollections.observableArrayList(orderBook.openOrders()));
+        fillHoldings(orderBook.holdings(), preserveSelection);
+        Tables.setItemsPreservingSelection(ordersTable, orderBook.openOrders(),
+                OrderDto::orderId, preserveSelection);
 
         showOutcome(closed && orderBook.profitOrLoss() != null, "PROFIT OR LOSS",
                 orderBook.profitOrLoss() == null ? 0 : orderBook.profitOrLoss(), true);
     }
 
-    private void fillHoldings(List<HoldingDto> holdings) {
-        holdingsTable.setItems(FXCollections.observableArrayList(holdings));
+    private void fillHoldings(List<HoldingDto> holdings, boolean preserveSelection) {
+        Tables.setItemsPreservingSelection(holdingsTable, holdings,
+                HoldingDto::optionName, preserveSelection);
         double worth = 0;
         for (HoldingDto holding : holdings) {
             worth += holding.currentValue();

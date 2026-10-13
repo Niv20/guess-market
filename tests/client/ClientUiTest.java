@@ -6,6 +6,7 @@ import guessmarket.dto.network.SnapshotDto;
 import guessmarket.ui.common.Animations;
 import guessmarket.ui.common.Dialogs;
 import guessmarket.ui.common.Skin;
+import guessmarket.ui.common.Tables;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -28,6 +29,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Real JavaFX layout and interaction regressions; runs in a disposable client without HTTP writes. */
 public final class ClientUiTest extends Application {
@@ -57,6 +59,7 @@ public final class ClientUiTest extends Application {
             require(Animations.isEnabled(), "Animations must start enabled");
             // Avoid measuring a scene in the middle of an entrance transition.
             Animations.enabledProperty().set(false);
+            verifyTableSelectionSurvivesRefresh();
             layout();
             TextField username = node("login-username", TextField.class);
             username.setText("Niv");
@@ -229,6 +232,48 @@ public final class ClientUiTest extends Application {
         return new SnapshotDto(List.of(), Map.of(), List.of(),
                 new UserDto("Niv", 0, 0, false, List.of(), List.of()), List.of(), List.of(), List.of(), messages);
     }
+    private void verifyTableSelectionSurvivesRefresh() {
+        TableView<SelectionRow> table = new TableView<>();
+        table.setItems(javafx.collections.FXCollections.observableArrayList(
+                new SelectionRow(11, "selected"), new SelectionRow(12, "other")));
+        table.getSelectionModel().select(0);
+
+        Tables.setItemsPreservingSelection(table,
+                List.of(new SelectionRow(12, "other updated"), new SelectionRow(11, "selected updated")),
+                SelectionRow::id);
+        require(table.getSelectionModel().getSelectedItem().equals(new SelectionRow(11, "selected updated")),
+                "A refreshed table restores its selected row by stable key");
+
+        table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        table.getSelectionModel().clearSelection();
+        table.getSelectionModel().select(0);
+        table.getSelectionModel().select(1);
+        Tables.setItemsPreservingSelection(table,
+                List.of(new SelectionRow(11, "selected again"), new SelectionRow(12, "other again")),
+                SelectionRow::id);
+        Set<Integer> selectedIds = Set.copyOf(table.getSelectionModel().getSelectedItems().stream()
+                .map(SelectionRow::id).toList());
+        require(selectedIds.equals(Set.of(11, 12)),
+                "A refreshed table restores every selected row in multiple-selection mode");
+
+        table.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        table.getSelectionModel().clearSelection();
+        table.getSelectionModel().select(0);
+        Tables.setItemsPreservingSelection(table, List.of(new SelectionRow(13, "replacement")),
+                SelectionRow::id);
+        require(table.getSelectionModel().getSelectedItem() == null,
+                "A removed row does not leave a stale table selection");
+
+        table.getSelectionModel().select(0);
+        Tables.setItemsPreservingSelection(table, List.of(new SelectionRow(13, "new context")),
+                SelectionRow::id, false);
+        require(table.getSelectionModel().getSelectedItem() == null,
+                "Changing table context clears a selection even when a row key is reused");
+    }
+
+    private record SelectionRow(int id, String value) {
+    }
+
     private void layout() { scene.getRoot().applyCss(); scene.getRoot().layout(); }
     private <T> T node(String id, Class<T> type) { return type.cast(java.util.Objects.requireNonNull(scene.lookup("#" + id), id)); }
     private <T> T nodeByType(Class<T> type) { return scene.getRoot().lookupAll("*").stream().filter(type::isInstance).map(type::cast).findFirst().orElseThrow(); }

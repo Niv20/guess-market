@@ -13,7 +13,6 @@ import guessmarket.ui.common.Charts;
 import guessmarket.ui.common.Formats;
 import guessmarket.ui.common.Tables;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
@@ -229,9 +228,10 @@ public class EventDetailsController {
         showIdentity(event);
         showStatistics(event, status);
 
-        showMarket(event, status);
-        showParticipants(event, status.participants());
-        historyTable.setItems(FXCollections.observableArrayList(status.tradeHistory()));
+        showMarket(event, status, !anotherEvent);
+        showParticipants(event, status.participants(), !anotherEvent);
+        Tables.setItemsPreservingSelection(historyTable, status.tradeHistory(),
+                MarketTradeDto::serialNumber, !anotherEvent);
         showOnly(participantsBox, started(event));
         showOnly(historyBox, started(event));
         showPriceChart(event, priceHistory);
@@ -263,7 +263,7 @@ public class EventDetailsController {
      * themselves, and the line would be the program telling them to wait for a thing it is at the
      * same moment offering them a button to do. They are shown the button and nothing else.
      */
-    private void showMarket(EventDto event, EventTradingStatusDto status) {
+    private void showMarket(EventDto event, EventTradingStatusDto status, boolean preserveSelection) {
         boolean started = started(event);
         boolean lmsr = event.isLmsr();
         waitingLabel.setText("Waiting for " + event.marketMakerName() + " to open it.");
@@ -271,10 +271,11 @@ public class EventDetailsController {
         showOnly(lmsrBox, started && lmsr);
         showOnly(booksBox, started && !lmsr);
         if (lmsr) {
-            optionsTable.setItems(FXCollections.observableArrayList(status.optionStates()));
+            Tables.setItemsPreservingSelection(optionsTable, status.optionStates(),
+                    OptionStateDto::name, preserveSelection);
         } else {
-            firstBookController.show(status.books().get(0));
-            secondBookController.show(status.books().get(1));
+            firstBookController.show(status.books().get(0), preserveSelection);
+            secondBookController.show(status.books().get(1), preserveSelection);
         }
     }
 
@@ -452,9 +453,11 @@ public class EventDetailsController {
         scroller.setVvalue(top / hidden);
     }
 
-    private void showParticipants(EventDto event, List<ParticipantDto> participants) {
+    private void showParticipants(EventDto event, List<ParticipantDto> participants,
+                                  boolean preserveSelection) {
         rebuildParticipantColumns(event.optionNames());
-        participantsTable.setItems(FXCollections.observableArrayList(participants));
+        Tables.setItemsPreservingSelection(participantsTable, participants,
+                ParticipantDto::userName, preserveSelection);
     }
 
     /**
