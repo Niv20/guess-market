@@ -59,13 +59,21 @@ Get quote asks the server for the current LMSR share cost before commission. The
 
 My account follows the supplied sketch: the left side shows your balance and funding controls, the account ledger and balance chart. The right side shows events you run or participate in, your holdings and orders, full event details and the same trading controls used on Events.
 
-Private account rows and personal involvement records always belong to the logged-in user. The header keeps your current balance visible and provides Upload events and a profile icon. The profile dropdown shows your username, Settings and Logout. Settings offers Midnight, Daylight and Neon themes and an animations switch; animations start enabled. Funding controls live only in My account. Leaving an account or closing the client asks you to choose Leave or Stay.
+Private account rows and personal involvement records always belong to the logged-in user. The JavaFX header provides Upload events, Save state and Restore state; the web companion provides Add event and System state. The profile dropdown shows your username, Settings and Logout. Settings offers Midnight, Daylight and Neon themes and an animations switch; animations start enabled. Funding controls live only in My account. Leaving an account or closing the client asks you to choose Leave or Stay.
 
 ### Upload event files
 
 Use Upload events to choose an XML file of at most 2 MB. The server accepts the supplied Exercise 3 format in data/ex3/GM-EX3-Schema.xsd, illustrated by data/ex3/small.xml and data/ex3/multiple.xml. Files contain events without event IDs or a users section. Exercise 1 and 2 system files are not accepted by the online upload endpoint.
 
 Every accepted upload adds to the existing market. The server generates unique event IDs and assigns the uploading user as market maker of every event in that file. It checks the supplied schema, the event-definition rules, duplicate names within the file and names already present on the server. A rejected file reports its reasons and adds nothing. A successful upload does not open the events or debit a subsidy.
+
+### Save and restore Exercise 3 state
+
+Save state downloads one versioned `.gmstate` snapshot from the server. This is deliberately separate from the Exercise 3 XML schema: XML uploads still contain only event definitions, with no `GM-users` element and no event `id`. The state snapshot contains the server-generated IDs and the complete running market model, including registered users, balances, blocking status, holdings, open orders, trades, settlements, price histories and account histories.
+
+Restore state accepts only a `.gmstate` file exported by the Exercise 3 server, up to 16 MB, and atomically replaces the shared market for every connected client. The authenticated uploader's username must exist in the file so the request cannot switch identity or strand its own session. Connected users that also exist in the restored state keep their sessions; a client whose name is absent receives an expired-session response on its next request. After a server restart, restored user names may each be claimed once by a client, while names already claimed during that server lifetime remain reserved.
+
+Chat and HTTP sessions are not part of a market state file. Restore clears the transient chat so messages from the replaced market do not remain beside a different set of users. A failed, damaged, oversized or wrong-version state import leaves the current system untouched. Deserialization uses an allowlist and structural limits; the server never writes uploaded state or XML bytes to its own filesystem.
 
 ### Live updates and chat
 
@@ -90,10 +98,10 @@ The client communicates only through HTTP. Tomcat creates one application servic
 | Class | Role |
 | --- | --- |
 | ApplicationListener | Creates fresh ApplicationService state on deployment and removes the context reference when the application stops. |
-| ApplicationService | Owns the online engine, cookie and bearer authentication, and shared chat. It holds the engine monitor while applying actions or collecting a complete snapshot. |
+| ApplicationService | Owns the online engine, authentication, claimed usernames and shared chat. It holds the engine monitor while applying actions, restoring state or collecting a complete snapshot. |
 | AccessTokenStore | Issues 256-bit browser tokens, refreshes their 30-minute inactivity window and revokes them at logout. |
 | BrowserHostAllowlist | Validates and matches the exact local, LAN or remote server names approved for browser access. |
-| MarketServlet | Routes /api/* requests, enforces the exact web-origin allowlist, binds authenticated identity, maps failures to JSON and handles uploads entirely in memory. |
+| MarketServlet | Routes /api/* requests, enforces the exact web-origin allowlist, binds authenticated identity, maps failures to JSON and transfers XML and state files entirely in memory. |
 | JsonInput | Reads a bounded strict JSON object, requires the correct primitive types and required fields, and rejects identity overrides in action payloads. |
 | ApiException | Carries an expected HTTP status and a user-facing error message inside the server. |
 
@@ -101,8 +109,8 @@ The client communicates only through HTTP. Tomcat creates one application servic
 
 | Class or interface | Role |
 | --- | --- |
-| OnlineMarketEngine | Extends GuessMarketEngine with registration, deposits, stream uploads and account history. |
-| OnlineMarketEngineImpl | Starts with an empty market, adds users and files cumulatively, exposes ledger rows, and disables offline replacement and persistence methods. |
+| OnlineMarketEngine | Extends GuessMarketEngine with registration, deposits, event uploads, account history and Exercise 3 state import/export. |
+| OnlineMarketEngineImpl | Starts with an empty market, adds users and XML files cumulatively, and exports or atomically replaces the complete online model through a versioned state stream. |
 | OnlineEventFileLoader | Validates an XML stream against the supplied schema, checks event rules and produces all candidate events before any are added. |
 | UserAlreadyExistsException | Reports an attempted registration with an existing username. The factory now exposes createOnlineEngine(). |
 
@@ -115,7 +123,7 @@ The client communicates only through HTTP. Tomcat creates one application servic
 | Main | A small launcher that starts JavaFX with the application JAR on the classpath and JavaFX on the module path. |
 | GuessMarketClient | Builds the login screen, Events and My account; applies snapshots; preserves selections; connects the profile settings, floating chat, upload and account funding controls. |
 | ClientSession | Runs login, actions and polling on one worker. It delivers callbacks on the JavaFX thread and discards callbacks from older sessions after logout or expiry. |
-| ApiClient | Uses JDK HttpClient, a cookie store and Gson for HTTP/JSON. It resolves the server URL, posts multipart bytes, enforces timeouts and reads structured errors. |
+| ApiClient | Uses JDK HttpClient, a cookie store and Gson for HTTP/JSON and binary state downloads. It resolves the server URL, posts multipart bytes, enforces timeouts and reads structured errors. |
 | ApiClient.ApiException | Preserves an HTTP error status so ClientSession can distinguish an expired session from a recoverable connection failure. |
 | TradeActions | One reusable trading panel for both main screens. It binds quotes, purchases, orders, opening and closing to the selected market and the current session. |
 
@@ -130,6 +138,7 @@ EventDetailsController, OptionBookController, EventTile and UserInvolvementContr
 | SnapshotDto | All event details and price histories; public user summaries; the current user, involvements, balance history and account entries; the shared chat. |
 | PublicUserDto | Username, balance and whether that user runs at least one event. |
 | AccountEntryDto | Operation sequence, description, signed amount, balance before and balance after. Deposits, trades, commissions and settlement changes remain separate rows. |
+| StateTransferResultDto | Imported state filename and the restored event and registered-user totals. |
 | ChatMessageDto | Monotonic message ID, authenticated username, message text and a server timestamp in epoch milliseconds. |
 | LoginResponseDto | The canonical username and an opaque browser bearer token; JavaFX continues to use its session cookie. |
 | QuoteDto | The current LMSR share cost, before commission. |
@@ -144,11 +153,13 @@ All paths below are relative to http://localhost:8080/guess-market/api/. JSON re
 | Method and path | Request and result |
 | --- | --- |
 | GET /health | No authentication. Returns the readiness message plus `service: "guess-market"` and `apiVersion: 2`. |
-| POST /login | {username} creates a session and returns LoginResponseDto with a bearer token. An existing name returns HTTP 409. |
+| POST /login | {username} creates a session and returns LoginResponseDto with a bearer token. An already claimed name returns HTTP 409. |
 | POST /logout | Invalidates the cookie session and/or revokes its bearer token; returns an acknowledgement. |
 | GET /snapshot | Returns SnapshotDto with all public market information and this session's private account records. |
 | POST /funds | {amount} deposits funds in this session's account and returns UserDto. |
 | POST /upload | One multipart field named file, containing one XML file. Returns LoadResultDto. |
+| GET /state | Downloads the complete versioned Exercise 3 state as `guess-market.gmstate`. |
+| POST /state | One multipart field named file, containing one Exercise 3 `.gmstate` file. Returns StateTransferResultDto. |
 | GET /quote | Query parameters eventId, optionIndex and shares. Returns QuoteDto. |
 | POST /events/open | {eventId}; returns OpenEventResultDto. |
 | POST /events/close | {eventId, winningOptionIndex}; returns CloseEventResultDto. |
@@ -165,7 +176,7 @@ Errors use the JSON shape {"message":"..."}. Expected failures include invalid i
 
 ### A coherent shared market
 
-All engine calls are synchronized. The service also holds that same monitor while collecting an entire snapshot, so another request cannot expose a half-completed trade, commission payment or settlement. Upload validation and insertion are atomic. A slow request delays the next poll instead of creating overlapping pulls.
+All engine calls are synchronized. The service also holds that same monitor while collecting an entire snapshot, so another request cannot expose a half-completed trade, commission payment or settlement. Upload validation, event insertion and complete state replacement are atomic. A slow request delays the next poll instead of creating overlapping pulls.
 
 ## Build verification and operating choices
 
@@ -192,6 +203,7 @@ Run ./test.sh for the project checks. Set CATALINA_HOME to the installed Tomcat 
 
 - Load funds in both accounts, upload small.xml, open a market as its owner and trade from the second client. Observe balances, ledger rows and event history update in both windows.
 - Upload a second valid file to check accumulation. Try a duplicate name and an invalid file; check the error reasons and confirm that the previous market is unchanged.
+- Save the state after trading, make another deposit or event, then restore the saved file. Confirm that generated event IDs, every user's balance, ledger, holdings, orders and trade history return to their saved values in both clients.
 - Check that only the owner can open or close an event, that a session cannot trade as someone else, and that every commission and payout reaches the appropriate account.
 - Send chat messages in both directions and resize the Events and My account screens. Sign out and confirm the ended session can no longer call the API.
 
@@ -201,7 +213,7 @@ New accounts start at zero. Load funds before paying an opening subsidy or tradi
 
 Usernames are case-insensitive and remain reserved for the server lifetime, including after logout, client closure or credential expiry. This prevents a fresh session from claiming an existing account without a password. Keep the same client window open to retain access. Cookie sessions and browser bearer tokens expire after 30 minutes without requests; active polling keeps them alive.
 
-Events, accounts, history, chat and sessions exist only in memory and disappear when the application or server stops. Tomcat session persistence is explicitly disabled. XML upload bytes remain in memory through native Servlet multipart handling; no uploaded content is saved to a server file.
+The live server still keeps events, accounts, history, chat and sessions in memory, and Tomcat session persistence is explicitly disabled. Users can explicitly download the market model to an Exercise 3 `.gmstate` file and upload it after a restart. Chat and sessions are intentionally transient and are not serialized. XML and state upload bytes remain in memory through native Servlet multipart handling; no uploaded content is saved to a server file.
 
 After a connection interruption, polling retries automatically. Mutating actions are not automatically repeated: inspect the refreshed market and account before retrying a deposit, order or purchase whose response was lost. If login cannot reach the server, verify Tomcat, the deployed WAR filename, the Java version and the Server field.
 

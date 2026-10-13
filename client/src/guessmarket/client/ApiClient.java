@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import guessmarket.dto.LoadResultDto;
+import guessmarket.dto.StateTransferResultDto;
 import guessmarket.dto.network.LoginResponseDto;
 import guessmarket.dto.network.SnapshotDto;
 
@@ -25,6 +26,7 @@ import java.util.UUID;
 public final class ApiClient {
     public static final String DEFAULT_SERVER = "http://localhost:8080/guess-market/api/";
     private static final long MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+    private static final long MAX_STATE_BYTES = 16 * 1024 * 1024;
     private final Gson gson = new Gson();
     private final URI base;
     private final CookieManager cookies = new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER);
@@ -84,6 +86,49 @@ public final class ApiClient {
                 LoadResultDto.class);
     }
 
+    /** Restores a complete Exercise 3 server state through the authenticated session. */
+    public StateTransferResultDto uploadState(Path file) throws IOException, InterruptedException {
+        if (file.getFileName() == null || !file.getFileName().toString()
+                .toLowerCase(java.util.Locale.ROOT).endsWith(".gmstate")) {
+            throw new IOException("Choose a saved state file with the .gmstate extension.");
+        }
+        if (Files.size(file) == 0 || Files.size(file) > MAX_STATE_BYTES) {
+            throw new IOException("The saved state file must contain data and be no larger than 16 MB.");
+        }
+        byte[] contents;
+        try (var input = Files.newInputStream(file)) {
+            contents = input.readNBytes((int) MAX_STATE_BYTES + 1);
+        }
+        if (contents.length > MAX_STATE_BYTES) {
+            throw new IOException("The saved state file must be no larger than 16 MB.");
+        }
+        String boundary = "GuessMarket" + UUID.randomUUID().toString().replace("-", "");
+        byte[] head = ("--" + boundary
+                + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"system.gmstate\"\r\n"
+                + "Content-Type: application/octet-stream\r\n\r\n").getBytes(StandardCharsets.UTF_8);
+        byte[] tail = ("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8);
+        return send(request("state").header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                        .POST(HttpRequest.BodyPublishers.ofByteArrays(java.util.List.of(head, contents, tail))).build(),
+                StateTransferResultDto.class);
+    }
+
+    /** Downloads the server-owned market state and writes it only after a complete response. */
+    public Path downloadState(Path file) throws IOException, InterruptedException {
+        Path destination = file.toString().toLowerCase(java.util.Locale.ROOT).endsWith(".gmstate")
+                ? file : Path.of(file + ".gmstate");
+        HttpResponse<byte[]> response = http.send(request("state")
+                        .setHeader("Accept", "application/octet-stream").GET().build(),
+                HttpResponse.BodyHandlers.ofByteArray());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw error(response.statusCode(), new String(response.body(), StandardCharsets.UTF_8));
+        }
+        if (response.body().length == 0 || response.body().length > MAX_STATE_BYTES) {
+            throw new IOException("The server returned an invalid or oversized saved state.");
+        }
+        Files.write(destination, response.body());
+        return destination;
+    }
+
     public void clearSession() {
         cookies.getCookieStore().removeAll();
     }
@@ -97,14 +142,7 @@ public final class ApiClient {
         HttpResponse<String> response = http.send(request,
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            String message = "The server returned HTTP " + response.statusCode() + ".";
-            try {
-                JsonObject error = gson.fromJson(response.body(), JsonObject.class);
-                if (error != null && error.has("message")) message = error.get("message").getAsString();
-            } catch (RuntimeException ignored) {
-                if (response.statusCode() == 404) message = "Guess Market was not found at this address. Check that guess-market.war is deployed.";
-            }
-            throw new ApiException(response.statusCode(), message);
+            throw error(response.statusCode(), response.body());
         }
         if (type == Void.class || response.body().isBlank()) return null;
         try {
@@ -114,6 +152,19 @@ public final class ApiClient {
         } catch (RuntimeException error) {
             throw new IOException("The server returned an unreadable response. Check the client and server versions.", error);
         }
+    }
+
+    private ApiException error(int status, String body) {
+        String message = "The server returned HTTP " + status + ".";
+        try {
+            JsonObject error = gson.fromJson(body, JsonObject.class);
+            if (error != null && error.has("message")) message = error.get("message").getAsString();
+        } catch (RuntimeException ignored) {
+            if (status == 404) {
+                message = "Guess Market was not found at this address. Check that guess-market.war is deployed.";
+            }
+        }
+        return new ApiException(status, message);
     }
 
     public static final class ApiException extends IOException {

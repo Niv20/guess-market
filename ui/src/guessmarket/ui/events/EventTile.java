@@ -20,8 +20,8 @@ import java.util.Locale;
  * <p>How the event is doing comes first and is a coloured dot rather than a word, and it stands
  * in a narrow column of its own down the left of everything else: it is what a list is scanned
  * for, and one colour at one distance from the edge is found in a single pass where a word has to
- * be read row by row. The colours are a set of traffic lights - red waiting, amber running, green
- * finished - which is the one arrangement of three colours that needs no key beside it. Everything else is on one line with the name or underneath it. The number
+ * be read row by row. Inactive events are gray and an active event is orange and pulsing.
+ * Everything else is on one line with the name or underneath it. The number
  * the file gave the event leads that line, quiet, in front of the name rather than off in a
  * corner of its own — it is how the event is referred to everywhere else in the program, so it
  * belongs where the name is looked at. Then the name, which is the largest thing on the tile
@@ -110,21 +110,7 @@ public final class EventTile {
         return Tiles.titleRow(before, Tiles.title(event.name()), List.of());
     }
 
-    /**
-     * The dot that says how the event is doing, as a set of traffic lights: red for one that has
-     * not been opened, in which nothing at all can happen yet; amber for one that is running;
-     * green for one that is over and has paid everybody out.
-     *
-     * <p>Three colours nobody has to be taught, which is the whole reason for choosing them - a
-     * list is scanned for its marks before a word of it is read, and a reader who has to remember
-     * what the colours mean is reading it after all. What they mean here is what they mean at a
-     * junction: stop, in motion, go.
-     *
-     * <p>The amber one beats, when the animations are on. The other two are states the event is
-     * resting in and this one is not — an open event is taking trades while it is being looked
-     * at — and a mark that is moving is the difference between saying so and saying it was open
-     * at the moment the list was drawn.
-     */
+    /** The status dot is gray for inactive events and pulses orange while an event is active. */
     private static Node statusDot(EventDto event) {
         Node dot = Tiles.statusDot(dotStyle(event.status()), event.status().getDisplayName());
         if (event.status() == EventStatus.ACTIVE) {

@@ -26,8 +26,11 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -120,7 +123,17 @@ public class EventDetailsController {
     @FXML private VBox historyBox;
     @FXML private TableView<MarketTradeDto> historyTable;
     @FXML private VBox chartBox;
+    @FXML private HBox chartLegend;
     @FXML private LineChart<Number, Number> priceChart;
+
+    /** The option names represented by the custom chart legend, to keep it steady while refreshing. */
+    private List<String> chartLegendFor = List.of();
+
+    /** The legend row currently under the pointer, or -1 when neither option is highlighted. */
+    private int highlightedOutcome = -1;
+
+    /** Status currently represented by the badge, to avoid restarting its pulse on every refresh. */
+    private EventStatus displayedStatus;
 
     /** The option names the participants table was last built for, so it is rebuilt only when needed. */
     private List<String> participantColumnsFor = List.of();
@@ -159,6 +172,7 @@ public class EventDetailsController {
     private void initialize() {
         termTiles.addAll(List.of(commissionTile, liquidityTile, subsidyTile,
                 baseValueTile, investmentTile, mintTile));
+        priceChart.getStyleClass().add("price-history-chart");
         // The width changes during a layout pass, and moving the boxes there would leave the
         // panels above and below them already measured for the height the row used to have. So the
         // move waits for the pass to finish, and the whole card is measured again with it.
@@ -274,6 +288,17 @@ public class EventDetailsController {
         descriptionLabel.setText(event.description());
         statusBadge.setText(event.status().getDisplayName().toUpperCase());
         statusBadge.getStyleClass().setAll("badge", badgeStyleOf(event.status()));
+        if (event.status() != displayedStatus) {
+            Circle dot = new Circle(2.5);
+            dot.getStyleClass().add(event.status() == EventStatus.ACTIVE
+                    ? "status-dot-live" : "status-dot-idle");
+            if (event.status() == EventStatus.ACTIVE) {
+                Animations.pulse(dot);
+            }
+            statusBadge.setGraphic(dot);
+            statusBadge.setGraphicTextGap(5);
+            displayedStatus = event.status();
+        }
 
         // Not shouted, unlike the badge beside the name above: it now carries somebody's name,
         // and a name set in capitals is a name being shouted.
@@ -472,6 +497,7 @@ public class EventDetailsController {
      * that move a price.
      */
     private void showPriceChart(EventDto event, List<PricePointDto> priceHistory) {
+        buildChartLegend(event.optionNames());
         Map<String, XYChart.Series<Number, Number>> seriesByOption = new LinkedHashMap<>();
         for (String optionName : event.optionNames()) {
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
@@ -485,8 +511,83 @@ public class EventDetailsController {
             }
         }
         priceChart.getData().setAll(seriesByOption.values());
+        watchChartSeriesNodes();
+        applyChartHighlight();
         Charts.countAlong((NumberAxis) priceChart.getXAxis(), priceChart.getData());
         showOnly(chartBox, started(event) && !priceHistory.isEmpty());
+    }
+
+    /** Builds a separate legend so the outcomes are identified by line style as well as text. */
+    private void buildChartLegend(List<String> optionNames) {
+        if (chartLegendFor.equals(optionNames)) {
+            return;
+        }
+
+        chartLegendFor = List.copyOf(optionNames);
+        highlightedOutcome = -1;
+        chartLegend.getChildren().clear();
+        for (int index = 0; index < optionNames.size(); index++) {
+            int outcomeIndex = index;
+            Line sample = new Line(0, 0, 22, 0);
+            sample.getStyleClass().add("price-chart-legend-line");
+            if (index % 2 == 1) {
+                sample.getStrokeDashArray().setAll(6.0, 4.0);
+            }
+
+            Label name = new Label(optionNames.get(index));
+            HBox item = new HBox(7, sample, name);
+            item.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            item.getStyleClass().add("price-chart-legend-item");
+            item.setOnMouseEntered(event -> highlightOutcome(outcomeIndex));
+            item.setOnMouseExited(event -> clearOutcomeHighlight(outcomeIndex));
+            chartLegend.getChildren().add(item);
+        }
+    }
+
+    /** Keeps newly-created series nodes in step with the current legend hover state. */
+    private void watchChartSeriesNodes() {
+        for (int index = 0; index < priceChart.getData().size(); index++) {
+            int outcomeIndex = index;
+            XYChart.Series<Number, Number> series = priceChart.getData().get(index);
+            series.nodeProperty().addListener((observable, previous, current) ->
+                    setSeriesOpacity(outcomeIndex, current));
+        }
+    }
+
+    private void highlightOutcome(int outcomeIndex) {
+        highlightedOutcome = outcomeIndex;
+        applyChartHighlight();
+    }
+
+    private void clearOutcomeHighlight(int outcomeIndex) {
+        if (highlightedOutcome == outcomeIndex) {
+            highlightedOutcome = -1;
+            applyChartHighlight();
+        }
+    }
+
+    private void applyChartHighlight() {
+        for (int index = 0; index < chartLegend.getChildren().size(); index++) {
+            Node item = chartLegend.getChildren().get(index);
+            boolean highlighted = highlightedOutcome == index;
+            item.setOpacity(highlightedOutcome < 0 || highlighted ? 1.0 : 0.42);
+            if (highlighted) {
+                if (!item.getStyleClass().contains("is-highlighted")) {
+                    item.getStyleClass().add("is-highlighted");
+                }
+            } else {
+                item.getStyleClass().remove("is-highlighted");
+            }
+        }
+        for (int index = 0; index < priceChart.getData().size(); index++) {
+            setSeriesOpacity(index, priceChart.getData().get(index).getNode());
+        }
+    }
+
+    private void setSeriesOpacity(int index, Node node) {
+        if (node != null) {
+            node.setOpacity(highlightedOutcome < 0 || highlightedOutcome == index ? 1.0 : 0.22);
+        }
     }
 
     // ------------------------------------------------------------------ table layouts
@@ -520,10 +621,7 @@ public class EventDetailsController {
         node.setManaged(visible);
     }
 
-    /**
-     * @return the badge a stage of an event is worn in: the same three traffic lights the mark on
-     *         a tile uses, so that the two say one thing rather than two
-     */
+    /** @return the badge class for the event's matching gray or orange status */
     private static String badgeStyleOf(EventStatus status) {
         return switch (status) {
             case NOT_STARTED -> "badge-waiting";

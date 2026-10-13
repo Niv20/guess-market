@@ -193,8 +193,16 @@ public final class GuessMarketClient extends Application implements ClientSessio
         Button upload = new Button("Upload events"); upload.setId("upload-button");
         upload.setGraphic(Icons.openFolder(Icons.SMALL)); upload.getStyleClass().add("button-primary");
         upload.disableProperty().bind(busy); upload.setOnAction(action -> upload());
+        Button saveState = new Button("Save state"); saveState.setId("save-state-button");
+        saveState.setGraphic(Icons.floppyDisk(Icons.SMALL));
+        saveState.disableProperty().bind(busy); saveState.setOnAction(action -> saveState());
+        Button restoreState = new Button("Restore state"); restoreState.setId("restore-state-button");
+        restoreState.setGraphic(Icons.openFolder(Icons.SMALL));
+        restoreState.disableProperty().bind(busy); restoreState.setOnAction(action -> restoreState());
         uploadPath.setId("upload-path"); uploadPath.setEditable(false); uploadPath.setPromptText("No file uploaded in this session");
-        HBox uploadRow = new HBox(10, upload, uploadPath); HBox.setHgrow(uploadPath, Priority.ALWAYS);
+        FlowPane fileActions = new FlowPane(10, 8, upload, saveState, restoreState);
+        fileActions.setAlignment(Pos.CENTER_LEFT);
+        HBox uploadRow = new HBox(10, fileActions, uploadPath); HBox.setHgrow(uploadPath, Priority.ALWAYS);
         VBox header = new VBox(10, heading, uploadRow); header.getStyleClass().add("header-bar");
         shell.setTop(header);
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -367,6 +375,36 @@ public final class GuessMarketClient extends Application implements ClientSessio
         session.perform(api -> api.upload(file.toPath()), result -> {
             uploadPath.setText(file.getAbsolutePath());
             message("Uploaded " + Formats.count(result.eventCount(), "event") + " from " + file.getName() + ". You are their market maker.");
+        });
+    }
+
+    private void saveState() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save the Exercise 3 system state");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Guess Market saved state", "*.gmstate"));
+        chooser.setInitialFileName("guess-market.gmstate");
+        File file = chooser.showSaveDialog(stage);
+        if (file == null) return;
+        session.perform(api -> api.downloadState(file.toPath()), saved ->
+                message("Saved the registered users, generated event IDs, balances, orders, trades and histories to "
+                        + saved.toAbsolutePath() + "."));
+    }
+
+    private void restoreState() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Restore an Exercise 3 system state");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Guess Market saved state", "*.gmstate"));
+        File file = chooser.showOpenDialog(stage);
+        if (file == null) return;
+        if (!Dialogs.confirm(stage, "Replace the shared market?",
+                "This replaces the market for every connected client. Your current username must exist in the saved state. "
+                        + "Exercise 3 XML uploads remain separate and contain no users or event IDs.")) return;
+        session.perform(api -> api.uploadState(file.toPath()), result -> {
+            uploadPath.clear();
+            message("Restored " + Formats.count(result.eventCount(), "event") + " and "
+                    + Formats.count(result.userCount(), "user") + " from " + result.fileName() + ".");
         });
     }
 

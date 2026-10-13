@@ -2,6 +2,7 @@ package guessmarket.tests;
 
 import guessmarket.client.ApiClient;
 import guessmarket.dto.LoadResultDto;
+import guessmarket.dto.StateTransferResultDto;
 import guessmarket.dto.UserDto;
 import guessmarket.dto.network.ChatMessageDto;
 import guessmarket.dto.network.SnapshotDto;
@@ -34,6 +35,18 @@ public final class ApiClientIntegrationTest {
         first.post("chat", Map.of("message", "Java client round trip"), ChatMessageDto.class);
         require(second.snapshot().chat().stream().anyMatch(entry -> entry.message().equals("Java client round trip")),
                 "Chat did not propagate between Java clients");
+        Path stateFile = Files.createTempFile(Path.of("out"), "java-client-state-", ".gmstate");
+        double savedBalance = first.snapshot().self().balance();
+        try {
+            first.downloadState(stateFile);
+            first.post("funds", Map.of("amount", 17), UserDto.class);
+            StateTransferResultDto restored = first.uploadState(stateFile);
+            require(restored.userCount() >= 2, "Java state multipart response was not deserialized");
+            require(first.snapshot().self().balance() == savedBalance,
+                    "Java state restore did not restore the complete account");
+        } finally {
+            Files.deleteIfExists(stateFile);
+        }
         Path file = Files.createTempFile(Path.of("out"), "java-client-upload-", ".xml");
         try {
             String xml = Files.readString(Path.of("data/ex3/small.xml"))

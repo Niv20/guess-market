@@ -5,24 +5,33 @@ import guessmarket.dto.CreateEventRequestDto;
 import guessmarket.dto.EventDto;
 import guessmarket.dto.LoadResultDto;
 import guessmarket.dto.StateFileResultDto;
+import guessmarket.dto.StateTransferResultDto;
 import guessmarket.dto.UserDto;
 import guessmarket.engine.OnlineMarketEngine;
 import guessmarket.engine.exception.InvalidEventDefinitionException;
 import guessmarket.engine.exception.InvalidFileContentException;
+import guessmarket.engine.exception.SystemStateFileException;
 import guessmarket.engine.exception.UserAlreadyExistsException;
 import guessmarket.engine.market.BalanceChange;
 import guessmarket.engine.market.Event;
 import guessmarket.engine.market.GuessMarketSystem;
 import guessmarket.engine.market.User;
+import guessmarket.engine.persistence.SystemStateStore;
 import guessmarket.engine.xml.OnlineEventFileLoader;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
 /** Adds registration and cumulative stream uploads to the existing trading engine. */
 public final class OnlineMarketEngineImpl extends GuessMarketEngineImpl implements OnlineMarketEngine {
+    private static final byte[] STATE_HEADER = "GUESS-MARKET-EX3-STATE\n1\n"
+            .getBytes(StandardCharsets.US_ASCII);
     private final OnlineEventFileLoader uploadLoader = new OnlineEventFileLoader();
 
     public OnlineMarketEngineImpl() {
@@ -116,6 +125,66 @@ public final class OnlineMarketEngineImpl extends GuessMarketEngineImpl implemen
     @Override
     public synchronized StateFileResultDto loadSystemState(String path) {
         throw new UnsupportedOperationException("The online server keeps its state in memory only.");
+    }
+
+    @Override
+    public synchronized byte[] exportSystemState() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        output.writeBytes(STATE_HEADER);
+        SystemStateStore.save(loadedSystem(), output);
+        return output.toByteArray();
+    }
+
+    @Override
+    public synchronized StateTransferResultDto importSystemState(
+            String userName, InputStream stream, String fileName) {
+        requireExerciseThreeState(stream, fileName);
+        GuessMarketSystem restored = SystemStateStore.load(stream, fileName);
+        if (!restored.hasUser(userName)) {
+            throw new InvalidFileContentException(fileName, List.of(
+                    "The saved system does not contain your account, \"" + userName
+                            + "\". Sign in with a username contained in the state file before restoring it."));
+        }
+        // Exercise every restored aggregate before publishing it. A malformed object graph must
+        // fail while the old system is still live, not during somebody's next snapshot.
+        try {
+            validateRestoredSystem(restored);
+        } catch (RuntimeException malformed) {
+            throw new InvalidFileContentException(fileName, List.of(
+                    "The saved state contains incomplete or inconsistent market data."));
+        }
+        replaceSystem(restored);
+        return new StateTransferResultDto(fileName, restored.getEventCount(), restored.getUserCount());
+    }
+
+    private void requireExerciseThreeState(InputStream stream, String fileName) {
+        if (stream == null) {
+            throw new SystemStateFileException("No saved Exercise 3 state was supplied.");
+        }
+        try {
+            byte[] header = stream.readNBytes(STATE_HEADER.length);
+            if (!Arrays.equals(header, STATE_HEADER)) {
+                throw new SystemStateFileException("The file \"" + fileName
+                        + "\" is not a Guess Market Exercise 3 saved state. "
+                        + "Choose a .gmstate file exported by the Exercise 3 server.");
+            }
+        } catch (IOException failure) {
+            throw new SystemStateFileException("The file \"" + fileName
+                    + "\" could not be read.", failure);
+        }
+    }
+
+    private void validateRestoredSystem(GuessMarketSystem restored) {
+        for (User user : restored.getUsers()) {
+            DtoFactory.toUserDto(user);
+            user.getBalanceHistory();
+        }
+        for (Event event : restored.getEvents()) {
+            DtoFactory.toEventDto(event);
+            DtoFactory.toTradingStatusDto(event);
+            DtoFactory.toPriceHistory(event);
+            restored.requireUser(event.getMarketMakerName());
+        }
     }
 
     private boolean hasEventName(String name) {

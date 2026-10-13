@@ -62,7 +62,9 @@ with tempfile.TemporaryDirectory(prefix='http-test-', dir=ROOT / 'out') as tmp:
                     raise AssertionError('Tomcat upload directory missing: ' + str(directory))
                 directory.chmod(0o555)
             original_files = {directory: set(directory.rglob('*')) for directory in upload_directories}
-            subprocess.run([sys.executable, str(ROOT / 'tests/http_integration.py'), url], check=True)
+            saved_state = reports / 'exercise-3-state.gmstate'
+            subprocess.run([sys.executable, str(ROOT / 'tests/http_integration.py'), url,
+                            str(saved_state)], check=True)
             classpath = os.pathsep.join(str(ROOT / path) for path in [
                 'out/test-classes', 'out/artifacts/client/client.jar', 'out/artifacts/client/dto.jar',
                 'out/artifacts/client/lib/gson-2.13.2.jar'])
@@ -98,7 +100,7 @@ with tempfile.TemporaryDirectory(prefix='http-test-', dir=ROOT / 'out') as tmp:
                 raise RuntimeError('Restarted Tomcat did not become ready')
             cookies = http.cookiejar.CookieJar()
             client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
-            request = urllib.request.Request(url + '/login', data=b'{"username":"Trader"}',
+            request = urllib.request.Request(url + '/login', data=b'{"username":"Market Maker"}',
                 headers={'Content-Type':'application/json'})
             with client.open(request, timeout=5) as response:
                 assert response.status == 200, 'Previously reserved name survived server restart'
@@ -106,7 +108,26 @@ with tempfile.TemporaryDirectory(prefix='http-test-', dir=ROOT / 'out') as tmp:
                 fresh = json.load(response)
             assert fresh['events'] == [] and fresh['chat'] == [] and fresh['self']['balance'] == 0
             assert len(fresh['users']) == 1, 'User directory survived server restart'
-            print('PASS: restarting the server discards users, events, funds and chat')
+            boundary = 'GuessMarketRestartState'
+            contents = saved_state.read_bytes()
+            body = (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="restart.gmstate"\r\n'
+                    'Content-Type: application/octet-stream\r\n\r\n').encode() + contents + f'\r\n--{boundary}--\r\n'.encode()
+            restore = urllib.request.Request(url + '/state', data=body, method='POST', headers={
+                'Content-Type': 'multipart/form-data; boundary=' + boundary})
+            with client.open(restore, timeout=5) as response:
+                result = json.load(response)
+            assert result['eventCount'] > 0 and result['userCount'] > 1
+            newcomer = urllib.request.build_opener(
+                urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+            claim = urllib.request.Request(url + '/login', data=b'{"username":"Trader"}',
+                headers={'Content-Type':'application/json'})
+            with newcomer.open(claim, timeout=5) as response:
+                assert response.status == 200, 'A restored, unclaimed Exercise 3 user could not reconnect'
+            with newcomer.open(url + '/snapshot', timeout=5) as response:
+                restored = json.load(response)
+            assert restored['self']['name'] == 'Trader' and restored['events']
+            assert len(restored['accountEntries']) > 1, 'Restored user operation history is missing'
+            print('PASS: restart starts empty and a manual Exercise 3 state restore recovers users and history')
         finally:
             server.terminate()
             try:

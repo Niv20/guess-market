@@ -6,7 +6,9 @@ import guessmarket.dto.CommissionType;
 import guessmarket.dto.CreateEventRequestDto;
 import guessmarket.dto.OrderSide;
 import guessmarket.dto.SubmitOrderRequestDto;
+import guessmarket.dto.StateTransferResultDto;
 import guessmarket.dto.TradingMethod;
+import guessmarket.dto.UserDto;
 import guessmarket.dto.EventDto;
 import guessmarket.dto.OpenEventRequestDto;
 import guessmarket.dto.PurchaseRequestDto;
@@ -16,6 +18,7 @@ import guessmarket.engine.OnlineMarketEngine;
 import guessmarket.engine.exception.FileLoadException;
 import guessmarket.engine.exception.InvalidFileContentException;
 import guessmarket.engine.exception.InvalidShareQuantityException;
+import guessmarket.engine.exception.SystemStateFileException;
 import guessmarket.engine.market.LmsrMechanism;
 import guessmarket.engine.exception.UserAlreadyExistsException;
 
@@ -42,6 +45,7 @@ public final class OnlineMarketEngineTest {
         uploadedCourseSamples();
         atomicValidation();
         accountLedgerTracksOtherUsers();
+        onlineStateRoundTrip();
         concurrentOperations();
         numericShareCapacity();
         previousExerciseStillWorks();
@@ -169,6 +173,47 @@ public final class OnlineMarketEngineTest {
                 close(rows.get(i - 1).balanceAfter(), rows.get(i).balanceBefore(), "continuous statement");
             }
         }
+    }
+
+    private static void onlineStateRoundTrip() throws IOException {
+        OnlineMarketEngine source = GuessMarketEngineFactory.createOnlineEngine();
+        source.registerUser("Owner");
+        source.registerUser("Buyer");
+        source.depositFunds("Owner", 1000);
+        source.depositFunds("Buyer", 500);
+        upload(source, xml(event("Saved online event", "5")));
+        int generatedId = source.getAllEvents().getFirst().id();
+        source.openEvent(new OpenEventRequestDto("Owner", generatedId));
+        source.purchaseShares(new PurchaseRequestDto("Buyer", generatedId, 0, 7));
+        byte[] state = source.exportSystemState();
+
+        OnlineMarketEngine restored = GuessMarketEngineFactory.createOnlineEngine();
+        restored.registerUser("Owner");
+        restored.depositFunds("Owner", 1);
+        StateTransferResultDto result = restored.importSystemState("Owner",
+                new ByteArrayInputStream(state), "online.gmstate");
+        check(result.eventCount() == 1 && result.userCount() == 2, "state result reports restored totals");
+        check(restored.getAllUsers().stream().map(UserDto::name).toList()
+                .equals(List.of("Owner", "Buyer")), "registered Exercise 3 users restored");
+        check(restored.getAllEvents().getFirst().id() == generatedId, "server-generated event id restored");
+        check(restored.getEventTradingStatus(generatedId).tradeHistory().size() == 1,
+                "trade history restored");
+        check(restored.getAccountHistory("Buyer").equals(source.getAccountHistory("Buyer")),
+                "complete account operation history restored");
+        close(restored.getUser("Owner").balance(), source.getUser("Owner").balance(),
+                "temporary pre-import account was replaced");
+
+        OnlineMarketEngine wrongUser = GuessMarketEngineFactory.createOnlineEngine();
+        wrongUser.registerUser("Not in file");
+        expect(InvalidFileContentException.class, () -> wrongUser.importSystemState("Not in file",
+                new ByteArrayInputStream(state), "online.gmstate"));
+        check(wrongUser.getAllUsers().size() == 1 && wrongUser.getAllEvents().isEmpty(),
+                "state without session user is rejected atomically");
+
+        byte[] exerciseTwoState = Files.readAllBytes(Path.of("data/full-market-in-play.gmstate"));
+        expect(SystemStateFileException.class, () -> restored.importSystemState("Owner",
+                new ByteArrayInputStream(exerciseTwoState), "exercise-two.gmstate"));
+        check(restored.getAllEvents().size() == 1, "Exercise 2 state is not mistaken for Exercise 3 state");
     }
 
     private static void concurrentOperations() throws InterruptedException {
@@ -302,6 +347,10 @@ public final class OnlineMarketEngineTest {
         check(engine.isSystemLoaded() && engine.getAllUsers().size() > 0, "Exercise 2 file loading retained");
         engine.loadSystemDetailsFile("data/multiple-events.xml");
         check(engine.getAllEvents().size() > 1, "Exercise 2 replacement loading retained");
+        engine.loadSystemState("data/full-market-in-play.gmstate");
+        check(engine.getAllUsers().size() > 1 && engine.getAllEvents().stream()
+                .anyMatch(event -> event.status() != guessmarket.dto.EventStatus.NOT_STARTED),
+                "Exercise 2 saved-state loading retained");
     }
 
     private static void upload(OnlineMarketEngine engine, String xml) {

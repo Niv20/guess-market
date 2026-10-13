@@ -1029,26 +1029,7 @@
     -fx-text-fill: -app-text-dim;
 }
 
-/*
- * How a thing is doing, said in colour alone at the head of the row it belongs to.
- *
- * A list is scanned for the rows that are still running before a word of it is read, and one
- * colour repeated down the left hand edge is found in a single pass where a word has to be read
- * row by row. The three colours are a set of traffic lights, which is the one arrangement of
- * three colours nobody has to be taught: red for an event that has not been opened and in which
- * nothing at all can happen yet, amber for one that is running, green for one that is over and
- * has paid everybody out.
- *
- * The amber one beats, when the animations are on. Amber on a road means a state that is about
- * to end and this one means a state that is in motion, which is the same thing said about a
- * market: the difference between an event that is open and one that was open when the list was
- * drawn. It beats rather than blinks, and it is a fade rather than a stylesheet rule, because
- * JavaFX has no animation in its stylesheets - see Animations.pulse for the fade and for the
- * switch in the settings that stops it.
- *
- * The size is set in Tiles rather than here, because a shape is drawn at a radius and not at a
- * font size, and saying it twice is how the two come to disagree.
- */
+/* Inactive events use gray; an active event's orange mark pulses through Animations.pulse. */
 .status-dot-idle {
     -fx-fill: -app-status-waiting;
 }
@@ -1151,14 +1132,7 @@
     -fx-text-fill: -app-accent;
 }
 
-/*
- * What stage an event has reached, written out where a tile would have shown a dot.
- *
- * The same three traffic lights as .status-dot above and in the same order, so that the badge on
- * an event and the mark beside it in the list are one statement in two sizes. Outlined and not
- * filled: a badge is a word already, and a word in a coloured box beside a heading reads as a
- * warning rather than as a state.
- */
+/* Event status badges follow the same gray and orange palette as the list markers. */
 .badge-waiting {
     -fx-background-color: transparent;
     -fx-border-color: -app-status-waiting;
@@ -1653,3 +1627,39 @@
 .default-color0.chart-line-symbol { -fx-background-color: -app-accent, -app-surface; }
 .default-color1.chart-line-symbol { -fx-background-color: -app-yes, -app-surface; }
 .default-color2.chart-line-symbol { -fx-background-color: -app-no, -app-surface; }
+
+.price-history-chart .chart-series-line {
+    -fx-stroke: #d97757;
+}
+
+/* The second outcome is the same orange as the first, distinguished by a dashed stroke. */
+.price-history-chart .default-color1.chart-series-line {
+    -fx-opacity: 0.72;
+    -fx-stroke-dash-array: 7 4;
+}
+
+.price-history-chart .chart-line-symbol {
+    -fx-background-color: #d97757, -app-surface;
+}
+
+.price-chart-legend {
+    -fx-padding: 2 0 0 2;
+}
+
+.price-chart-legend-item {
+    -fx-cursor: hand;
+}
+
+.price-chart-legend-item .label {
+    -fx-text-fill: -app-text-dim;
+}
+
+.price-chart-legend-item.is-highlighted .label {
+    -fx-text-fill: -app-accent;
+    -fx-font-weight: bold;
+}
+
+.price-chart-legend-line {
+    -fx-stroke: #d97757;
+    -fx-stroke-width: 2.4;
+}

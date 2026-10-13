@@ -13,6 +13,7 @@ import uuid
 
 BASE = (sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:18080/guess-market/api').rstrip('/')
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+STATE_OUTPUT = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else None
 checks = 0
 
 
@@ -29,7 +30,7 @@ class Client:
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar))
 
     def request(self, path, body=None, method=None, raw=None, content_type=None,
-                headers=None, return_headers=False):
+                headers=None, return_headers=False, binary=False):
         data = raw if raw is not None else (json.dumps(body).encode() if body is not None else None)
         request_headers = dict(headers or {})
         if data is not None:
@@ -42,7 +43,7 @@ class Client:
             response = error
         with response:
             payload = response.read()
-            result = json.loads(payload) if payload else None
+            result = payload if binary else (json.loads(payload) if payload else None)
             if return_headers:
                 return response.status, result, response.headers
             return response.status, result
@@ -65,6 +66,16 @@ class Client:
                'Content-Type: application/xml\r\n\r\n').encode() + xml + f'\r\n--{boundary}--\r\n'.encode()
         return self.request('/upload', method='POST', raw=raw,
                             content_type='multipart/form-data; boundary=' + boundary, headers=headers)
+
+    def upload_state(self, saved, name='system.gmstate'):
+        boundary = 'GuessMarketStateTest' + uuid.uuid4().hex
+        raw = (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{name}"\r\n'
+               'Content-Type: application/octet-stream\r\n\r\n').encode() + saved + f'\r\n--{boundary}--\r\n'.encode()
+        return self.request('/state', method='POST', raw=raw,
+                            content_type='multipart/form-data; boundary=' + boundary)
+
+    def download_state(self):
+        return self.request('/state', headers={'Accept': 'application/octet-stream'}, binary=True)
 
 
 def state(client):
@@ -287,6 +298,36 @@ def main():
     trader.bad('/chat', {'message': ' '})
     trader.bad('/chat', {'message': 'x' * 5000})
     check(maker.ok('/snapshot?username=Trader')['self']['name'] == 'Market Maker', 'query parameter changed snapshot identity')
+
+    # Exercise 3 state is separate from schema XML: it preserves server-generated IDs,
+    # registered clients and operation history, while a restore replaces the shared market.
+    saved_snapshot = state(maker)
+    status, saved_state = maker.download_state()
+    check(status == 200 and saved_state.startswith(b'GUESS-MARKET-EX3-STATE\n1\n'),
+          'Exercise 3 state export is missing or unversioned')
+    maker.ok('/funds', {'amount': 123})
+    temporary = maker.ok('/events/create', create_request('Removed by state restore'))
+    status, restored = maker.upload_state(saved_state)
+    check(200 <= status < 300 and restored['eventCount'] == len(saved_snapshot['events'])
+          and restored['userCount'] == len(saved_snapshot['users']),
+          f'Exercise 3 state restore failed: {status}: {restored}')
+    after_restore = state(maker)
+    check(after_restore['events'] == saved_snapshot['events'],
+          'state restore did not preserve generated event IDs and event history')
+    check(after_restore['self'] == saved_snapshot['self']
+          and after_restore['accountEntries'] == saved_snapshot['accountEntries'],
+          'state restore did not preserve the importing account and operation history')
+    check(all(row['event']['id'] != temporary['id'] for row in after_restore['events']),
+          'state restore accumulated events instead of replacing the shared market')
+    check(state(trader)['self']['name'] == 'Trader',
+          'a connected user present in the restored state lost their account')
+    check(after_restore['chat'] == [], 'chat from the replaced market was left behind')
+    status, error = maker.upload_state((ROOT / 'data' / 'full-market-in-play.gmstate').read_bytes(),
+                                       'exercise-two.gmstate')
+    check(status == 400 and bool(error.get('message')), 'Exercise 2 state was accepted as Exercise 3 state')
+    check(state(maker)['events'] == after_restore['events'], 'rejected state restore changed the market')
+    if STATE_OUTPUT:
+        STATE_OUTPUT.write_bytes(saved_state)
 
     # Concurrent servlet requests exercise synchronized registration and account changes.
     def race_login(_):

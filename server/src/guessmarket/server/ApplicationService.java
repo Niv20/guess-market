@@ -3,6 +3,7 @@ package guessmarket.server;
 import guessmarket.dto.EventDto;
 import guessmarket.dto.EventTradingStatusDto;
 import guessmarket.dto.PricePointDto;
+import guessmarket.dto.StateTransferResultDto;
 import guessmarket.dto.UserDto;
 import guessmarket.dto.network.ChatMessageDto;
 import guessmarket.dto.network.LoginResponseDto;
@@ -14,15 +15,19 @@ import guessmarket.engine.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpSession;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 /**
  * The single server-owned market, authentication boundary and chat room. Every operation uses
  * the engine monitor, including login and complete snapshots, so polling cannot see half a trade.
- * Nothing here is persisted; a logged-out name remains reserved until this application stops.
+ * Logged-out names remain reserved until this application stops. Names restored from a state file
+ * can be claimed once, which lets their owners continue the restored accounts and histories.
  */
 public final class ApplicationService {
     static final String CONTEXT_ATTRIBUTE = ApplicationService.class.getName();
@@ -31,6 +36,7 @@ public final class ApplicationService {
     private static final int MAX_CHAT_MESSAGES = 500;
     private final OnlineMarketEngine engine = GuessMarketEngineFactory.createOnlineEngine();
     private final AccessTokenStore tokens = new AccessTokenStore();
+    private final Set<String> claimedUserNames = new HashSet<>();
     private final List<ChatMessageDto> chat = new ArrayList<>();
     private long nextChatId = 1;
 
@@ -45,16 +51,28 @@ public final class ApplicationService {
                 if (!existingSessionName.equalsIgnoreCase(name)) {
                     throw new ApiException(409, "You are already logged in. Log out before choosing a new username.");
                 }
+                try {
+                    engine.getUser(existingSessionName);
+                } catch (UserNotFoundException removedByRestore) {
+                    expireIdentity(session, sessionToken(session), existingSessionName);
+                    throw new ApiException(401, "Your account is not present in the restored system. Please log in again.");
+                }
                 return loginResponse(session, existingSessionName);
             }
-            try {
-                engine.getUser(name);
+            if (claimedUserNames.contains(userKey(name))) {
                 throw new ApiException(409, "That username already exists. Please choose another username.");
-            } catch (UserNotFoundException available) {
-                UserDto user = engine.registerUser(name);
-                session.setAttribute(USER_ATTRIBUTE, user.name());
-                return loginResponse(session, user.name());
             }
+            UserDto user;
+            try {
+                // A state file may already contain this account. It is available until the first
+                // client claims it during this server lifetime.
+                user = engine.getUser(name);
+            } catch (UserNotFoundException available) {
+                user = engine.registerUser(name);
+            }
+            claimedUserNames.add(userKey(user.name()));
+            session.setAttribute(USER_ATTRIBUTE, user.name());
+            return loginResponse(session, user.name());
         }
     }
 
@@ -69,8 +87,26 @@ public final class ApplicationService {
             if (username == null) {
                 throw new ApiException(401, "Your session has ended. Please log in.");
             }
+            try {
+                engine.getUser(username);
+            } catch (UserNotFoundException removedByRestore) {
+                expireIdentity(session, bearerToken, username);
+                throw new ApiException(401, "Your account is not present in the restored system. Please log in again.");
+            }
             return operation.apply(engine, username);
         }
+    }
+
+    StateTransferResultDto importState(HttpSession session, String bearerToken,
+                                       java.io.InputStream input, String fileName) {
+        return authenticated(session, bearerToken, (market, username) -> {
+            StateTransferResultDto result = market.importSystemState(username, input, fileName);
+            // Chat is a transient communication channel rather than market/account history.
+            // Clearing it prevents messages from the replaced market lingering beside new users.
+            chat.clear();
+            nextChatId = 1;
+            return result;
+        });
     }
 
     void logout(HttpSession session, String bearerToken) {
@@ -150,5 +186,22 @@ public final class ApplicationService {
         } catch (IllegalStateException expired) {
             return null;
         }
+    }
+
+    private void expireIdentity(HttpSession session, String bearerToken, String username) {
+        tokens.revoke(bearerToken);
+        String sessionName = sessionUsername(session);
+        if (session != null && sessionName != null && sessionName.equalsIgnoreCase(username)) {
+            tokens.revoke(sessionToken(session));
+            try {
+                session.invalidate();
+            } catch (IllegalStateException alreadyExpired) {
+                // The identity is already gone, which is the desired result.
+            }
+        }
+    }
+
+    private static String userKey(String name) {
+        return name.strip().toLowerCase(Locale.ROOT);
     }
 }

@@ -10,6 +10,7 @@ import guessmarket.dto.OpenEventRequestDto;
 import guessmarket.dto.OrderSide;
 import guessmarket.dto.PurchaseRequestDto;
 import guessmarket.dto.SubmitOrderRequestDto;
+import guessmarket.dto.StateTransferResultDto;
 import guessmarket.dto.TradingMethod;
 import guessmarket.dto.network.HealthResponseDto;
 import guessmarket.dto.network.MessageDto;
@@ -48,10 +49,12 @@ import java.util.Set;
  * stays in RAM: the threshold covers the entire permitted request and Part.write is never used.
  */
 @WebServlet(name = "GuessMarketApi", urlPatterns = "/api/*", loadOnStartup = 1)
-@MultipartConfig(fileSizeThreshold = 2_162_688, maxFileSize = 2_097_152, maxRequestSize = 2_162_688)
+@MultipartConfig(fileSizeThreshold = 16_842_752, maxFileSize = 16_777_216, maxRequestSize = 16_842_752)
 public final class MarketServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final int MAX_FILE_BYTES = 2_097_152;
+    private static final int MAX_STATE_BYTES = 16_777_216;
+    private static final Object NO_BODY = new Object();
     private static final String DEFAULT_ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173";
     private static final String ALLOWED_ORIGINS_PROPERTY = "guessmarket.allowedOrigins";
     private static final String ALLOWED_ORIGINS_ENV = "GUESS_MARKET_ALLOWED_ORIGINS";
@@ -90,7 +93,9 @@ public final class MarketServlet extends HttpServlet {
                 return;
             }
             Object result = dispatch(request, response);
-            write(response, result);
+            if (result != NO_BODY) {
+                write(response, result);
+            }
         } catch (ApiException failure) {
             fail(response, failure.status(), failure.getMessage());
         } catch (NotMarketMakerException | UserBlockedException failure) {
@@ -142,6 +147,13 @@ public final class MarketServlet extends HttpServlet {
             case "/upload" -> {
                 requireMethod(request, response, "POST");
                 yield upload(request, session, bearerToken);
+            }
+            case "/state" -> {
+                if ("GET".equals(request.getMethod())) {
+                    yield downloadState(response, session, bearerToken);
+                }
+                requireMethod(request, response, "POST");
+                yield uploadState(request, session, bearerToken);
             }
             case "/quote" -> {
                 requireMethod(request, response, "GET");
@@ -227,6 +239,63 @@ public final class MarketServlet extends HttpServlet {
         String fileName = name;
         return application.authenticated(session, bearerToken, (engine, username) ->
                 engine.uploadEvents(username, new ByteArrayInputStream(content), fileName));
+    }
+
+    private Object downloadState(HttpServletResponse response, HttpSession session, String bearerToken)
+            throws IOException {
+        byte[] state = application.authenticated(session, bearerToken,
+                (engine, username) -> engine.exportSystemState());
+        if (state.length > MAX_STATE_BYTES) {
+            throw new ApiException(413, "The current system state is larger than the 16 MB transfer limit.");
+        }
+        response.setContentType("application/octet-stream");
+        response.setHeader("Content-Disposition", "attachment; filename=\"guess-market.gmstate\"");
+        response.setContentLength(state.length);
+        response.getOutputStream().write(state);
+        return NO_BODY;
+    }
+
+    private StateTransferResultDto uploadState(HttpServletRequest request, HttpSession session,
+                                                String bearerToken) throws IOException {
+        String type = request.getContentType();
+        if (type == null || !type.split(";", 2)[0].strip().toLowerCase(Locale.ROOT)
+                .equals("multipart/form-data")) {
+            throw new ApiException(415, "Choose a .gmstate file and upload it as multipart/form-data.");
+        }
+        Collection<Part> parts;
+        try {
+            parts = request.getParts();
+        } catch (IllegalStateException tooLarge) {
+            throw new ApiException(413, "The saved state file must be no larger than 16 MB.");
+        } catch (ServletException malformed) {
+            throw new ApiException(400, "The saved state upload is not a valid multipart request.");
+        }
+        if (parts.size() != 1) {
+            throw new ApiException(400, "Upload exactly one .gmstate file in the 'file' field.");
+        }
+        Part file = parts.iterator().next();
+        String submittedName = file.getSubmittedFileName();
+        if (!file.getName().equals("file") || submittedName == null || submittedName.isBlank()) {
+            throw new ApiException(400, "The upload must contain a .gmstate file in the 'file' field.");
+        }
+        String name = submittedName.replace('\\', '/');
+        name = name.substring(name.lastIndexOf('/') + 1);
+        if (!name.toLowerCase(Locale.ROOT).endsWith(".gmstate")) {
+            throw new ApiException(400, "Choose a file with the .gmstate extension.");
+        }
+        if (file.getSize() == 0 || file.getSize() > MAX_STATE_BYTES) {
+            throw new ApiException(file.getSize() == 0 ? 400 : 413,
+                    "The saved state file must contain data and be no larger than 16 MB.");
+        }
+        byte[] content;
+        try (InputStream stream = file.getInputStream()) {
+            content = stream.readNBytes(MAX_STATE_BYTES + 1);
+        }
+        if (content.length > MAX_STATE_BYTES) {
+            throw new ApiException(413, "The saved state file must be no larger than 16 MB.");
+        }
+        return application.importState(session, bearerToken,
+                new ByteArrayInputStream(content), name);
     }
 
     private void configureCors(HttpServletRequest request, HttpServletResponse response) {

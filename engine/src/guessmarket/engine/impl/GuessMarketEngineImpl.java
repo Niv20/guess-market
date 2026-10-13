@@ -247,6 +247,14 @@ public class GuessMarketEngineImpl implements GuessMarketEngine {
         return system;
     }
 
+    /** Replaces the complete model only after a caller has fully read and validated a new one. */
+    protected final void replaceSystem(GuessMarketSystem replacement) {
+        if (replacement == null) {
+            throw new IllegalArgumentException("A replacement system is required.");
+        }
+        this.system = replacement;
+    }
+
     private static LmsrEvent requireLmsr(Event event) {
         if (event instanceof LmsrEvent lmsr) {
             return lmsr;

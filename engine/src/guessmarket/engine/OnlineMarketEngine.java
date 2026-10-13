@@ -2,6 +2,7 @@ package guessmarket.engine;
 
 import guessmarket.dto.AccountEntryDto;
 import guessmarket.dto.LoadResultDto;
+import guessmarket.dto.StateTransferResultDto;
 import guessmarket.dto.UserDto;
 
 import java.io.InputStream;
@@ -25,6 +26,15 @@ public interface OnlineMarketEngine extends GuessMarketEngine {
      * the caller's responsibility to close. Existing state is untouched on any validation failure.
      */
     LoadResultDto uploadEvents(String userName, InputStream stream, String fileName);
+
+    /** Serializes every generated event id, registered user, balance, order and trade. */
+    byte[] exportSystemState();
+
+    /**
+     * Restores a complete Exercise 3 online state atomically. The importing user's account must exist
+     * in the state so the authenticated session cannot silently change identity or become invalid.
+     */
+    StateTransferResultDto importSystemState(String userName, InputStream stream, String fileName);
 
     /** Returns all account changes, including payments caused by other users, oldest first. */
     List<AccountEntryDto> getAccountHistory(String userName);
